@@ -1,0 +1,1321 @@
+     1→'use client';
+     2→
+     3→import { useState, useMemo } from 'react';
+     4→import { motion, AnimatePresence } from 'framer-motion';
+     5→import {
+     6→  LineChart,
+     7→  Line,
+     8→  XAxis,
+     9→  YAxis,
+    10→  CartesianGrid,
+    11→  Tooltip,
+    12→  ResponsiveContainer,
+    13→  PieChart,
+    14→  Pie,
+    15→  Cell,
+    16→  BarChart,
+    17→  Bar,
+    18→  RadarChart,
+    19→  PolarGrid,
+    20→  PolarAngleAxis,
+    21→  PolarRadiusAxis,
+    22→  Radar,
+    23→} from 'recharts';
+    24→import {
+    25→  Brain,
+    26→  AlertTriangle,
+    27→  Heart,
+    28→  Smile,
+    29→  Meh,
+    30→  Frown,
+    31→  Sun,
+    32→  Moon,
+    33→  Shield,
+    34→  Phone,
+    35→  MessageCircle,
+    36→  Activity,
+    37→  TrendingUp,
+    38→  TrendingDown,
+    39→  Camera,
+    40→  CameraOff,
+    41→  Sparkles,
+    42→  BookOpen,
+    43→  HandHeart,
+    44→  Leaf,
+    45→  Music,
+    46→  Bed,
+    47→  Footprints,
+    48→} from 'lucide-react';
+    49→import TTSSpeaker from '@/components/features/tts-speaker';
+    50→import VoiceInput from '@/components/features/voice-input';
+    51→import { monthlyMoodData } from '@/lib/mock-data';
+    52→import {
+    53→  Card,
+    54→  CardHeader,
+    55→  CardTitle,
+    56→  CardContent,
+    57→  CardDescription,
+    58→} from '@/components/ui/card';
+    59→import { Button } from '@/components/ui/button';
+    60→import { Badge } from '@/components/ui/badge';
+    61→import { Slider } from '@/components/ui/slider';
+    62→import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+    63→import { Textarea } from '@/components/ui/textarea';
+    64→import { Progress } from '@/components/ui/progress';
+    65→import {
+    66→  Dialog,
+    67→  DialogContent,
+    68→  DialogHeader,
+    69→  DialogTitle,
+    70→  DialogTrigger,
+    71→} from '@/components/ui/dialog';
+    72→
+    73→// --- Types ---
+    74→type MoodType =
+    75→  | 'happy'
+    76→  | 'calm'
+    77→  | 'anxious'
+    78→  | 'sad'
+    79→  | 'angry'
+    80→  | 'neutral'
+    81→  | 'excited'
+    82→  | 'tired';
+    83→
+    84→interface MoodOption {
+    85→  key: MoodType;
+    86→  emoji: string;
+    87→  label: string;
+    88→  score: number;
+    89→  color: string;
+    90→}
+    91→
+    92→interface MoodEntry {
+    93→  id: string;
+    94→  mood: MoodType;
+    95→  score: number;
+    96→  productivity: number;
+    97→  energy: number;
+    98→  stress: number;
+    99→  note: string;
+   100→  timestamp: Date;
+   101→}
+   102→
+   103→type RiskLevel = 'Low' | 'Medium' | 'High' | 'Critical';
+   104→
+   105→// --- Constants ---
+   106→const MOOD_OPTIONS: MoodOption[] = [
+   107→  { key: 'happy', emoji: '😊', label: 'Happy', score: 9, color: '#10b981' },
+   108→  { key: 'calm', emoji: '😌', label: 'Calm', score: 8, color: '#14b8a6' },
+   109→  { key: 'excited', emoji: '🤩', label: 'Excited', score: 9.5, color: '#f59e0b' },
+   110→  { key: 'neutral', emoji: '😐', label: 'Neutral', score: 5, color: '#6b7280' },
+   111→  { key: 'tired', emoji: '😴', label: 'Tired', score: 4, color: '#8b5cf6' },
+   112→  { key: 'anxious', emoji: '😰', label: 'Anxious', score: 3, color: '#f97316' },
+   113→  { key: 'sad', emoji: '😢', label: 'Sad', score: 2, color: '#3b82f6' },
+   114→  { key: 'angry', emoji: '😠', label: 'Angry', score: 1, color: '#ef4444' },
+   115→];
+   116→
+   117→const RISK_COLORS: Record<RiskLevel, { bg: string; text: string; border: string; glow: string }> = {
+   118→  Low: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', glow: '' },
+   119→  Medium: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', glow: '' },
+   120→  High: { bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-300', glow: 'shadow-orange-200/50 shadow-lg' },
+   121→  Critical: { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-300', glow: 'shadow-red-300/50 shadow-xl' },
+   122→};
+   123→
+   124→// Simulated 30-day mood timeline data
+   125→const generateTimelineData = () => {
+   126→  const data = [];
+   127→  const now = new Date();
+   128→  for (let i = 29; i >= 0; i--) {
+   129→    const date = new Date(now);
+   130→    date.setDate(date.getDate() - i);
+   131→    const dayStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+   132→    const base = 5 + Math.sin(i * 0.3) * 2;
+   133→    const noise = (Math.random() - 0.5) * 3;
+   134→    const score = Math.max(1, Math.min(10, Math.round((base + noise) * 10) / 10));
+   135→    data.push({ day: dayStr, score, date: date.toISOString() });
+   136→  }
+   137→  return data;
+   138→};
+   139→
+   140→const timelineData = generateTimelineData();
+   141→
+   142→// Mood distribution for pie chart
+   143→const moodDistribution = [
+   144→  { name: 'Happy', value: 35, color: '#10b981' },
+   145→  { name: 'Calm', value: 25, color: '#14b8a6' },
+   146→  { name: 'Neutral', value: 15, color: '#6b7280' },
+   147→  { name: 'Excited', value: 10, color: '#f59e0b' },
+   148→  { name: 'Tired', value: 8, color: '#8b5cf6' },
+   149→  { name: 'Anxious', value: 4, color: '#f97316' },
+   150→  { name: 'Sad', value: 2, color: '#3b82f6' },
+   151→  { name: 'Angry', value: 1, color: '#ef4444' },
+   152→];
+   153→
+   154→// Weekly pattern data (4 weeks × 7 days)
+   155→const weeklyPatternData = [
+   156→  { day: 'Mon', w1: 7, w2: 6, w3: 8, w4: 7 },
+   157→  { day: 'Tue', w1: 6, w2: 5, w3: 7, w4: 8 },
+   158→  { day: 'Wed', w1: 5, w2: 4, w3: 6, w4: 7 },
+   159→  { day: 'Thu', w1: 8, w2: 7, w3: 8, w4: 9 },
+   160→  { day: 'Fri', w1: 7, w2: 6, w3: 7, w4: 8 },
+   161→  { day: 'Sat', w1: 9, w2: 8, w3: 9, w4: 9 },
+   162→  { day: 'Sun', w1: 8, w2: 7, w3: 8, w4: 8 },
+   163→];
+   164→
+   165→// Radar chart data for emotional wellness
+   166→const wellnessRadarData = [
+   167→  { dimension: 'Positivity', score: 72 },
+   168→  { dimension: 'Energy', score: 58 },
+   169→  { dimension: 'Calm', score: 65 },
+   170→  { dimension: 'Focus', score: 70 },
+   171→  { dimension: 'Resilience', score: 60 },
+   172→  { dimension: 'Social', score: 55 },
+   173→];
+   174→
+   175→// AI recommendations
+   176→const wellnessRecommendations = [
+   177→  {
+   178→    icon: Leaf,
+   179→    title: 'Mindful Breathing',
+   180→    description: 'Try 5 minutes of deep breathing when anxiety peaks. Box breathing (4-4-4-4) is especially effective.',
+   181→    category: 'Anxiety Relief',
+   182→    color: 'text-teal-600',
+   183→    bgColor: 'bg-teal-50',
+   184→  },
+   185→  {
+   186→    icon: Music,
+   187→    title: 'Mood Music Therapy',
+   188→    description: 'Listen to calming instrumental music for 15 minutes. Nature sounds can reduce stress by 25%.',
+   189→    category: 'Stress Relief',
+   190→    color: 'text-purple-600',
+   191→    bgColor: 'bg-purple-50',
+   192→  },
+   193→  {
+   194→    icon: Footprints,
+   195→    title: 'Gentle Movement',
+   196→    description: 'A 10-minute walk can boost your mood significantly. Even seated stretching helps release tension.',
+   197→    category: 'Energy Boost',
+   198→    color: 'text-amber-600',
+   199→    bgColor: 'bg-amber-50',
+   200→  },
+   201→  {
+   202→    icon: Bed,
+   203→    title: 'Sleep Hygiene Check',
+   204→    description: 'Your tiredness pattern suggests improving sleep. Try a consistent bedtime routine with no screens.',
+   205→    category: 'Rest',
+   206→    color: 'text-indigo-600',
+   207→    bgColor: 'bg-indigo-50',
+   208→  },
+   209→  {
+   210→    icon: HandHeart,
+   211→    title: 'Self-Compassion Pause',
+   212→    description: 'Acknowledge your feelings without judgment. Write one kind thing about yourself today.',
+   213→    category: 'Emotional Care',
+   214→    color: 'text-rose-600',
+   215→    bgColor: 'bg-rose-50',
+   216→  },
+   217→  {
+   218→    icon: BookOpen,
+   219→    title: 'Gratitude Journaling',
+   220→    description: 'List 3 things you are grateful for. Gratitude practice rewires the brain for positivity over time.',
+   221→    category: 'Positivity',
+   222→    color: 'text-emerald-600',
+   223→    bgColor: 'bg-emerald-50',
+   224→  },
+   225→];
+   226→
+   227→// Face expression simulation
+   228→const faceExpressions = [
+   229→  { expression: 'Neutral', confidence: 78 },
+   230→  { expression: 'Slight Smile', confidence: 15 },
+   231→  { expression: 'Brow Furrow', confidence: 5 },
+   232→  { expression: 'Eye Contact', confidence: 92 },
+   233→];
+   234→
+   235→// --- Helper ---
+   236→function getMoodScore(mood: MoodType | null, defaultScore: number): number {
+   237→  if (!mood) return defaultScore;
+   238→  const found = MOOD_OPTIONS.find((m) => m.key === mood);
+   239→  return found ? found.score : defaultScore;
+   240→}
+   241→
+   242→function computeRisk(entries: MoodEntry[]): RiskLevel {
+   243→  if (entries.length === 0) return 'Low';
+   244→  const recent = entries.slice(-5);
+   245→  const avgScore = recent.reduce((sum, e) => sum + e.score, 0) / recent.length;
+   246→  const avgStress = recent.reduce((sum, e) => sum + e.stress, 0) / recent.length;
+   247→  const sadCount = recent.filter((e) => e.mood === 'sad' || e.mood === 'angry').length;
+   248→
+   249→  if (avgScore <= 2.5 || avgStress >= 8.5 || sadCount >= 4) return 'Critical';
+   250→  if (avgScore <= 4 || avgStress >= 7 || sadCount >= 3) return 'High';
+   251→  if (avgScore <= 5.5 || avgStress >= 5.5 || sadCount >= 2) return 'Medium';
+   252→  return 'Low';
+   253→}
+   254→
+   255→// --- Component ---
+   256→export default function MoodMonitor() {
+   257→  const [selectedMood, setSelectedMood] = useState<MoodType | null>(null);
+   258→  const [productivity, setProductivity] = useState([5]);
+   259→  const [energy, setEnergy] = useState([5]);
+   260→  const [stress, setStress] = useState([5]);
+   261→  const [journalNote, setJournalNote] = useState('');
+   262→  const [moodEntries, setMoodEntries] = useState<MoodEntry[]>([
+   263→    {
+   264→      id: '1',
+   265→      mood: 'calm',
+   266→      score: 8,
+   267→      productivity: 6,
+   268→      energy: 5,
+   269→      stress: 3,
+   270→      note: 'Had a good morning walk',
+   271→      timestamp: new Date(Date.now() - 86400000),
+   272→    },
+   273→    {
+   274→      id: '2',
+   275→      mood: 'happy',
+   276→      score: 9,
+   277→      productivity: 7,
+   278→      energy: 7,
+   279→      stress: 2,
+   280→      note: 'Great therapy session today',
+   281→      timestamp: new Date(Date.now() - 43200000),
+   282→    },
+   283→  ]);
+   284→  const [cameraActive, setCameraActive] = useState(false);
+   285→  const [faceAnalysis, setFaceAnalysis] = useState(false);
+   286→
+   287→  const riskLevel = useMemo(() => computeRisk(moodEntries), [moodEntries]);
+   288→  const riskColors = RISK_COLORS[riskLevel];
+   289→  const showCriticalAlert = riskLevel === 'Critical' || riskLevel === 'High';
+   290→
+   291→  const handleLogMood = () => {
+   292→    if (!selectedMood) return;
+   293→    const entry: MoodEntry = {
+   294→      id: Date.now().toString(),
+   295→      mood: selectedMood,
+   296→      score: getMoodScore(selectedMood, 5),
+   297→      productivity: productivity[0],
+   298→      energy: energy[0],
+   299→      stress: stress[0],
+   300→      note: journalNote,
+   301→      timestamp: new Date(),
+   302→    };
+   303→    setMoodEntries((prev) => [...prev, entry]);
+   304→    setJournalNote('');
+   305→  };
+   306→
+   307→  const handleSimulateFaceAnalysis = () => {
+   308→    setCameraActive(true);
+   309→    setTimeout(() => {
+   310→      setFaceAnalysis(true);
+   311→    }, 2000);
+   312→  };
+   313→
+   314→  // Heatmap color based on score 1-10
+   315→  const getHeatColor = (value: number) => {
+   316→    if (value >= 8) return 'bg-emerald-400';
+   317→    if (value >= 6) return 'bg-teal-300';
+   318→    if (value >= 4) return 'bg-amber-300';
+   319→    if (value >= 2) return 'bg-orange-300';
+   320→    return 'bg-red-400';
+   321→  };
+   322→
+   323→  // Line chart data with gradient
+   324→  const monthlyLineData = monthlyMoodData.map((d) => ({
+   325→    week: d.week,
+   326→    happy: d.happy,
+   327→    calm: d.calm,
+   328→    anxious: d.anxious,
+   329→    sad: d.sad,
+   330→  }));
+   331→
+   332→  return (
+   333→    <div className="w-full max-w-7xl mx-auto space-y-6 p-4 sm:p-6">
+   334→      {/* Header */}
+   335→      <motion.div
+   336→        initial={{ opacity: 0, y: -20 }}
+   337→        animate={{ opacity: 1, y: 0 }}
+   338→        className="flex flex-col sm:flex-row items-start sm:items-center gap-4"
+   339→      >
+   340→        <div className="flex items-center gap-3">
+   341→          <div className="p-2.5 rounded-xl bg-gradient-to-br from-teal-500 to-purple-600 text-white">
+   342→            <Brain className="w-6 h-6" />
+   343→          </div>
+   344→          <div>
+   345→            <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-teal-600 to-purple-600 bg-clip-text text-transparent">
+   346→              Mood & Emotion Monitor
+   347→            </h1>
+   348→            <p className="text-sm text-muted-foreground">
+   349→              AI-powered emotional wellness tracking &amp; support
+   350→            </p>
+   351→          </div>
+   352→        </div>
+   353→        <div className="flex items-center gap-2 sm:ml-auto">
+   354→          <Badge variant="outline" className="gap-1.5 text-teal-600 border-teal-200 bg-teal-50">
+   355→            <Activity className="w-3 h-3" /> Tracking Active
+   356→          </Badge>
+   357→          <Badge variant="outline" className="gap-1.5 text-purple-600 border-purple-200 bg-purple-50">
+   358→            <Sparkles className="w-3 h-3" /> AI Enabled
+   359→          </Badge>
+   360→        </div>
+   361→      </motion.div>
+   362→
+   363→      {/* Anti-Suicide Prevention Alert - Show when risk is High or Critical */}
+   364→      <AnimatePresence>
+   365→        {showCriticalAlert && (
+   366→          <motion.div
+   367→            initial={{ opacity: 0, height: 0 }}
+   368→            animate={{ opacity: 1, height: 'auto' }}
+   369→            exit={{ opacity: 0, height: 0 }}
+   370→            transition={{ duration: 0.5 }}
+   371→          >
+   372→            <Alert
+   373→              className={`border-red-300 ${
+   374→                riskLevel === 'Critical'
+   375→                  ? 'bg-gradient-to-r from-red-50 via-red-100 to-rose-50'
+   376→                  : 'bg-gradient-to-r from-orange-50 via-amber-50 to-orange-50'
+   377→              }`}
+   378→            >
+   379→              <motion.div
+   380→                animate={{ scale: [1, 1.1, 1] }}
+   381→                transition={{ repeat: Infinity, duration: 2 }}
+   382→              >
+   383→                <Heart className="h-5 w-5 text-red-500" />
+   384→              </motion.div>
+   385→              <AlertTitle className="text-red-800 text-base font-semibold flex items-center gap-2">
+   386→                {riskLevel === 'Critical'
+   387→                  ? 'We care about you — You are not alone'
+   388→                  : 'We notice you may be going through a tough time'}
+   389→                <TTSSpeaker
+   390→                  text={riskLevel === 'Critical'
+   391→                    ? 'We care about you. You are not alone. Your recent mood patterns suggest you might be going through a very difficult period. Please know that help is always available, and people care about you deeply. Call 988 for the Suicide and Crisis Lifeline, available 24 hours a day, 7 days a week.'
+   392→                    : 'We notice you may be going through a tough time. Your emotional data indicates some challenging moments. It is okay to reach out. Speaking with someone can make a real difference.'}
+   393→                  size="sm"
+   394→                  voice="tongtong"
+   395→                  speed={0.85}
+   396→                  className="text-red-600 hover:text-red-800"
+   397→                />
+   398→              </AlertTitle>
+   399→              <AlertDescription className="text-red-700 space-y-3">
+   400→                <p className="text-sm">
+   401→                  {riskLevel === 'Critical'
+   402→                    ? 'Your recent mood patterns suggest you might be going through a very difficult period. Please know that help is always available, and people care about you deeply.'
+   403→                    : 'Your emotional data indicates some challenging moments. It\'s okay to reach out — speaking with someone can make a real difference.'}
+   404→                </p>
+   405→                <div className="flex flex-col sm:flex-row gap-3 mt-2">
+   406→                  <div className="flex items-center gap-2 bg-white/80 rounded-lg px-3 py-2">
+   407→                    <Phone className="w-4 h-4 text-red-600 shrink-0" />
+   408→                    <div>
+   409→                      <p className="font-semibold text-sm">988 Suicide &amp; Crisis Lifeline</p>
+   410→                      <p className="text-xs text-red-600">Call or text 988 — Available 24/7</p>
+   411→                    </div>
+   412→                  </div>
+   413→                  <div className="flex items-center gap-2 bg-white/80 rounded-lg px-3 py-2">
+   414→                    <MessageCircle className="w-4 h-4 text-red-600 shrink-0" />
+   415→                    <div>
+   416→                      <p className="font-semibold text-sm">Crisis Text Line</p>
+   417→                      <p className="text-xs text-red-600">Text HOME to 741741</p>
+   418→                    </div>
+   419→                  </div>
+   420→                </div>
+   421→                <p className="text-xs text-red-600/80 mt-1">
+   422→                  💙 You matter. Your feelings are valid. Reaching out is a sign of strength, not weakness.
+   423→                </p>
+   424→              </AlertDescription>
+   425→            </Alert>
+   426→          </motion.div>
+   427→        )}
+   428→      </AnimatePresence>
+   429→
+   430→      {/* Main Grid */}
+   431→      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+   432→        {/* Left Column - Mood Logger + Sliders + Journal */}
+   433→        <div className="space-y-6">
+   434→          {/* Mood Logger */}
+   435→          <motion.div
+   436→            initial={{ opacity: 0, x: -20 }}
+   437→            animate={{ opacity: 1, x: 0 }}
+   438→            transition={{ delay: 0.1 }}
+   439→          >
+   440→            <Card className="border-teal-100">
+   441→              <CardHeader>
+   442→                <CardTitle className="flex items-center gap-2 text-lg">
+   443→                  <Smile className="w-5 h-5 text-teal-500" />
+   444→                  How are you feeling?
+   445→                </CardTitle>
+   446→                <CardDescription>Select the mood that best describes your current state</CardDescription>
+   447→              </CardHeader>
+   448→              <CardContent>
+   449→                <div className="grid grid-cols-4 gap-3">
+   450→                  {MOOD_OPTIONS.map((mood) => (
+   451→                    <motion.button
+   452→                      key={mood.key}
+   453→                      whileHover={{ scale: 1.15 }}
+   454→                      whileTap={{ scale: 0.9 }}
+   455→                      onClick={() => setSelectedMood(mood.key)}
+   456→                      className={`flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all cursor-pointer ${
+   457→                        selectedMood === mood.key
+   458→                          ? 'border-teal-400 bg-teal-50 shadow-md shadow-teal-100'
+   459→                          : 'border-transparent bg-muted/30 hover:bg-muted/60'
+   460→                      }`}
+   461→                    >
+   462→                      <span className="text-3xl sm:text-4xl">{mood.emoji}</span>
+   463→                      <span className="text-[10px] sm:text-xs font-medium text-muted-foreground">
+   464→                        {mood.label}
+   465→                      </span>
+   466→                    </motion.button>
+   467→                  ))}
+   468→                </div>
+   469→              </CardContent>
+   470→            </Card>
+   471→          </motion.div>
+   472→
+   473→          {/* Productivity / Energy / Stress Sliders */}
+   474→          <motion.div
+   475→            initial={{ opacity: 0, x: -20 }}
+   476→            animate={{ opacity: 1, x: 0 }}
+   477→            transition={{ delay: 0.2 }}
+   478→          >
+   479→            <Card className="border-purple-100">
+   480→              <CardHeader>
+   481→                <CardTitle className="flex items-center gap-2 text-lg">
+   482→                  <Activity className="w-5 h-5 text-purple-500" />
+   483→                  Daily Metrics
+   484→                </CardTitle>
+   485→                <CardDescription>Rate your productivity, energy, and stress levels</CardDescription>
+   486→              </CardHeader>
+   487→              <CardContent className="space-y-6">
+   488→                {/* Productivity */}
+   489→                <div className="space-y-2">
+   490→                  <div className="flex justify-between items-center">
+   491→                    <label className="text-sm font-medium flex items-center gap-1.5">
+   492→                      <TrendingUp className="w-4 h-4 text-emerald-500" /> Productivity
+   493→                    </label>
+   494→                    <Badge variant="outline" className="text-emerald-600 border-emerald-200">
+   495→                      {productivity[0]}/10
+   496→                    </Badge>
+   497→                  </div>
+   498→                  <Slider
+   499→                    value={productivity}
+   500→                    onValueChange={setProductivity}
+   501→                    min={1}
+   502→                    max={10}
+   503→                    step={1}
+   504→                    className="[&_[data-slot=slider-range]]:bg-emerald-500 [&_[data-slot=slider-thumb]]:border-emerald-500"
+   505→                  />
+   506→                </div>
+   507→
+   508→                {/* Energy */}
+   509→                <div className="space-y-2">
+   510→                  <div className="flex justify-between items-center">
+   511→                    <label className="text-sm font-medium flex items-center gap-1.5">
+   512→                      <Sun className="w-4 h-4 text-amber-500" /> Energy
+   513→                    </label>
+   514→                    <Badge variant="outline" className="text-amber-600 border-amber-200">
+   515→                      {energy[0]}/10
+   516→                    </Badge>
+   517→                  </div>
+   518→                  <Slider
+   519→                    value={energy}
+   520→                    onValueChange={setEnergy}
+   521→                    min={1}
+   522→                    max={10}
+   523→                    step={1}
+   524→                    className="[&_[data-slot=slider-range]]:bg-amber-500 [&_[data-slot=slider-thumb]]:border-amber-500"
+   525→                  />
+   526→                </div>
+   527→
+   528→                {/* Stress */}
+   529→                <div className="space-y-2">
+   530→                  <div className="flex justify-between items-center">
+   531→                    <label className="text-sm font-medium flex items-center gap-1.5">
+   532→                      <TrendingDown className="w-4 h-4 text-red-500" /> Stress
+   533→                    </label>
+   534→                    <Badge variant="outline" className="text-red-600 border-red-200">
+   535→                      {stress[0]}/10
+   536→                    </Badge>
+   537→                  </div>
+   538→                  <Slider
+   539→                    value={stress}
+   540→                    onValueChange={setStress}
+   541→                    min={1}
+   542→                    max={10}
+   543→                    step={1}
+   544→                    className="[&_[data-slot=slider-range]]:bg-red-400 [&_[data-slot=slider-thumb]]:border-red-400"
+   545→                  />
+   546→                </div>
+   547→              </CardContent>
+   548→            </Card>
+   549→          </motion.div>
+   550→
+   551→          {/* Mood Journal */}
+   552→          <motion.div
+   553→            initial={{ opacity: 0, x: -20 }}
+   554→            animate={{ opacity: 1, x: 0 }}
+   555→            transition={{ delay: 0.3 }}
+   556→          >
+   557→            <Card className="border-peach-100 bg-gradient-to-br from-white to-orange-50/30">
+   558→              <CardHeader>
+   559→                <CardTitle className="flex items-center gap-2 text-lg">
+   560→                  <BookOpen className="w-5 h-5 text-orange-500" />
+   561→                  Mood Journal
+   562→                </CardTitle>
+   563→                <CardDescription>Write down what&apos;s on your mind — no judgment, just expression</CardDescription>
+   564→              </CardHeader>
+   565→              <CardContent className="space-y-4">
+   566→                <div className="relative">
+   567→                  <Textarea
+   568→                    placeholder="How was your day? What are you grateful for? What challenged you?"
+   569→                    value={journalNote}
+   570→                    onChange={(e) => setJournalNote(e.target.value)}
+   571→                    className="min-h-[100px] resize-none border-orange-200 focus:border-orange-300 pr-10"
+   572→                  />
+   573→                  <div className="absolute bottom-2 right-2">
+   574→                    <VoiceInput
+   575→                      onTranscription={(text) => setJournalNote(text)}
+   576→                      size="sm"
+   577→                    />
+   578→                  </div>
+   579→                </div>
+   580→                <Button
+   581→                  onClick={handleLogMood}
+   582→                  disabled={!selectedMood}
+   583→                  className="w-full bg-gradient-to-r from-teal-500 to-purple-500 hover:from-teal-600 hover:to-purple-600 text-white"
+   584→                >
+   585→                  <Heart className="w-4 h-4 mr-2" />
+   586→                  Log Mood Entry
+   587→                </Button>
+   588→                {!selectedMood && (
+   589→                  <p className="text-xs text-muted-foreground text-center">
+   590→                    Please select a mood above before logging
+   591→                  </p>
+   592→                )}
+   593→              </CardContent>
+   594→            </Card>
+   595→          </motion.div>
+   596→        </div>
+   597→
+   598→        {/* Middle Column - Charts */}
+   599→        <div className="space-y-6">
+   600→          {/* Mood Timeline Chart */}
+   601→          <motion.div
+   602→            initial={{ opacity: 0, y: 20 }}
+   603→            animate={{ opacity: 1, y: 0 }}
+   604→            transition={{ delay: 0.15 }}
+   605→          >
+   606→            <Card className="border-teal-100">
+   607→              <CardHeader>
+   608→                <CardTitle className="flex items-center gap-2 text-lg">
+   609→                  <Activity className="w-5 h-5 text-teal-500" />
+   610→                  30-Day Mood Timeline
+   611→                </CardTitle>
+   612→                <CardDescription>Your emotional journey over the past month</CardDescription>
+   613→              </CardHeader>
+   614→              <CardContent>
+   615→                <div className="h-[220px]">
+   616→                  <ResponsiveContainer width="100%" height="100%">
+   617→                    <LineChart data={timelineData}>
+   618→                      <defs>
+   619→                        <linearGradient id="moodGradient" x1="0" y1="0" x2="0" y2="1">
+   620→                          <stop offset="5%" stopColor="#14b8a6" stopOpacity={0.3} />
+   621→                          <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.05} />
+   622→                        </linearGradient>
+   623→                      </defs>
+   624→                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+   625→                      <XAxis
+   626→                        dataKey="day"
+   627→                        tick={{ fontSize: 10 }}
+   628→                        interval={4}
+   629→                        stroke="#9ca3af"
+   630→                      />
+   631→                      <YAxis domain={[0, 10]} tick={{ fontSize: 10 }} stroke="#9ca3af" />
+   632→                      <Tooltip
+   633→                        contentStyle={{
+   634→                          borderRadius: '8px',
+   635→                          border: '1px solid #e5e7eb',
+   636→                          fontSize: '12px',
+   637→                        }}
+   638→                      />
+   639→                      <Line
+   640→                        type="monotone"
+   641→                        dataKey="score"
+   642→                        stroke="url(#moodGradientLine)"
+   643→                        strokeWidth={2.5}
+   644→                        dot={{ r: 2, fill: '#14b8a6' }}
+   645→                        activeDot={{ r: 5, fill: '#14b8a6', stroke: '#fff', strokeWidth: 2 }}
+   646→                      />
+   647→                      <defs>
+   648→                        <linearGradient id="moodGradientLine" x1="0" y1="0" x2="1" y2="0">
+   649→                          <stop offset="0%" stopColor="#14b8a6" />
+   650→                          <stop offset="100%" stopColor="#8b5cf6" />
+   651→                        </linearGradient>
+   652→                      </defs>
+   653→                    </LineChart>
+   654→                  </ResponsiveContainer>
+   655→                </div>
+   656→              </CardContent>
+   657→            </Card>
+   658→          </motion.div>
+   659→
+   660→          {/* Monthly Mood Breakdown - Multi-line */}
+   661→          <motion.div
+   662→            initial={{ opacity: 0, y: 20 }}
+   663→            animate={{ opacity: 1, y: 0 }}
+   664→            transition={{ delay: 0.25 }}
+   665→          >
+   666→            <Card className="border-purple-100">
+   667→              <CardHeader>
+   668→                <CardTitle className="flex items-center gap-2 text-lg">
+   669→                  <Moon className="w-5 h-5 text-purple-500" />
+   670→                  Monthly Mood Breakdown
+   671→                </CardTitle>
+   672→                <CardDescription>Mood categories over recent weeks</CardDescription>
+   673→              </CardHeader>
+   674→              <CardContent>
+   675→                <div className="h-[200px]">
+   676→                  <ResponsiveContainer width="100%" height="100%">
+   677→                    <LineChart data={monthlyLineData}>
+   678→                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+   679→                      <XAxis dataKey="week" tick={{ fontSize: 11 }} stroke="#9ca3af" />
+   680→                      <YAxis tick={{ fontSize: 11 }} stroke="#9ca3af" />
+   681→                      <Tooltip
+   682→                        contentStyle={{
+   683→                          borderRadius: '8px',
+   684→                          border: '1px solid #e5e7eb',
+   685→                          fontSize: '12px',
+   686→                        }}
+   687→                      />
+   688→                      <Line type="monotone" dataKey="happy" stroke="#10b981" strokeWidth={2} dot={{ r: 3 }} />
+   689→                      <Line type="monotone" dataKey="calm" stroke="#14b8a6" strokeWidth={2} dot={{ r: 3 }} />
+   690→                      <Line type="monotone" dataKey="anxious" stroke="#f97316" strokeWidth={2} dot={{ r: 3 }} />
+   691→                      <Line type="monotone" dataKey="sad" stroke="#3b82f6" strokeWidth={2} dot={{ r: 3 }} />
+   692→                    </LineChart>
+   693→                  </ResponsiveContainer>
+   694→                </div>
+   695→                <div className="flex flex-wrap gap-3 mt-3 justify-center">
+   696→                  {[
+   697→                    { label: 'Happy', color: '#10b981' },
+   698→                    { label: 'Calm', color: '#14b8a6' },
+   699→                    { label: 'Anxious', color: '#f97316' },
+   700→                    { label: 'Sad', color: '#3b82f6' },
+   701→                  ].map((item) => (
+   702→                    <div key={item.label} className="flex items-center gap-1.5 text-xs">
+   703→                      <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+   704→                      {item.label}
+   705→                    </div>
+   706→                  ))}
+   707→                </div>
+   708→              </CardContent>
+   709→            </Card>
+   710→          </motion.div>
+   711→
+   712→          {/* Mood Distribution - Donut Chart */}
+   713→          <motion.div
+   714→            initial={{ opacity: 0, y: 20 }}
+   715→            animate={{ opacity: 1, y: 0 }}
+   716→            transition={{ delay: 0.35 }}
+   717→          >
+   718→            <Card className="border-teal-100">
+   719→              <CardHeader>
+   720→                <CardTitle className="flex items-center gap-2 text-lg">
+   721→                  <Smile className="w-5 h-5 text-teal-500" />
+   722→                  Mood Distribution
+   723→                </CardTitle>
+   724→                <CardDescription>Overall mood pattern breakdown</CardDescription>
+   725→              </CardHeader>
+   726→              <CardContent>
+   727→                <div className="h-[220px]">
+   728→                  <ResponsiveContainer width="100%" height="100%">
+   729→                    <PieChart>
+   730→                      <Pie
+   731→                        data={moodDistribution}
+   732→                        cx="50%"
+   733→                        cy="50%"
+   734→                        innerRadius={55}
+   735→                        outerRadius={85}
+   736→                        paddingAngle={2}
+   737→                        dataKey="value"
+   738→                      >
+   739→                        {moodDistribution.map((entry, index) => (
+   740→                          <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+   741→                        ))}
+   742→                      </Pie>
+   743→                      <Tooltip
+   744→                        contentStyle={{
+   745→                          borderRadius: '8px',
+   746→                          border: '1px solid #e5e7eb',
+   747→                          fontSize: '12px',
+   748→                        }}
+   749→                        formatter={(value: number) => [`${value}%`, 'Share']}
+   750→                      />
+   751→                    </PieChart>
+   752→                  </ResponsiveContainer>
+   753→                </div>
+   754→                <div className="grid grid-cols-4 gap-2 mt-2">
+   755→                  {moodDistribution.map((item) => (
+   756→                    <div key={item.name} className="flex items-center gap-1.5 text-[10px]">
+   757→                      <div
+   758→                        className="w-2 h-2 rounded-full shrink-0"
+   759→                        style={{ backgroundColor: item.color }}
+   760→                      />
+   761→                      <span className="truncate">{item.name}</span>
+   762→                    </div>
+   763→                  ))}
+   764→                </div>
+   765→              </CardContent>
+   766→            </Card>
+   767→          </motion.div>
+   768→        </div>
+   769→
+   770→        {/* Right Column - Risk + Face + Pattern + Radar */}
+   771→        <div className="space-y-6">
+   772→          {/* Risk Assessment Panel */}
+   773→          <motion.div
+   774→            initial={{ opacity: 0, x: 20 }}
+   775→            animate={{ opacity: 1, x: 0 }}
+   776→            transition={{ delay: 0.1 }}
+   777→          >
+   778→            <Card className={`border ${riskColors.border} ${riskColors.bg} ${riskColors.glow}`}>
+   779→              <CardHeader>
+   780→                <CardTitle className="flex items-center gap-2 text-lg">
+   781→                  <Shield className={`w-5 h-5 ${riskColors.text}`} />
+   782→                  AI Risk Assessment
+   783→                </CardTitle>
+   784→                <CardDescription>AI-analyzed emotional wellness risk level</CardDescription>
+   785→              </CardHeader>
+   786→              <CardContent className="space-y-4">
+   787→                <div className="flex items-center justify-between">
+   788→                  <span className="text-sm font-medium">Risk Level</span>
+   789→                  <motion.div
+   790→                    key={riskLevel}
+   791→                    initial={{ scale: 0.8 }}
+   792→                    animate={{ scale: 1 }}
+   793→                    transition={{ type: 'spring', stiffness: 300 }}
+   794→                  >
+   795→                    <Badge
+   796→                      className={`text-sm px-3 py-1 ${
+   797→                        riskLevel === 'Low'
+   798→                          ? 'bg-emerald-100 text-emerald-700 border-emerald-300'
+   799→                          : riskLevel === 'Medium'
+   800→                            ? 'bg-amber-100 text-amber-700 border-amber-300'
+   801→                            : riskLevel === 'High'
+   802→                              ? 'bg-orange-100 text-orange-700 border-orange-300'
+   803→                              : 'bg-red-100 text-red-700 border-red-300'
+   804→                      }`}
+   805→                    >
+   806→                      {riskLevel === 'Critical' && (
+   807→                        <AlertTriangle className="w-3 h-3 mr-1" />
+   808→                      )}
+   809→                      {riskLevel}
+   810→                    </Badge>
+   811→                  </motion.div>
+   812→                </div>
+   813→
+   814→                {/* Risk meter */}
+   815→                <div className="space-y-2">
+   816→                  <div className="h-3 w-full rounded-full bg-gray-100 overflow-hidden flex">
+   817→                    <div
+   818→                      className="h-full bg-emerald-400 transition-all duration-700"
+   819→                      style={{ width: riskLevel === 'Low' ? '25%' : '0%' }}
+   820→                    />
+   821→                    <div
+   822→                      className="h-full bg-amber-400 transition-all duration-700"
+   823→                      style={{
+   824→                        width:
+   825→                          riskLevel === 'Medium'
+   826→                            ? '25%'
+   827→                            : riskLevel === 'High'
+   828→                              ? '25%'
+   829→                              : riskLevel === 'Critical'
+   830→                                ? '25%'
+   831→                                : '0%',
+   832→                      }}
+   833→                    />
+   834→                    <div
+   835→                      className="h-full bg-orange-400 transition-all duration-700"
+   836→                      style={{
+   837→                        width:
+   838→                          riskLevel === 'High'
+   839→                            ? '25%'
+   840→                            : riskLevel === 'Critical'
+   841→                              ? '25%'
+   842→                              : '0%',
+   843→                      }}
+   844→                    />
+   845→                    <div
+   846→                      className="h-full bg-red-400 transition-all duration-700"
+   847→                      style={{ width: riskLevel === 'Critical' ? '25%' : '0%' }}
+   848→                    />
+   849→                  </div>
+   850→                  <div className="flex justify-between text-[10px] text-muted-foreground">
+   851→                    <span>Low</span>
+   852→                    <span>Medium</span>
+   853→                    <span>High</span>
+   854→                    <span>Critical</span>
+   855→                  </div>
+   856→                </div>
+   857→
+   858→                <div className="grid grid-cols-2 gap-3 text-center">
+   859→                  <div className="bg-white/60 rounded-lg p-2">
+   860→                    <p className="text-lg font-bold text-teal-600">{moodEntries.length}</p>
+   861→                    <p className="text-[10px] text-muted-foreground">Entries Logged</p>
+   862→                  </div>
+   863→                  <div className="bg-white/60 rounded-lg p-2">
+   864→                    <p className="text-lg font-bold text-purple-600">
+   865→                      {moodEntries.length > 0
+   866→                        ? (
+   867→                            moodEntries.reduce((s, e) => s + e.score, 0) / moodEntries.length
+   868→                          ).toFixed(1)
+   869→                        : '—'}
+   870→                    </p>
+   871→                    <p className="text-[10px] text-muted-foreground">Avg Mood Score</p>
+   872→                  </div>
+   873→                </div>
+   874→
+   875→                {riskLevel !== 'Low' && (
+   876→                  <p className="text-xs text-muted-foreground bg-white/50 rounded-lg p-2">
+   877→                    💡 Based on your recent mood entries, stress levels, and pattern analysis, our AI suggests
+   878→                    {riskLevel === 'Medium' && ' practicing some calming activities.'}
+   879→                    {riskLevel === 'High' && ' reaching out to a trusted person or counselor.'}
+   880→                    {riskLevel === 'Critical' && ' speaking with a professional as soon as possible.'}
+   881→                  </p>
+   882→                )}
+   883→              </CardContent>
+   884→            </Card>
+   885→          </motion.div>
+   886→
+   887→          {/* Face Expression Analysis */}
+   888→          <motion.div
+   889→            initial={{ opacity: 0, x: 20 }}
+   890→            animate={{ opacity: 1, x: 0 }}
+   891→            transition={{ delay: 0.2 }}
+   892→          >
+   893→            <Card className="border-purple-100">
+   894→              <CardHeader>
+   895→                <CardTitle className="flex items-center gap-2 text-lg">
+   896→                  <Camera className="w-5 h-5 text-purple-500" />
+   897→                  Face Expression Analysis
+   898→                </CardTitle>
+   899→                <CardDescription>AI-powered expression detection</CardDescription>
+   900→              </CardHeader>
+   901→              <CardContent className="space-y-4">
+   902→                <div className="relative bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl h-[140px] flex items-center justify-center overflow-hidden">
+   903→                  {!cameraActive ? (
+   904→                    <div className="text-center">
+   905→                      <Camera className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+   906→                      <p className="text-sm text-gray-500">Camera inactive</p>
+   907→                      <Button
+   908→                        variant="outline"
+   909→                        size="sm"
+   910→                        onClick={handleSimulateFaceAnalysis}
+   911→                        className="mt-2 text-xs"
+   912→                      >
+   913→                        <Camera className="w-3 h-3 mr-1" /> Enable Camera
+   914→                      </Button>
+   915→                    </div>
+   916→                  ) : !faceAnalysis ? (
+   917→                    <motion.div
+   918→                      animate={{ opacity: [0.5, 1, 0.5] }}
+   919→                      transition={{ repeat: Infinity, duration: 1.5 }}
+   920→                      className="text-center"
+   921→                    >
+   922→                      <div className="w-12 h-12 border-4 border-purple-400 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+   923→                      <p className="text-sm text-purple-600">Analyzing expression...</p>
+   924→                    </motion.div>
+   925→                  ) : (
+   926→                    <motion.div
+   927→                      initial={{ opacity: 0 }}
+   928→                      animate={{ opacity: 1 }}
+   929→                      className="w-full px-4"
+   930→                    >
+   931→                      <div className="flex items-center gap-3">
+   932→                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-teal-200 to-purple-200 flex items-center justify-center">
+   933→                          <span className="text-2xl">😐</span>
+   934→                        </div>
+   935→                        <div className="flex-1 space-y-2">
+   936→                          {faceExpressions.map((expr) => (
+   937→                            <div key={expr.expression} className="space-y-1">
+   938→                              <div className="flex justify-between text-[10px]">
+   939→                                <span>{expr.expression}</span>
+   940→                                <span className="font-medium">{expr.confidence}%</span>
+   941→                              </div>
+   942→                              <Progress
+   943→                                value={expr.confidence}
+   944→                                className="h-1.5 [&_[data-slot=progress-indicator]]:bg-gradient-to-r [&_[data-slot=progress-indicator]]:from-teal-400 [&_[data-slot=progress-indicator]]:to-purple-400"
+   945→                              />
+   946→                            </div>
+   947→                          ))}
+   948→                        </div>
+   949→                      </div>
+   950→                    </motion.div>
+   951→                  )}
+   952→                </div>
+   953→                <div className="flex gap-2">
+   954→                  <Button
+   955→                    variant="outline"
+   956→                    size="sm"
+   957→                    onClick={() => {
+   958→                      setCameraActive(false);
+   959→                      setFaceAnalysis(false);
+   960→                    }}
+   961→                    className="flex-1 text-xs"
+   962→                  >
+   963→                    <CameraOff className="w-3 h-3 mr-1" /> Disable
+   964→                  </Button>
+   965→                  <Button
+   966→                    variant="outline"
+   967→                    size="sm"
+   968→                    onClick={handleSimulateFaceAnalysis}
+   969→                    className="flex-1 text-xs"
+   970→                  >
+   971→                    <Camera className="w-3 h-3 mr-1" /> Re-analyze
+   972→                  </Button>
+   973→                </div>
+   974→              </CardContent>
+   975→            </Card>
+   976→          </motion.div>
+   977→
+   978→          {/* Wellness Radar */}
+   979→          <motion.div
+   980→            initial={{ opacity: 0, x: 20 }}
+   981→            animate={{ opacity: 1, x: 0 }}
+   982→            transition={{ delay: 0.3 }}
+   983→          >
+   984→            <Card className="border-teal-100">
+   985→              <CardHeader>
+   986→                <CardTitle className="flex items-center gap-2 text-lg">
+   987→                  <Brain className="w-5 h-5 text-teal-500" />
+   988→                  Emotional Wellness Profile
+   989→                </CardTitle>
+   990→              </CardHeader>
+   991→              <CardContent>
+   992→                <div className="h-[220px]">
+   993→                  <ResponsiveContainer width="100%" height="100%">
+   994→                    <RadarChart data={wellnessRadarData}>
+   995→                      <PolarGrid stroke="#e5e7eb" />
+   996→                      <PolarAngleAxis dataKey="dimension" tick={{ fontSize: 10 }} stroke="#9ca3af" />
+   997→                      <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fontSize: 8 }} stroke="#d1d5db" />
+   998→                      <Radar
+   999→                        name="Wellness"
+  1000→                        dataKey="score"
+  1001→                        stroke="#14b8a6"
+  1002→                        fill="#14b8a6"
+  1003→                        fillOpacity={0.25}
+  1004→                        strokeWidth={2}
+  1005→                      />
+  1006→                    </RadarChart>
+  1007→                  </ResponsiveContainer>
+  1008→                </div>
+  1009→              </CardContent>
+  1010→            </Card>
+  1011→          </motion.div>
+  1012→        </div>
+  1013→      </div>
+  1014→
+  1015→      {/* Weekly Mood Pattern - Heatmap */}
+  1016→      <motion.div
+  1017→        initial={{ opacity: 0, y: 20 }}
+  1018→        animate={{ opacity: 1, y: 0 }}
+  1019→        transition={{ delay: 0.4 }}
+  1020→      >
+  1021→        <Card className="border-purple-100">
+  1022→          <CardHeader>
+  1023→            <CardTitle className="flex items-center gap-2 text-lg">
+  1024→              <Sun className="w-5 h-5 text-amber-500" />
+  1025→              Weekly Mood Pattern
+  1026→            </CardTitle>
+  1027→            <CardDescription>Heatmap of mood patterns across the week</CardDescription>
+  1028→          </CardHeader>
+  1029→          <CardContent>
+  1030→            <div className="overflow-x-auto">
+  1031→              <div className="min-w-[500px]">
+  1032→                {/* Header */}
+  1033→                <div className="flex items-center mb-2">
+  1034→                  <div className="w-16" />
+  1035→                  {['Week 1', 'Week 2', 'Week 3', 'Week 4'].map((w) => (
+  1036→                    <div key={w} className="flex-1 text-center text-xs font-medium text-muted-foreground">
+  1037→                      {w}
+  1038→                    </div>
+  1039→                  ))}
+  1040→                </div>
+  1041→                {/* Rows */}
+  1042→                {weeklyPatternData.map((row) => (
+  1043→                  <div key={row.day} className="flex items-center mb-1.5">
+  1044→                    <div className="w-16 text-xs font-medium text-muted-foreground">{row.day}</div>
+  1045→                    {[
+  1046→                      { val: row.w1, label: `W1: ${row.w1}` },
+  1047→                      { val: row.w2, label: `W2: ${row.w2}` },
+  1048→                      { val: row.w3, label: `W3: ${row.w3}` },
+  1049→                      { val: row.w4, label: `W4: ${row.w4}` },
+  1050→                    ].map((cell, ci) => (
+  1051→                      <motion.div
+  1052→                        key={ci}
+  1053→                        whileHover={{ scale: 1.1 }}
+  1054→                        className={`flex-1 mx-0.5 h-10 rounded-lg flex items-center justify-center text-sm font-medium cursor-default ${getHeatColor(cell.val)} text-white`}
+  1055→                        title={cell.label}
+  1056→                      >
+  1057→                        {cell.val}
+  1058→                      </motion.div>
+  1059→                    ))}
+  1060→                  </div>
+  1061→                ))}
+  1062→                {/* Legend */}
+  1063→                <div className="flex items-center justify-center gap-4 mt-4">
+  1064→                  {[
+  1065→                    { label: 'Low (1-2)', color: 'bg-red-400' },
+  1066→                    { label: 'Below (3-4)', color: 'bg-orange-300' },
+  1067→                    { label: 'Moderate (5-6)', color: 'bg-amber-300' },
+  1068→                    { label: 'Good (7-8)', color: 'bg-teal-300' },
+  1069→                    { label: 'Great (9-10)', color: 'bg-emerald-400' },
+  1070→                  ].map((leg) => (
+  1071→                    <div key={leg.label} className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+  1072→                      <div className={`w-3 h-3 rounded ${leg.color}`} />
+  1073→                      {leg.label}
+  1074→                    </div>
+  1075→                  ))}
+  1076→                </div>
+  1077→              </div>
+  1078→            </div>
+  1079→          </CardContent>
+  1080→        </Card>
+  1081→      </motion.div>
+  1082→
+  1083→      {/* AI Wellness Recommendations */}
+  1084→      <motion.div
+  1085→        initial={{ opacity: 0, y: 20 }}
+  1086→        animate={{ opacity: 1, y: 0 }}
+  1087→        transition={{ delay: 0.5 }}
+  1088→      >
+  1089→        <Card className="border-teal-100 bg-gradient-to-br from-white via-teal-50/20 to-purple-50/20">
+  1090→          <CardHeader>
+  1091→            <CardTitle className="flex items-center gap-2 text-lg">
+  1092→              <Sparkles className="w-5 h-5 text-teal-500" />
+  1093→              AI Wellness Recommendations
+  1094→            </CardTitle>
+  1095→            <CardDescription>
+  1096→              Personalized suggestions based on your mood patterns and emotional data
+  1097→            </CardDescription>
+  1098→          </CardHeader>
+  1099→          <CardContent>
+  1100→            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+  1101→              {wellnessRecommendations.map((rec, idx) => (
+  1102→                <motion.div
+  1103→                  key={rec.title}
+  1104→                  initial={{ opacity: 0, y: 10 }}
+  1105→                  animate={{ opacity: 1, y: 0 }}
+  1106→                  transition={{ delay: 0.5 + idx * 0.08 }}
+  1107→                >
+  1108→                  <Dialog>
+  1109→                    <DialogTrigger asChild>
+  1110→                      <div className="cursor-pointer group">
+  1111→                        <Card className="h-full border-transparent hover:border-teal-200 transition-all hover:shadow-md">
+  1112→                          <CardContent className="p-4 space-y-3">
+  1113→                            <div className="flex items-start gap-3">
+  1114→                              <div className={`p-2 rounded-lg ${rec.bgColor}`}>
+  1115→                                <rec.icon className={`w-5 h-5 ${rec.color}`} />
+  1116→                              </div>
+  1117→                              <div className="flex-1 min-w-0">
+  1118→                                <div className="flex items-center gap-2">
+  1119→                                  <h4 className="font-semibold text-sm">{rec.title}</h4>
+  1120→                                  <TTSSpeaker
+  1121→                                    text={`${rec.title}. ${rec.description}`}
+  1122→                                    size="sm"
+  1123→                                    voice="tongtong"
+  1124→                                    speed={0.9}
+  1125→                                  />
+  1126→                                </div>
+  1127→                                <Badge
+  1128→                                  variant="outline"
+  1129→                                  className="mt-1 text-[10px] border-teal-200 text-teal-600"
+  1130→                                >
+  1131→                                  {rec.category}
+  1132→                                </Badge>
+  1133→                              </div>
+  1134→                            </div>
+  1135→                            <p className="text-xs text-muted-foreground line-clamp-2">
+  1136→                              {rec.description}
+  1137→                            </p>
+  1138→                          </CardContent>
+  1139→                        </Card>
+  1140→                      </div>
+  1141→                    </DialogTrigger>
+  1142→                    <DialogContent>
+  1143→                      <DialogHeader>
+  1144→                        <DialogTitle className="flex items-center gap-2">
+  1145→                          <div className={`p-1.5 rounded-lg ${rec.bgColor}`}>
+  1146→                            <rec.icon className={`w-5 h-5 ${rec.color}`} />
+  1147→                          </div>
+  1148→                          {rec.title}
+  1149→                        </DialogTitle>
+  1150→                      </DialogHeader>
+  1151→                      <div className="space-y-3">
+  1152→                        <Badge variant="outline" className="border-teal-200 text-teal-600">
+  1153→                          {rec.category}
+  1154→                        </Badge>
+  1155→                        <p className="text-sm text-muted-foreground">{rec.description}</p>
+  1156→                        <div className="bg-teal-50 rounded-lg p-3 text-sm">
+  1157→                          <p className="font-medium text-teal-700 mb-1">How to start:</p>
+  1158→                          <ul className="list-disc list-inside text-teal-600 text-xs space-y-1">
+  1159→                            <li>Set a reminder for the same time each day</li>
+  1160→                            <li>Start with just 2-3 minutes and build up</li>
+  1161→                            <li>Track your progress in the mood journal</li>
+  1162→                            <li>Be patient with yourself — progress takes time</li>
+  1163→                          </ul>
+  1164→                        </div>
+  1165→                      </div>
+  1166→                    </DialogContent>
+  1167→                  </Dialog>
+  1168→                </motion.div>
+  1169→              ))}
+  1170→            </div>
+  1171→          </CardContent>
+  1172→        </Card>
+  1173→      </motion.div>
+  1174→
+  1175→      {/* Mood History / Illustration */}
+  1176→      <motion.div
+  1177→        initial={{ opacity: 0, y: 20 }}
+  1178→        animate={{ opacity: 1, y: 0 }}
+  1179→        transition={{ delay: 0.6 }}
+  1180→      >
+  1181→        <Card className="border-purple-100 overflow-hidden">
+  1182→          <CardContent className="p-0">
+  1183→            <div className="flex flex-col md:flex-row">
+  1184→              <div className="flex-1 p-6 space-y-4">
+  1185→                <h3 className="text-lg font-semibold flex items-center gap-2">
+  1186→                  <Heart className="w-5 h-5 text-rose-500" />
+  1187→                  Recent Mood History
+  1188→                </h3>
+  1189→                <div className="max-h-64 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+  1190→                  {moodEntries.length === 0 ? (
+  1191→                    <p className="text-sm text-muted-foreground text-center py-8">
+  1192→                      No entries yet. Log your first mood above!
+  1193→                    </p>
+  1194→                  ) : (
+  1195→                    [...moodEntries].reverse().map((entry) => {
+  1196→                      const moodOpt = MOOD_OPTIONS.find((m) => m.key === entry.mood);
+  1197→                      return (
+  1198→                        <motion.div
+  1199→                          key={entry.id}
+  1200→                          initial={{ opacity: 0, x: -10 }}
+  1201→                          animate={{ opacity: 1, x: 0 }}
+  1202→                          className="flex items-center gap-3 bg-muted/30 rounded-lg p-3"
+  1203→                        >
+  1204→                          <span className="text-2xl">{moodOpt?.emoji}</span>
+  1205→                          <div className="flex-1 min-w-0">
+  1206→                            <div className="flex items-center gap-2">
+  1207→                              <span className="font-medium text-sm">{moodOpt?.label}</span>
+  1208→                              <Badge variant="outline" className="text-[10px]">
+  1209→                                Score: {entry.score}
+  1210→                              </Badge>
+  1211→                            </div>
+  1212→                            {entry.note && (
+  1213→                              <p className="text-xs text-muted-foreground mt-0.5 truncate">
+  1214→                                &ldquo;{entry.note}&rdquo;
+  1215→                              </p>
+  1216→                            )}
+  1217→                            <div className="flex gap-3 mt-1 text-[10px] text-muted-foreground">
+  1218→                              <span>⚡ Energy: {entry.energy}</span>
+  1219→                              <span>📊 Prod: {entry.productivity}</span>
+  1220→                              <span>😰 Stress: {entry.stress}</span>
+  1221→                            </div>
+  1222→                          </div>
+  1223→                          <span className="text-[10px] text-muted-foreground shrink-0">
+  1224→                            {entry.timestamp.toLocaleTimeString([], {
+  1225→                              hour: '2-digit',
+  1226→                              minute: '2-digit',
+  1227→                            })}
+  1228→                          </span>
+  1229→                        </motion.div>
+  1230→                      );
+  1231→                    })
+  1232→                  )}
+  1233→                </div>
+  1234→              </div>
+  1235→              <div className="hidden md:flex items-center justify-center w-64 bg-gradient-to-br from-teal-50 to-purple-50 p-6">
+  1236→                <ImageWithFallback />
+  1237→              </div>
+  1238→            </div>
+  1239→          </CardContent>
+  1240→        </Card>
+  1241→      </motion.div>
+  1242→
+  1243→      {/* Bar Chart - Weekly comparison */}
+  1244→      <motion.div
+  1245→        initial={{ opacity: 0, y: 20 }}
+  1246→        animate={{ opacity: 1, y: 0 }}
+  1247→        transition={{ delay: 0.65 }}
+  1248→      >
+  1249→        <Card className="border-teal-100">
+  1250→          <CardHeader>
+  1251→            <CardTitle className="flex items-center gap-2 text-lg">
+  1252→              <Frown className="w-5 h-5 text-teal-500" />
+  1253→              Mood Trend by Category
+  1254→            </CardTitle>
+  1255→            <CardDescription>Comparison of mood categories across weeks</CardDescription>
+  1256→          </CardHeader>
+  1257→          <CardContent>
+  1258→            <div className="h-[250px]">
+  1259→              <ResponsiveContainer width="100%" height="100%">
+  1260→                <BarChart data={monthlyMoodData}>
+  1261→                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+  1262→                  <XAxis dataKey="week" tick={{ fontSize: 11 }} stroke="#9ca3af" />
+  1263→                  <YAxis tick={{ fontSize: 11 }} stroke="#9ca3af" />
+  1264→                  <Tooltip
+  1265→                    contentStyle={{
+  1266→                      borderRadius: '8px',
+  1267→                      border: '1px solid #e5e7eb',
+  1268→                      fontSize: '12px',
+  1269→                    }}
+  1270→                  />
+  1271→                  <Bar dataKey="happy" fill="#10b981" radius={[4, 4, 0, 0]} />
+  1272→                  <Bar dataKey="calm" fill="#14b8a6" radius={[4, 4, 0, 0]} />
+  1273→                  <Bar dataKey="anxious" fill="#f97316" radius={[4, 4, 0, 0]} />
+  1274→                  <Bar dataKey="sad" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+  1275→                </BarChart>
+  1276→              </ResponsiveContainer>
+  1277→            </div>
+  1278→            <div className="flex flex-wrap gap-4 mt-3 justify-center">
+  1279→              {[
+  1280→                { label: 'Happy', color: '#10b981' },
+  1281→                { label: 'Calm', color: '#14b8a6' },
+  1282→                { label: 'Anxious', color: '#f97316' },
+  1283→                { label: 'Sad', color: '#3b82f6' },
+  1284→              ].map((item) => (
+  1285→                <div key={item.label} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+  1286→                  <div className="w-3 h-3 rounded" style={{ backgroundColor: item.color }} />
+  1287→                  {item.label}
+  1288→                </div>
+  1289→              ))}
+  1290→            </div>
+  1291→          </CardContent>
+  1292→        </Card>
+  1293→      </motion.div>
+  1294→    </div>
+  1295→  );
+  1296→}
+  1297→
+  1298→// Image component with fallback
+  1299→function ImageWithFallback() {
+  1300→  const [imgError, setImgError] = useState(false);
+  1301→
+  1302→  if (imgError) {
+  1303→    return (
+  1304→      <div className="flex flex-col items-center justify-center gap-3 text-center">
+  1305→        <div className="text-6xl">🧠</div>
+  1306→        <p className="text-sm text-teal-600 font-medium">Your mind matters</p>
+  1307→        <p className="text-xs text-muted-foreground">Track, understand, and nurture your emotional health</p>
+  1308→      </div>
+  1309→    );
+  1310→  }
+  1311→
+  1312→  return (
+  1313→    <img
+  1314→      src="/images/mood.png"
+  1315→      alt="Mood monitoring illustration"
+  1316→      className="max-w-full max-h-48 object-contain"
+  1317→      onError={() => setImgError(true)}
+  1318→    />
+  1319→  );
+  1320→}
+  1321→

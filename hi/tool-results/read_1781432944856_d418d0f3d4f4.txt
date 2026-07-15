@@ -1,0 +1,744 @@
+     1→     1→'use client';
+     2→     2→
+     3→     3→import { motion } from 'framer-motion';
+     4→     4→import {
+     5→     5→  Activity,
+     6→     6→  Flame,
+     7→     7→  Heart,
+     8→     8→  Target,
+     9→     9→  TrendingUp,
+    10→    10→  Award,
+    11→    11→  Calendar,
+    12→    12→  Zap,
+    13→    13→} from 'lucide-react';
+    14→    14→import {
+    15→    15→  BarChart,
+    16→    16→  Bar,
+    17→    17→  AreaChart,
+    18→    18→  Area,
+    19→    19→  ComposedChart,
+    20→    20→  LineChart,
+    21→    21→  Line,
+    22→    22→  XAxis,
+    23→    23→  YAxis,
+    24→    24→  CartesianGrid,
+    25→    25→  Tooltip,
+    26→    26→  Legend,
+    27→    27→  Cell,
+    28→    28→  ReferenceLine,
+    29→    29→} from 'recharts';
+    30→    30→
+    31→    31→import {
+    32→    32→  Card,
+    33→    33→  CardHeader,
+    34→    34→  CardTitle,
+    35→    35→  CardContent,
+    36→    36→  CardDescription,
+    37→    37→} from '@/components/ui/card';
+    38→    38→import { Badge } from '@/components/ui/badge';
+    39→    39→import { Progress } from '@/components/ui/progress';
+    40→    40→import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+    41→    41→import {
+    42→    42→  ChartContainer,
+    43→    43→  ChartTooltip,
+    44→    44→  ChartTooltipContent,
+    45→    45→  ChartLegend,
+    46→    46→  ChartLegendContent,
+    47→    47→  type ChartConfig,
+    48→    48→} from '@/components/ui/chart';
+    49→    49→
+    50→    50→import {
+    51→    51→  weeklyExerciseData,
+    52→    52→  monthlyMoodData,
+    53→    53→  heartRateData,
+    54→    54→  progressData,
+    55→    55→  calorieTrackingData,
+    56→    56→  recentAchievements,
+    57→    57→} from '@/lib/mock-data';
+    58→    58→
+    59→    59→// ── Animation variants ──────────────────────────────────────────────────────
+    60→    60→
+    61→    61→const containerVariants = {
+    62→    62→  hidden: { opacity: 0 },
+    63→    63→  visible: {
+    64→    64→    opacity: 1,
+    65→    65→    transition: { staggerChildren: 0.08 },
+    66→    66→  },
+    67→    67→};
+    68→    68→
+    69→    69→const itemVariants = {
+    70→    70→  hidden: { opacity: 0, y: 20 },
+    71→    71→  visible: {
+    72→    72→    opacity: 1,
+    73→    73→    y: 0,
+    74→    74→    transition: { duration: 0.5, ease: 'easeOut' },
+    75→    75→  },
+    76→    76→};
+    77→    77→
+    78→    78→// ── Chart configs ────────────────────────────────────────────────────────────
+    79→    79→
+    80→    80→const weeklyExerciseConfig: ChartConfig = {
+    81→    81→  minutes: { label: 'Minutes', color: '#10b981' },
+    82→    82→  target: { label: 'Target', color: '#f59e0b' },
+    83→    83→};
+    84→    84→
+    85→    85→const progressConfig: ChartConfig = {
+    86→    86→  strength: { label: 'Strength', color: '#10b981' },
+    87→    87→  flexibility: { label: 'Flexibility', color: '#f59e0b' },
+    88→    88→  endurance: { label: 'Endurance', color: '#f43f5e' },
+    89→    89→  balance: { label: 'Balance', color: '#06b6d4' },
+    90→    90→};
+    91→    91→
+    92→    92→const calorieConfig: ChartConfig = {
+    93→    93→  intake: { label: 'Intake', color: '#f59e0b' },
+    94→    94→  burned: { label: 'Burned', color: '#f43f5e' },
+    95→    95→  target: { label: 'Target', color: '#10b981' },
+    96→    96→};
+    97→    97→
+    98→    98→const heartRateConfig: ChartConfig = {
+    99→    99→  bpm: { label: 'BPM', color: '#f43f5e' },
+   100→   100→};
+   101→   101→
+   102→   102→const moodConfig: ChartConfig = {
+   103→   103→  happy: { label: 'Happy', color: '#10b981' },
+   104→   104→  calm: { label: 'Calm', color: '#06b6d4' },
+   105→   105→  anxious: { label: 'Anxious', color: '#f59e0b' },
+   106→   106→  sad: { label: 'Sad', color: '#f43f5e' },
+   107→   107→};
+   108→   108→
+   109→   109→// ── Heart rate zone colouring ───────────────────────────────────────────────
+   110→   110→
+   111→   111→const zoneColors: Record<string, string> = {
+   112→   112→  Resting: '#10b981',
+   113→   113→  Light: '#06b6d4',
+   114→   114→  Moderate: '#f59e0b',
+   115→   115→  Vigorous: '#f43f5e',
+   116→   116→};
+   117→   117→
+   118→   118→// ── Helper: today's date string ─────────────────────────────────────────────
+   119→   119→
+   120→   120→function getFormattedDate(): string {
+   121→   121→  return new Date().toLocaleDateString('en-US', {
+   122→   122→    weekday: 'long',
+   123→   123→    year: 'numeric',
+   124→   124→    month: 'long',
+   125→   125→    day: 'numeric',
+   126→   126→  });
+   127→   127→}
+   128→   128→
+   129→   129→// ── Stat card data ───────────────────────────────────────────────────────────
+   130→   130→
+   131→   131→const totalMinutesThisWeek = weeklyExerciseData.reduce(
+   132→   132→  (sum, d) => sum + d.minutes,
+   133→   133→  0
+   134→   134→);
+   135→   135→const totalTargetThisWeek = weeklyExerciseData.reduce(
+   136→   136→  (sum, d) => sum + d.target,
+   137→   137→  0
+   138→   138→);
+   139→   139→const caloriesBurnedToday = weeklyExerciseData[0]?.calories ?? 0;
+   140→   140→const moodScore = 7;
+   141→   141→const formAccuracy = 87;
+   142→   142→
+   143→   143→const statCards = [
+   144→   144→  {
+   145→   145→    title: 'Exercise Minutes',
+   146→   146→    value: `${totalMinutesThisWeek}`,
+   147→   147→    subtitle: `of ${totalTargetThisWeek} min target`,
+   148→   148→    progress: Math.round((totalMinutesThisWeek / totalTargetThisWeek) * 100),
+   149→   149→    icon: Activity,
+   150→   150→    gradient: 'from-emerald-500 to-emerald-600',
+   151→   151→    bgGlow: 'bg-emerald-500/10',
+   152→   152→    iconColor: 'text-emerald-500',
+   153→   153→  },
+   154→   154→  {
+   155→   155→    title: 'Calories Burned',
+   156→   156→    value: `${caloriesBurnedToday}`,
+   157→   157→    subtitle: 'kcal today',
+   158→   158→    progress: Math.round((caloriesBurnedToday / 300) * 100),
+   159→   159→    icon: Flame,
+   160→   160→    gradient: 'from-amber-500 to-amber-600',
+   161→   161→    bgGlow: 'bg-amber-500/10',
+   162→   162→    iconColor: 'text-amber-500',
+   163→   163→  },
+   164→   164→  {
+   165→   165→    title: 'Mood Score',
+   166→   166→    value: `${moodScore}`,
+   167→   167→    subtitle: 'out of 10',
+   168→   168→    progress: moodScore * 10,
+   169→   169→    icon: Heart,
+   170→   170→    gradient: 'from-rose-500 to-rose-600',
+   171→   171→    bgGlow: 'bg-rose-500/10',
+   172→   172→    iconColor: 'text-rose-500',
+   173→   173→  },
+   174→   174→  {
+   175→   175→    title: 'Form Accuracy',
+   176→   176→    value: `${formAccuracy}%`,
+   177→   177→    subtitle: 'average this week',
+   178→   178→    progress: formAccuracy,
+   179→   179→    icon: Target,
+   180→   180→    gradient: 'from-cyan-500 to-cyan-600',
+   181→   181→    bgGlow: 'bg-cyan-500/10',
+   182→   182→    iconColor: 'text-cyan-500',
+   183→   183→  },
+   184→   184→];
+   185→   185→
+   186→   186→// ── Custom tooltip for heart rate ────────────────────────────────────────────
+   187→   187→
+   188→   188→interface HeartRatePayloadEntry {
+   189→   189→  value: number;
+   190→   190→  payload: { zone: string; time: string; bpm: number };
+   191→   191→}
+   192→   192→
+   193→   193→function HeartRateTooltip({
+   194→   194→  active,
+   195→   195→  payload,
+   196→   196→}: {
+   197→   197→  active?: boolean;
+   198→   198→  payload?: HeartRatePayloadEntry[];
+   199→   199→}) {
+   200→   200→  if (!active || !payload?.length) return null;
+   201→   201→  const data = payload[0].payload;
+   202→   202→  return (
+   203→   203→    <div className="rounded-lg border border-border/50 bg-background px-3 py-2 text-xs shadow-xl">
+   204→   204→      <p className="font-medium">{data.time}</p>
+   205→   205→      <p style={{ color: zoneColors[data.zone] ?? '#f43f5e' }}>
+   206→   206→        {data.bpm} BPM — {data.zone}
+   207→   207→      </p>
+   208→   208→    </div>
+   209→   209→  );
+   210→   210→}
+   211→   211→
+   212→   212→// ══════════════════════════════════════════════════════════════════════════════
+   213→   213→// Dashboard component
+   214→   214→// ══════════════════════════════════════════════════════════════════════════════
+   215→   215→
+   216→   216→export default function Dashboard() {
+   217→   217→  return (
+   218→   218→    <motion.div
+   219→   219→      className="mx-auto max-w-7xl space-y-6 p-4 md:p-6"
+   220→   220→      variants={containerVariants}
+   221→   221→      initial="hidden"
+   222→   222→      animate="visible"
+   223→   223→    >
+   224→   224→      {/* ── Welcome Header ───────────────────────────────────────────────── */}
+   225→   225→      <motion.div variants={itemVariants}>
+   226→   226→        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+   227→   227→          <div>
+   228→   228→            <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
+   229→   229→              Welcome back, <span className="text-emerald-500">Alex</span>
+   230→   230→            </h1>
+   231→   231→            <p className="text-muted-foreground flex items-center gap-1.5 text-sm">
+   232→   232→              <Calendar className="h-4 w-4" />
+   233→   233→              {getFormattedDate()}
+   234→   234→            </p>
+   235→   235→          </div>
+   236→   236→          <Badge
+   237→   237→            variant="secondary"
+   238→   238→            className="mt-2 w-fit gap-1.5 sm:mt-0"
+   239→   239→          >
+   240→   240→            <Zap className="h-3.5 w-3.5" />
+   241→   241→            7-Day Streak Active
+   242→   242→          </Badge>
+   243→   243→        </div>
+   244→   244→      </motion.div>
+   245→   245→
+   246→   246→      {/* ── Quick Stats Row ──────────────────────────────────────────────── */}
+   247→   247→      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+   248→   248→        {statCards.map((card, index) => (
+   249→   249→          <motion.div key={card.title} variants={itemVariants}>
+   250→   250→            <Card className="relative overflow-hidden rounded-xl py-0">
+   251→   251→              {/* Gradient accent bar */}
+   252→   252→              <div
+   253→   253→                className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${card.gradient}`}
+   254→   254→              />
+   255→   255→              <CardHeader className="flex flex-row items-center justify-between pb-2 pt-5">
+   256→   256→                <CardDescription className="text-sm font-medium">
+   257→   257→                  {card.title}
+   258→   258→                </CardDescription>
+   259→   259→                <div className={`rounded-lg p-2 ${card.bgGlow}`}>
+   260→   260→                  <card.icon className={`h-5 w-5 ${card.iconColor}`} />
+   261→   261→                </div>
+   262→   262→              </CardHeader>
+   263→   263→              <CardContent className="pb-4">
+   264→   264→                <div className="flex items-end gap-2">
+   265→   265→                  <span className="text-3xl font-bold tracking-tight">
+   266→   266→                    {card.value}
+   267→   267→                  </span>
+   268→   268→                  <span className="text-muted-foreground mb-1 text-xs">
+   269→   269→                    {card.subtitle}
+   270→   270→                  </span>
+   271→   271→                </div>
+   272→   272→                <Progress value={card.progress} className="mt-3 h-2" />
+   273→   273→                <p className="text-muted-foreground mt-1 text-xs">
+   274→   274→                  {card.progress}% of goal
+   275→   275→                </p>
+   276→   276→              </CardContent>
+   277→   277→            </Card>
+   278→   278→          </motion.div>
+   279→   279→        ))}
+   280→   280→      </div>
+   281→   281→
+   282→   282→      {/* ── Charts Section ───────────────────────────────────────────────── */}
+   283→   283→      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+   284→   284→        {/* Weekly Exercise Chart */}
+   285→   285→        <motion.div variants={itemVariants}>
+   286→   286→          <Card className="rounded-xl">
+   287→   287→            <CardHeader>
+   288→   288→              <CardTitle className="flex items-center gap-2 text-base">
+   289→   289→                <Activity className="h-5 w-5 text-emerald-500" />
+   290→   290→                Weekly Exercise
+   291→   291→              </CardTitle>
+   292→   292→              <CardDescription>
+   293→   293→                Daily exercise minutes vs target
+   294→   294→              </CardDescription>
+   295→   295→            </CardHeader>
+   296→   296→            <CardContent className="p-4 pt-0">
+   297→   297→              <ChartContainer
+   298→   298→                config={weeklyExerciseConfig}
+   299→   299→                className="h-[280px] w-full"
+   300→   300→              >
+   301→   301→                <BarChart
+   302→   302→                  data={weeklyExerciseData}
+   303→   303→                  margin={{ top: 5, right: 10, left: -10, bottom: 5 }}
+   304→   304→                >
+   305→   305→                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+   306→   306→                  <XAxis
+   307→   307→                    dataKey="day"
+   308→   308→                    tickLine={false}
+   309→   309→                    axisLine={false}
+   310→   310→                    fontSize={12}
+   311→   311→                  />
+   312→   312→                  <YAxis
+   313→   313→                    tickLine={false}
+   314→   314→                    axisLine={false}
+   315→   315→                    fontSize={12}
+   316→   316→                    tickFormatter={(v: number) => `${v}m`}
+   317→   317→                  />
+   318→   318→                  <ChartTooltip content={<ChartTooltipContent />} />
+   319→   319→                  <ChartLegend content={<ChartLegendContent />} />
+   320→   320→                  <Bar
+   321→   321→                    dataKey="minutes"
+   322→   322→                    fill="var(--color-minutes)"
+   323→   323→                    radius={[4, 4, 0, 0]}
+   324→   324→                    maxBarSize={32}
+   325→   325→                  />
+   326→   326→                  <Bar
+   327→   327→                    dataKey="target"
+   328→   328→                    fill="var(--color-target)"
+   329→   329→                    radius={[4, 4, 0, 0]}
+   330→   330→                    maxBarSize={32}
+   331→   331→                    opacity={0.5}
+   332→   332→                  />
+   333→   333→                </BarChart>
+   334→   334→              </ChartContainer>
+   335→   335→            </CardContent>
+   336→   336→          </Card>
+   337→   337→        </motion.div>
+   338→   338→
+   339→   339→        {/* Progress Over Time */}
+   340→   340→        <motion.div variants={itemVariants}>
+   341→   341→          <Card className="rounded-xl">
+   342→   342→            <CardHeader>
+   343→   343→              <CardTitle className="flex items-center gap-2 text-base">
+   344→   344→                <TrendingUp className="h-5 w-5 text-cyan-500" />
+   345→   345→                Progress Over Time
+   346→   346→              </CardTitle>
+   347→   347→              <CardDescription>
+   348→   348→                Strength, flexibility, endurance &amp; balance
+   349→   349→              </CardDescription>
+   350→   350→            </CardHeader>
+   351→   351→            <CardContent className="p-4 pt-0">
+   352→   352→              <ChartContainer
+   353→   353→                config={progressConfig}
+   354→   354→                className="h-[280px] w-full"
+   355→   355→              >
+   356→   356→                <AreaChart
+   357→   357→                  data={progressData}
+   358→   358→                  margin={{ top: 5, right: 10, left: -10, bottom: 5 }}
+   359→   359→                >
+   360→   360→                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+   361→   361→                  <XAxis
+   362→   362→                    dataKey="month"
+   363→   363→                    tickLine={false}
+   364→   364→                    axisLine={false}
+   365→   365→                    fontSize={12}
+   366→   366→                  />
+   367→   367→                  <YAxis
+   368→   368→                    tickLine={false}
+   369→   369→                    axisLine={false}
+   370→   370→                    fontSize={12}
+   371→   371→                    tickFormatter={(v: number) => `${v}%`}
+   372→   372→                  />
+   373→   373→                  <ChartTooltip content={<ChartTooltipContent />} />
+   374→   374→                  <ChartLegend content={<ChartLegendContent />} />
+   375→   375→                  <Area
+   376→   376→                    type="monotone"
+   377→   377→                    dataKey="strength"
+   378→   378→                    stackId="1"
+   379→   379→                    stroke="var(--color-strength)"
+   380→   380→                    fill="var(--color-strength)"
+   381→   381→                    fillOpacity={0.15}
+   382→   382→                  />
+   383→   383→                  <Area
+   384→   384→                    type="monotone"
+   385→   385→                    dataKey="flexibility"
+   386→   386→                    stackId="2"
+   387→   387→                    stroke="var(--color-flexibility)"
+   388→   388→                    fill="var(--color-flexibility)"
+   389→   389→                    fillOpacity={0.15}
+   390→   390→                  />
+   391→   391→                  <Area
+   392→   392→                    type="monotone"
+   393→   393→                    dataKey="endurance"
+   394→   394→                    stackId="3"
+   395→   395→                    stroke="var(--color-endurance)"
+   396→   396→                    fill="var(--color-endurance)"
+   397→   397→                    fillOpacity={0.15}
+   398→   398→                  />
+   399→   399→                  <Area
+   400→   400→                    type="monotone"
+   401→   401→                    dataKey="balance"
+   402→   402→                    stackId="4"
+   403→   403→                    stroke="var(--color-balance)"
+   404→   404→                    fill="var(--color-balance)"
+   405→   405→                    fillOpacity={0.15}
+   406→   406→                  />
+   407→   407→                </AreaChart>
+   408→   408→              </ChartContainer>
+   409→   409→            </CardContent>
+   410→   410→          </Card>
+   411→   411→        </motion.div>
+   412→   412→
+   413→   413→        {/* Calorie Tracking */}
+   414→   414→        <motion.div variants={itemVariants}>
+   415→   415→          <Card className="rounded-xl">
+   416→   416→            <CardHeader>
+   417→   417→              <CardTitle className="flex items-center gap-2 text-base">
+   418→   418→                <Flame className="h-5 w-5 text-amber-500" />
+   419→   419→                Calorie Tracking
+   420→   420→              </CardTitle>
+   421→   421→              <CardDescription>
+   422→   422→                Daily intake vs burned vs target
+   423→   423→              </CardDescription>
+   424→   424→            </CardHeader>
+   425→   425→            <CardContent className="p-4 pt-0">
+   426→   426→              <ChartContainer
+   427→   427→                config={calorieConfig}
+   428→   428→                className="h-[280px] w-full"
+   429→   429→              >
+   430→   430→                <ComposedChart
+   431→   431→                  data={calorieTrackingData}
+   432→   432→                  margin={{ top: 5, right: 10, left: -10, bottom: 5 }}
+   433→   433→                >
+   434→   434→                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+   435→   435→                  <XAxis
+   436→   436→                    dataKey="day"
+   437→   437→                    tickLine={false}
+   438→   438→                    axisLine={false}
+   439→   439→                    fontSize={12}
+   440→   440→                  />
+   441→   441→                  <YAxis
+   442→   442→                    tickLine={false}
+   443→   443→                    axisLine={false}
+   444→   444→                    fontSize={12}
+   445→   445→                    tickFormatter={(v: number) => `${v}`}
+   446→   446→                  />
+   447→   447→                  <ChartTooltip content={<ChartTooltipContent />} />
+   448→   448→                  <ChartLegend content={<ChartLegendContent />} />
+   449→   449→                  <Bar
+   450→   450→                    dataKey="intake"
+   451→   451→                    fill="var(--color-intake)"
+   452→   452→                    radius={[4, 4, 0, 0]}
+   453→   453→                    maxBarSize={24}
+   454→   454→                  />
+   455→   455→                  <Bar
+   456→   456→                    dataKey="burned"
+   457→   457→                    fill="var(--color-burned)"
+   458→   458→                    radius={[4, 4, 0, 0]}
+   459→   459→                    maxBarSize={24}
+   460→   460→                  />
+   461→   461→                  <Line
+   462→   462→                    type="monotone"
+   463→   463→                    dataKey="target"
+   464→   464→                    stroke="var(--color-target)"
+   465→   465→                    strokeWidth={2}
+   466→   466→                    dot={false}
+   467→   467→                    strokeDasharray="5 5"
+   468→   468→                  />
+   469→   469→                </ComposedChart>
+   470→   470→              </ChartContainer>
+   471→   471→            </CardContent>
+   472→   472→          </Card>
+   473→   473→        </motion.div>
+   474→   474→
+   475→   475→        {/* Heart Rate Timeline */}
+   476→   476→        <motion.div variants={itemVariants}>
+   477→   477→          <Card className="rounded-xl">
+   478→   478→            <CardHeader>
+   479→   479→              <CardTitle className="flex items-center gap-2 text-base">
+   480→   480→                <Heart className="h-5 w-5 text-rose-500" />
+   481→   481→                Heart Rate Timeline
+   482→   482→              </CardTitle>
+   483→   483→              <CardDescription>
+   484→   484→                BPM throughout the day with zone indicators
+   485→   485→              </CardDescription>
+   486→   486→            </CardHeader>
+   487→   487→            <CardContent className="p-4 pt-0">
+   488→   488→              <ChartContainer
+   489→   489→                config={heartRateConfig}
+   490→   490→                className="h-[280px] w-full"
+   491→   491→              >
+   492→   492→                <LineChart
+   493→   493→                  data={heartRateData}
+   494→   494→                  margin={{ top: 5, right: 10, left: -10, bottom: 5 }}
+   495→   495→                >
+   496→   496→                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+   497→   497→                  <XAxis
+   498→   498→                    dataKey="time"
+   499→   499→                    tickLine={false}
+   500→   500→                    axisLine={false}
+   501→   501→                    fontSize={12}
+   502→   502→                  />
+   503→   503→                  <YAxis
+   504→   504→                    tickLine={false}
+   505→   505→                    axisLine={false}
+   506→   506→                    fontSize={12}
+   507→   507→                    domain={[50, 170]}
+   508→   508→                    tickFormatter={(v: number) => `${v}`}
+   509→   509→                  />
+   510→   510→                  <Tooltip content={<HeartRateTooltip />} />
+   511→   511→                  {/* Zone reference lines */}
+   512→   512→                  <ReferenceLine
+   513→   513→                    y={60}
+   514→   514→                    stroke="#10b981"
+   515→   515→                    strokeDasharray="3 3"
+   516→   516→                    strokeWidth={1}
+   517→   517→                    label={false}
+   518→   518→                  />
+   519→   519→                  <ReferenceLine
+   520→   520→                    y={100}
+   521→   521→                    stroke="#06b6d4"
+   522→   522→                    strokeDasharray="3 3"
+   523→   523→                    strokeWidth={1}
+   524→   524→                    label={false}
+   525→   525→                  />
+   526→   526→                  <ReferenceLine
+   527→   527→                    y={130}
+   528→   528→                    stroke="#f59e0b"
+   529→   529→                    strokeDasharray="3 3"
+   530→   530→                    strokeWidth={1}
+   531→   531→                    label={false}
+   532→   532→                  />
+   533→   533→                  <Line
+   534→   534→                    type="monotone"
+   535→   535→                    dataKey="bpm"
+   536→   536→                    stroke="var(--color-bpm)"
+   537→   537→                    strokeWidth={2.5}
+   538→   538→                    dot={({ cx, cy, payload }) => {
+   539→   539→                      const color =
+   540→   540→                        zoneColors[payload.zone] ?? '#f43f5e';
+   541→   541→                      return (
+   542→   542→                        <circle
+   543→   543→                          key={`dot-${payload.time}`}
+   544→   544→                          cx={cx}
+   545→   545→                          cy={cy}
+   546→   546→                          r={4}
+   547→   547→                          fill={color}
+   548→   548→                          stroke="#fff"
+   549→   549→                          strokeWidth={2}
+   550→   550→                        />
+   551→   551→                      );
+   552→   552→                    }}
+   553→   553→                    activeDot={{ r: 6 }}
+   554→   554→                  />
+   555→   555→                </LineChart>
+   556→   556→              </ChartContainer>
+   557→   557→              {/* Zone legend */}
+   558→   558→              <div className="mt-2 flex flex-wrap items-center justify-center gap-3 text-xs">
+   559→   559→                {Object.entries(zoneColors).map(([zone, color]) => (
+   560→   560→                  <span key={zone} className="flex items-center gap-1">
+   561→   561→                    <span
+   562→   562→                      className="inline-block h-2.5 w-2.5 rounded-full"
+   563→   563→                      style={{ backgroundColor: color }}
+   564→   564→                    />
+   565→   565→                    {zone}
+   566→   566→                  </span>
+   567→   567→                ))}
+   568→   568→              </div>
+   569→   569→            </CardContent>
+   570→   570→          </Card>
+   571→   571→        </motion.div>
+   572→   572→      </div>
+   573→   573→
+   574→   574→      {/* ── Bottom Section: Achievements + Mood ──────────────────────────── */}
+   575→   575→      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+   576→   576→        {/* Recent Achievements */}
+   577→   577→        <motion.div variants={itemVariants} className="lg:col-span-1">
+   578→   578→          <Card className="rounded-xl">
+   579→   579→            <CardHeader>
+   580→   580→              <CardTitle className="flex items-center gap-2 text-base">
+   581→   581→                <Award className="h-5 w-5 text-amber-500" />
+   582→   582→                Recent Achievements
+   583→   583→              </CardTitle>
+   584→   584→              <CardDescription>Your latest milestones</CardDescription>
+   585→   585→            </CardHeader>
+   586→   586→            <CardContent className="p-4 pt-0">
+   587→   587→              <div className="max-h-72 space-y-3 overflow-y-auto pr-1">
+   588→   588→                {recentAchievements.map((ach, idx) => (
+   589→   589→                  <motion.div
+   590→   590→                    key={ach.id}
+   591→   591→                    initial={{ opacity: 0, x: -10 }}
+   592→   592→                    animate={{ opacity: 1, x: 0 }}
+   593→   593→                    transition={{ delay: 0.3 + idx * 0.1 }}
+   594→   594→                    className="flex items-start gap-3 rounded-lg border p-3 transition-colors hover:bg-muted/50"
+   595→   595→                  >
+   596→   596→                    <span className="mt-0.5 text-2xl leading-none">
+   597→   597→                      {ach.icon}
+   598→   598→                    </span>
+   599→   599→                    <div className="min-w-0 flex-1">
+   600→   600→                      <p className="text-sm font-semibold leading-tight">
+   601→   601→                        {ach.title}
+   602→   602→                      </p>
+   603→   603→                      <p className="text-muted-foreground text-xs">
+   604→   604→                        {ach.description}
+   605→   605→                      </p>
+   606→   606→                      <p className="text-muted-foreground mt-0.5 text-[11px]">
+   607→   607→                        {ach.date}
+   608→   608→                      </p>
+   609→   609→                    </div>
+   610→   610→                  </motion.div>
+   611→   611→                ))}
+   612→   612→              </div>
+   613→   613→            </CardContent>
+   614→   614→          </Card>
+   615→   615→        </motion.div>
+   616→   616→
+   617→   617→        {/* Mood Trend */}
+   618→   618→        <motion.div variants={itemVariants} className="lg:col-span-2">
+   619→   619→          <Card className="rounded-xl">
+   620→   620→            <CardHeader>
+   621→   621→              <CardTitle className="flex items-center gap-2 text-base">
+   622→   622→                <Heart className="h-5 w-5 text-rose-500" />
+   623→   623→                Mood Trend
+   624→   624→              </CardTitle>
+   625→   625→              <CardDescription>
+   626→   626→                Mood distribution over recent weeks
+   627→   627→              </CardDescription>
+   628→   628→            </CardHeader>
+   629→   629→            <CardContent className="p-4 pt-0">
+   630→   630→              <Tabs defaultValue="chart">
+   631→   631→                <TabsList className="mb-4">
+   632→   632→                  <TabsTrigger value="chart">Chart</TabsTrigger>
+   633→   633→                  <TabsTrigger value="details">Details</TabsTrigger>
+   634→   634→                </TabsList>
+   635→   635→                <TabsContent value="chart">
+   636→   636→                  <ChartContainer
+   637→   637→                    config={moodConfig}
+   638→   638→                    className="h-[250px] w-full"
+   639→   639→                  >
+   640→   640→                    <BarChart
+   641→   641→                      data={monthlyMoodData}
+   642→   642→                      margin={{ top: 5, right: 10, left: -10, bottom: 5 }}
+   643→   643→                    >
+   644→   644→                      <CartesianGrid
+   645→   645→                        strokeDasharray="3 3"
+   646→   646→                        vertical={false}
+   647→   647→                      />
+   648→   648→                      <XAxis
+   649→   649→                        dataKey="week"
+   650→   650→                        tickLine={false}
+   651→   651→                        axisLine={false}
+   652→   652→                        fontSize={12}
+   653→   653→                      />
+   654→   654→                      <YAxis
+   655→   655→                        tickLine={false}
+   656→   656→                        axisLine={false}
+   657→   657→                        fontSize={12}
+   658→   658→                      />
+   659→   659→                      <ChartTooltip content={<ChartTooltipContent />} />
+   660→   660→                      <ChartLegend content={<ChartLegendContent />} />
+   661→   661→                      <Bar
+   662→   662→                        dataKey="happy"
+   663→   663→                        stackId="mood"
+   664→   664→                        fill="var(--color-happy)"
+   665→   665→                        radius={[0, 0, 0, 0]}
+   666→   666→                        maxBarSize={40}
+   667→   667→                      />
+   668→   668→                      <Bar
+   669→   669→                        dataKey="calm"
+   670→   670→                        stackId="mood"
+   671→   671→                        fill="var(--color-calm)"
+   672→   672→                        radius={[0, 0, 0, 0]}
+   673→   673→                        maxBarSize={40}
+   674→   674→                      />
+   675→   675→                      <Bar
+   676→   676→                        dataKey="anxious"
+   677→   677→                        stackId="mood"
+   678→   678→                        fill="var(--color-anxious)"
+   679→   679→                        radius={[0, 0, 0, 0]}
+   680→   680→                        maxBarSize={40}
+   681→   681→                      />
+   682→   682→                      <Bar
+   683→   683→                        dataKey="sad"
+   684→   684→                        stackId="mood"
+   685→   685→                        fill="var(--color-sad)"
+   686→   686→                        radius={[4, 4, 0, 0]}
+   687→   687→                        maxBarSize={40}
+   688→   688→                      />
+   689→   689→                    </BarChart>
+   690→   690→                  </ChartContainer>
+   691→   691→                </TabsContent>
+   692→   692→                <TabsContent value="details">
+   693→   693→                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+   694→   694→                    {monthlyMoodData.map((week) => (
+   695→   695→                      <div
+   696→   696→                        key={week.week}
+   697→   697→                        className="rounded-lg border p-3 text-center"
+   698→   698→                      >
+   699→   699→                        <p className="text-sm font-semibold">{week.week}</p>
+   700→   700→                        <div className="mt-2 flex h-6 overflow-hidden rounded-full">
+   701→   701→                          <div
+   702→   702→                            className="bg-emerald-500"
+   703→   703→                            style={{
+   704→   704→                              width: `${(week.happy / (week.happy + week.calm + week.anxious + week.sad)) * 100}%`,
+   705→   705→                            }}
+   706→   706→                          />
+   707→   707→                          <div
+   708→   708→                            className="bg-cyan-500"
+   709→   709→                            style={{
+   710→   710→                              width: `${(week.calm / (week.happy + week.calm + week.anxious + week.sad)) * 100}%`,
+   711→   711→                            }}
+   712→   712→                          />
+   713→   713→                          <div
+   714→   714→                            className="bg-amber-500"
+   715→   715→                            style={{
+   716→   716→                              width: `${(week.anxious / (week.happy + week.calm + week.anxious + week.sad)) * 100}%`,
+   717→   717→                            }}
+   718→   718→                          />
+   719→   719→                          <div
+   720→   720→                            className="bg-rose-500"
+   721→   721→                            style={{
+   722→   722→                              width: `${(week.sad / (week.happy + week.calm + week.anxious + week.sad)) * 100}%`,
+   723→   723→                            }}
+   724→   724→                          />
+   725→   725→                        </div>
+   726→   726→                        <p className="text-muted-foreground mt-1 text-xs">
+   727→   727→                          Happy {week.happy} · Calm {week.calm}
+   728→   728→                        </p>
+   729→   729→                        <p className="text-muted-foreground text-xs">
+   730→   730→                          Anxious {week.anxious} · Sad {week.sad}
+   731→   731→                        </p>
+   732→   732→                      </div>
+   733→   733→                    ))}
+   734→   734→                  </div>
+   735→   735→                </TabsContent>
+   736→   736→              </Tabs>
+   737→   737→            </CardContent>
+   738→   738→          </Card>
+   739→   739→        </motion.div>
+   740→   740→      </div>
+   741→   741→    </motion.div>
+   742→   742→  );
+   743→   743→}
+   744→   744→

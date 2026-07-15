@@ -1,0 +1,725 @@
+     1→'use client';
+     2→
+     3→import { useState, useCallback, useMemo } from 'react';
+     4→import { motion, AnimatePresence } from 'framer-motion';
+     5→import {
+     6→  Moon,
+     7→  Star,
+     8→  Clock,
+     9→  TrendingUp,
+    10→  TrendingDown,
+    11→  Minus,
+    12→  Sparkles,
+    13→  ChevronDown,
+    14→  ChevronUp,
+    15→  Save,
+    16→  Plus,
+    17→} from 'lucide-react';
+    18→import {
+    19→  Card,
+    20→  CardHeader,
+    21→  CardTitle,
+    22→  CardContent,
+    23→  CardDescription,
+    24→} from '@/components/ui/card';
+    25→import { Button } from '@/components/ui/button';
+    26→import { Badge } from '@/components/ui/badge';
+    27→import { Input } from '@/components/ui/input';
+    28→import { Slider } from '@/components/ui/slider';
+    29→import { Textarea } from '@/components/ui/textarea';
+    30→import { Label } from '@/components/ui/label';
+    31→
+    32→// ── Types ────────────────────────────────────────────────────────────────────
+    33→
+    34→interface SleepEntry {
+    35→  id: string;
+    36→  day: string;
+    37→  dayLabel: string;
+    38→  bedTime: string;
+    39→  wakeTime: string;
+    40→  durationHrs: number;
+    41→  quality: number;
+    42→  wakeFeeling: 'tired' | 'okay' | 'refreshed' | 'energized';
+    43→  interruptions: number;
+    44→  notes?: string;
+    45→  loggedAt: string;
+    46→}
+    47→
+    48→// ── Constants ────────────────────────────────────────────────────────────────
+    49→
+    50→const feelingEmojis: Record<string, { emoji: string; label: string; color: string }> = {
+    51→  tired: { emoji: '😴', label: 'Tired', color: 'border-rose-400 bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-300' },
+    52→  okay: { emoji: '😐', label: 'Okay', color: 'border-amber-400 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300' },
+    53→  refreshed: { emoji: '😊', label: 'Refreshed', color: 'border-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300' },
+    54→  energized: { emoji: '⚡', label: 'Energized', color: 'border-teal-400 bg-teal-50 dark:bg-teal-950/30 text-teal-700 dark:text-teal-300' },
+    55→};
+    56→
+    57→const qualityLabels = ['Poor', 'Poor', 'Fair', 'Fair', 'Average', 'Average', 'Good', 'Good', 'Excellent', 'Excellent'];
+    58→
+    59→function getDurationColor(hrs: number): string {
+    60→  if (hrs < 6) return 'bg-rose-500';
+    61→  if (hrs < 7) return 'bg-amber-500';
+    62→  if (hrs <= 9) return 'bg-emerald-500';
+    63→  return 'bg-teal-500';
+    64→}
+    65→
+    66→function getDurationTextColor(hrs: number): string {
+    67→  if (hrs < 6) return 'text-rose-600 dark:text-rose-400';
+    68→  if (hrs < 7) return 'text-amber-600 dark:text-amber-400';
+    69→  if (hrs <= 9) return 'text-emerald-600 dark:text-emerald-400';
+    70→  return 'text-teal-600 dark:text-teal-400';
+    71→}
+    72→
+    73→function getQualityEmoji(q: number): string {
+    74→  if (q <= 3) return '😫';
+    75→  if (q <= 5) return '😐';
+    76→  if (q <= 7) return '😊';
+    77→  if (q <= 9) return '😄';
+    78→  return '🌟';
+    79→}
+    80→
+    81→// ── Mock Data ────────────────────────────────────────────────────────────────
+    82→
+    83→function generateMockData(): SleepEntry[] {
+    84→  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    85→  const fullDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    86→  const mockData = [
+    87→    { durationHrs: 7.5, quality: 8, wakeFeeling: 'refreshed' as const, interruptions: 0, bedTime: '22:30', wakeTime: '06:00' },
+    88→    { durationHrs: 6.2, quality: 5, wakeFeeling: 'okay' as const, interruptions: 2, bedTime: '23:45', wakeTime: '05:57' },
+    89→    { durationHrs: 8.1, quality: 9, wakeFeeling: 'energized' as const, interruptions: 0, bedTime: '21:50', wakeTime: '05:56' },
+    90→    { durationHrs: 5.8, quality: 4, wakeFeeling: 'tired' as const, interruptions: 3, bedTime: '00:30', wakeTime: '06:18' },
+    91→    { durationHrs: 7.0, quality: 7, wakeFeeling: 'okay' as const, interruptions: 1, bedTime: '22:00', wakeTime: '05:00' },
+    92→    { durationHrs: 8.5, quality: 8, wakeFeeling: 'refreshed' as const, interruptions: 0, bedTime: '22:00', wakeTime: '06:30' },
+    93→    { durationHrs: 7.2, quality: 7, wakeFeeling: 'okay' as const, interruptions: 1, bedTime: '22:30', wakeTime: '05:42' },
+    94→  ];
+    95→
+    96→  const now = new Date();
+    97→  return mockData.map((d, i) => {
+    98→    const date = new Date(now);
+    99→    date.setDate(date.getDate() - (6 - i));
+   100→    return {
+   101→      id: `mock-${i}`,
+   102→      day: days[i],
+   103→      dayLabel: fullDays[i],
+   104→      ...d,
+   105→      notes: i === 3 ? 'Restless night, kept waking up' : undefined,
+   106→      loggedAt: date.toISOString(),
+   107→    };
+   108→  });
+   109→}
+   110→
+   111→// ── Animation Variants ───────────────────────────────────────────────────────
+   112→
+   113→const containerVariants = {
+   114→  hidden: { opacity: 0 },
+   115→  visible: {
+   116→    opacity: 1,
+   117→    transition: { staggerChildren: 0.1 },
+   118→  },
+   119→};
+   120→
+   121→const itemVariants = {
+   122→  hidden: { opacity: 0, y: 20 },
+   123→  visible: {
+   124→    opacity: 1,
+   125→    y: 0,
+   126→    transition: { duration: 0.5, ease: 'easeOut' },
+   127→  },
+   128→};
+   129→
+   130→const barVariants = {
+   131→  hidden: { scaleY: 0 },
+   132→  visible: (h: number) => ({
+   133→    scaleY: 1,
+   134→    transition: { duration: 0.6, ease: 'easeOut', delay: h * 0.05 },
+   135→  }),
+   136→};
+   137→
+   138→// ── Component ────────────────────────────────────────────────────────────────
+   139→
+   140→export default function SleepTracker() {
+   141→  const [sleepData, setSleepData] = useState<SleepEntry[]>(generateMockData);
+   142→  const [showLogForm, setShowLogForm] = useState(false);
+   143→  const [hoveredBar, setHoveredBar] = useState<number | null>(null);
+   144→
+   145→  // Form state
+   146→  const [bedTime, setBedTime] = useState('22:30');
+   147→  const [wakeTime, setWakeTime] = useState('06:30');
+   148→  const [quality, setQuality] = useState(7);
+   149→  const [wakeFeeling, setWakeFeeling] = useState<'tired' | 'okay' | 'refreshed' | 'energized'>('refreshed');
+   150→  const [interruptions, setInterruptions] = useState(0);
+   151→  const [notes, setNotes] = useState('');
+   152→  const [isSaving, setIsSaving] = useState(false);
+   153→
+   154→  // ── Computed Values ──────────────────────────────────────────────────────
+   155→
+   156→  const lastNight = sleepData[sleepData.length - 1];
+   157→
+   158→  const insights = useMemo(() => {
+   159→    const avgDuration = sleepData.reduce((s, d) => s + d.durationHrs, 0) / sleepData.length;
+   160→    const avgQuality = sleepData.reduce((s, d) => s + d.quality, 0) / sleepData.length;
+   161→    const best = sleepData.reduce((b, d) => (d.quality > b.quality ? d : b), sleepData[0]);
+   162→    const worst = sleepData.reduce((w, d) => (d.quality < w.quality ? d : w), sleepData[0]);
+   163→
+   164→    // Trend: compare last 3 days avg vs first 4 days avg
+   165→    const recentAvg = sleepData.slice(-3).reduce((s, d) => s + d.quality, 0) / 3;
+   166→    const earlierAvg = sleepData.slice(0, 4).reduce((s, d) => s + d.quality, 0) / 4;
+   167→    const trend = recentAvg > earlierAvg + 0.5 ? 'improving' : recentAvg < earlierAvg - 0.5 ? 'declining' : 'stable';
+   168→
+   169→    // Recommendation
+   170→    let recommendation = '';
+   171→    if (avgDuration < 7) {
+   172→      recommendation = 'Try going to bed 30 minutes earlier to reach the recommended 7-9 hours of sleep.';
+   173→    } else if (avgQuality < 6) {
+   174→      recommendation = 'Your sleep duration is good, but quality is low. Consider reducing screen time before bed and creating a relaxing bedtime routine.';
+   175→    } else if (interruptions > 1) {
+   176→      recommendation = 'Frequent interruptions detected. Try limiting caffeine after 2 PM and keeping your bedroom cool and dark.';
+   177→    } else {
+   178→      recommendation = 'Great sleep habits! Keep maintaining your consistent schedule for optimal recovery.';
+   179→    }
+   180→
+   181→    return { avgDuration, avgQuality, best, worst, trend, recommendation };
+   182→  }, [sleepData]);
+   183→
+   184→  const computedDuration = useMemo(() => {
+   185→    const [bh, bm] = bedTime.split(':').map(Number);
+   186→    const [wh, wm] = wakeTime.split(':').map(Number);
+   187→    let bedMinutes = bh * 60 + bm;
+   188→    let wakeMinutes = wh * 60 + wm;
+   189→    if (wakeMinutes <= bedMinutes) wakeMinutes += 24 * 60;
+   190→    return Math.round(((wakeMinutes - bedMinutes) / 60) * 10) / 10;
+   191→  }, [bedTime, wakeTime]);
+   192→
+   193→  // ── Handlers ────────────────────────────────────────────────────────────
+   194→
+   195→  const handleSave = useCallback(async () => {
+   196→    setIsSaving(true);
+   197→    const newEntry: SleepEntry = {
+   198→      id: `entry-${Date.now()}`,
+   199→      day: new Date().toLocaleDateString('en', { weekday: 'short' }),
+   200→      dayLabel: new Date().toLocaleDateString('en', { weekday: 'long' }),
+   201→      bedTime,
+   202→      wakeTime,
+   203→      durationHrs: computedDuration,
+   204→      quality,
+   205→      wakeFeeling,
+   206→      interruptions,
+   207→      notes: notes || undefined,
+   208→      loggedAt: new Date().toISOString(),
+   209→    };
+   210→
+   211→    try {
+   212→      const res = await fetch('/api/sleep-logs', {
+   213→        method: 'POST',
+   214→        headers: { 'Content-Type': 'application/json' },
+   215→        body: JSON.stringify({
+   216→          userId: 'default-user',
+   217→          bedTime: new Date().toISOString().split('T')[0] + 'T' + bedTime,
+   218→          wakeTime: new Date().toISOString().split('T')[0] + 'T' + wakeTime,
+   219→          durationHrs: computedDuration,
+   220→          quality,
+   221→          wakeFeeling,
+   222→          interruptions,
+   223→          notes,
+   224→        }),
+   225→      });
+   226→
+   227→      if (res.ok) {
+   228→        setSleepData((prev) => {
+   229→          const next = [...prev.slice(1), newEntry];
+   230→          return next;
+   231→        });
+   232→        setShowLogForm(false);
+   233→        setNotes('');
+   234→        setInterruptions(0);
+   235→      }
+   236→    } catch {
+   237→      // Still update locally even if API fails
+   238→      setSleepData((prev) => [...prev.slice(1), newEntry]);
+   239→      setShowLogForm(false);
+   240→      setNotes('');
+   241→      setInterruptions(0);
+   242→    } finally {
+   243→      setIsSaving(false);
+   244→    }
+   245→  }, [bedTime, wakeTime, computedDuration, quality, wakeFeeling, interruptions, notes]);
+   246→
+   247→  // ── Render ──────────────────────────────────────────────────────────────
+   248→
+   249→  return (
+   250→    <motion.div variants={containerVariants} initial="hidden" animate="visible">
+   251→      <Card className="overflow-hidden border-emerald-200/50 dark:border-emerald-800/50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl">
+   252→        {/* Night gradient accent at top */}
+   253→        <div className="h-1.5 bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-600" />
+   254→
+   255→        <CardHeader className="pb-3">
+   256→          <motion.div variants={itemVariants} className="flex items-center justify-between">
+   257→            <div className="flex items-center gap-3">
+   258→              <div className="relative">
+   259→                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/25">
+   260→                  <Moon className="w-5 h-5 text-white" />
+   261→                </div>
+   262→                {/* Decorative stars */}
+   263→                <Star className="w-3 h-3 text-amber-400 absolute -top-1 -right-1 fill-amber-400 animate-pulse" />
+   264→                <Star className="w-2 h-2 text-teal-300 absolute -top-0.5 -left-1 fill-teal-300 animate-pulse" style={{ animationDelay: '0.5s' }} />
+   265→              </div>
+   266→              <div>
+   267→                <CardTitle className="text-lg font-bold text-gray-900 dark:text-white">
+   268→                  Sleep Quality Tracker
+   269→                </CardTitle>
+   270→                <CardDescription className="text-xs text-gray-500 dark:text-gray-400">
+   271→                  Monitor your sleep for better recovery
+   272→                </CardDescription>
+   273→              </div>
+   274→            </div>
+   275→            <Button
+   276→              size="sm"
+   277→              onClick={() => setShowLogForm(!showLogForm)}
+   278→              className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-md shadow-emerald-500/20"
+   279→            >
+   280→              <Plus className="w-4 h-4 mr-1" />
+   281→              Log Sleep
+   282→            </Button>
+   283→          </motion.div>
+   284→        </CardHeader>
+   285→
+   286→        <CardContent className="space-y-5">
+   287→          {/* ── Last Night Summary ────────────────────────────────────────── */}
+   288→          <motion.div variants={itemVariants}>
+   289→            <div className="rounded-xl bg-gradient-to-br from-gray-900 via-gray-800 to-emerald-900/30 p-5 text-white relative overflow-hidden">
+   290→              {/* Decorative night sky elements */}
+   291→              <div className="absolute inset-0 opacity-20">
+   292→                <Star className="w-2 h-2 text-white absolute top-3 left-[15%] fill-white" />
+   293→                <Star className="w-3 h-3 text-amber-300 absolute top-6 right-[20%] fill-amber-300 animate-pulse" />
+   294→                <Star className="w-1.5 h-1.5 text-white absolute top-2 right-[45%] fill-white" style={{ animationDelay: '1s' }} />
+   295→                <Star className="w-2 h-2 text-teal-300 absolute bottom-4 left-[30%] fill-teal-300 animate-pulse" style={{ animationDelay: '0.7s' }} />
+   296→                <Star className="w-1.5 h-1.5 text-white absolute bottom-8 right-[35%] fill-white" style={{ animationDelay: '1.5s' }} />
+   297→              </div>
+   298→
+   299→              <div className="relative z-10">
+   300→                <p className="text-emerald-300 text-xs font-medium uppercase tracking-wider mb-3 flex items-center gap-1.5">
+   301→                  <Moon className="w-3.5 h-3.5" />
+   302→                  Last Night
+   303→                </p>
+   304→
+   305→                <div className="grid grid-cols-3 gap-4">
+   306→                  <div className="text-center">
+   307→                    <p className="text-4xl font-bold text-white">
+   308→                      {lastNight.durationHrs}
+   309→                      <span className="text-lg text-emerald-300 ml-0.5">h</span>
+   310→                    </p>
+   311→                    <p className="text-[11px] text-gray-400 mt-1">Total Sleep</p>
+   312→                  </div>
+   313→                  <div className="text-center">
+   314→                    <p className="text-4xl font-bold text-white">
+   315→                      {lastNight.quality}
+   316→                      <span className="text-lg ml-1">{getQualityEmoji(lastNight.quality)}</span>
+   317→                    </p>
+   318→                    <p className="text-[11px] text-gray-400 mt-1">Quality Score</p>
+   319→                  </div>
+   320→                  <div className="text-center space-y-1">
+   321→                    <div className="flex items-center justify-center gap-1.5 text-sm">
+   322→                      <span className="text-gray-400">↓</span>
+   323→                      <span className="text-white font-medium">{lastNight.bedTime}</span>
+   324→                    </div>
+   325→                    <div className="flex items-center justify-center gap-1.5 text-sm">
+   326→                      <span className="text-emerald-400">↑</span>
+   327→                      <span className="text-white font-medium">{lastNight.wakeTime}</span>
+   328→                    </div>
+   329→                    <p className="text-[11px] text-gray-400">Bed / Wake</p>
+   330→                  </div>
+   331→                </div>
+   332→
+   333→                {/* 7-day mini chart */}
+   334→                <div className="mt-4 pt-3 border-t border-white/10">
+   335→                  <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-2">7-Day Overview</p>
+   336→                  <div className="flex items-end justify-between gap-1.5 h-10">
+   337→                    {sleepData.map((entry, i) => (
+   338→                      <div key={entry.id} className="flex-1 flex flex-col items-center gap-1">
+   339→                        <motion.div
+   340→                          className="w-full rounded-sm relative group"
+   341→                          style={{
+   342→                            backgroundColor:
+   343→                              entry.durationHrs < 6 ? 'rgb(244 63 94 / 0.7)' :
+   344→                              entry.durationHrs < 7 ? 'rgb(245 158 11 / 0.7)' :
+   345→                              entry.durationHrs <= 9 ? 'rgb(16 185 129 / 0.7)' :
+   346→                              'rgb(20 184 166 / 0.7)',
+   347→                          }}
+   348→                          initial={{ height: 0 }}
+   349→                          animate={{ height: `${(entry.durationHrs / 10) * 100}%` }}
+   350→                          transition={{ duration: 0.5, delay: i * 0.05 }}
+   351→                        />
+   352→                        <span className="text-[9px] text-gray-500">{entry.day}</span>
+   353→                      </div>
+   354→                    ))}
+   355→                  </div>
+   356→                </div>
+   357→              </div>
+   358→            </div>
+   359→          </motion.div>
+   360→
+   361→          {/* ── Sleep Log Entry Form ──────────────────────────────────────── */}
+   362→          <AnimatePresence>
+   363→            {showLogForm && (
+   364→              <motion.div
+   365→                initial={{ opacity: 0, height: 0 }}
+   366→                animate={{ opacity: 1, height: 'auto' }}
+   367→                exit={{ opacity: 0, height: 0 }}
+   368→                transition={{ duration: 0.3 }}
+   369→                className="overflow-hidden"
+   370→              >
+   371→                <div className="rounded-xl border border-emerald-200/50 dark:border-emerald-800/40 bg-gradient-to-br from-emerald-50/80 to-teal-50/50 dark:from-emerald-950/20 dark:to-teal-950/10 p-5 space-y-5">
+   372→                  <div className="flex items-center gap-2 mb-1">
+   373→                    <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+   374→                    <h4 className="font-semibold text-sm text-gray-900 dark:text-white">Log Last Night&apos;s Sleep</h4>
+   375→                  </div>
+   376→
+   377→                  {/* Bedtime & Wake Time */}
+   378→                  <div className="grid grid-cols-2 gap-4">
+   379→                    <div className="space-y-1.5">
+   380→                      <Label htmlFor="bedtime" className="text-xs font-medium text-gray-700 dark:text-gray-300">
+   381→                        <Clock className="w-3 h-3 inline mr-1" />
+   382→                        Bedtime
+   383→                      </Label>
+   384→                      <Input
+   385→                        id="bedtime"
+   386→                        type="time"
+   387→                        value={bedTime}
+   388→                        onChange={(e) => setBedTime(e.target.value)}
+   389→                        className="bg-white dark:bg-gray-800 border-emerald-200 dark:border-emerald-800/50 text-sm"
+   390→                      />
+   391→                    </div>
+   392→                    <div className="space-y-1.5">
+   393→                      <Label htmlFor="waketime" className="text-xs font-medium text-gray-700 dark:text-gray-300">
+   394→                        <Clock className="w-3 h-3 inline mr-1" />
+   395→                        Wake Time
+   396→                      </Label>
+   397→                      <Input
+   398→                        id="waketime"
+   399→                        type="time"
+   400→                        value={wakeTime}
+   401→                        onChange={(e) => setWakeTime(e.target.value)}
+   402→                        className="bg-white dark:bg-gray-800 border-emerald-200 dark:border-emerald-800/50 text-sm"
+   403→                      />
+   404→                    </div>
+   405→                  </div>
+   406→
+   407→                  {/* Computed duration display */}
+   408→                  <div className="text-center">
+   409→                    <Badge
+   410→                      variant="secondary"
+   411→                      className={`${getDurationTextColor(computedDuration)} bg-white/60 dark:bg-gray-800/60 text-xs`}
+   412→                    >
+   413→                      {computedDuration}h sleep duration
+   414→                    </Badge>
+   415→                  </div>
+   416→
+   417→                  {/* Quality Slider */}
+   418→                  <div className="space-y-2">
+   419→                    <div className="flex items-center justify-between">
+   420→                      <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+   421→                        Sleep Quality
+   422→                      </Label>
+   423→                      <span className="text-sm font-bold text-gray-900 dark:text-white">
+   424→                        {quality}/10 {getQualityEmoji(quality)}
+   425→                      </span>
+   426→                    </div>
+   427→                    <Slider
+   428→                      value={[quality]}
+   429→                      onValueChange={(v) => setQuality(v[0])}
+   430→                      min={1}
+   431→                      max={10}
+   432→                      step={1}
+   433→                      className="w-full"
+   434→                    />
+   435→                    <div className="flex justify-between text-[10px] text-gray-400">
+   436→                      <span>Poor</span>
+   437→                      <span>Excellent</span>
+   438→                    </div>
+   439→                  </div>
+   440→
+   441→                  {/* Wake-up Feeling */}
+   442→                  <div className="space-y-2">
+   443→                    <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+   444→                      Wake-up Feeling
+   445→                    </Label>
+   446→                    <div className="grid grid-cols-4 gap-2">
+   447→                      {Object.entries(feelingEmojis).map(([key, val]) => (
+   448→                        <button
+   449→                          key={key}
+   450→                          onClick={() => setWakeFeeling(key as typeof wakeFeeling)}
+   451→                          className={`flex flex-col items-center gap-1 p-2.5 rounded-lg border-2 transition-all duration-200 ${
+   452→                            wakeFeeling === key
+   453→                              ? val.color + ' scale-105 shadow-md'
+   454→                              : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600'
+   455→                          }`}
+   456→                        >
+   457→                          <span className="text-xl">{val.emoji}</span>
+   458→                          <span className="text-[10px] font-medium">{val.label}</span>
+   459→                        </button>
+   460→                      ))}
+   461→                    </div>
+   462→                  </div>
+   463→
+   464→                  {/* Interruptions */}
+   465→                  <div className="space-y-1.5">
+   466→                    <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+   467→                      Night Interruptions
+   468→                    </Label>
+   469→                    <div className="flex items-center gap-3">
+   470→                      {[0, 1, 2, 3].map((n) => (
+   471→                        <button
+   472→                          key={n}
+   473→                          onClick={() => setInterruptions(n)}
+   474→                          className={`w-10 h-10 rounded-lg border-2 font-bold text-sm transition-all duration-200 ${
+   475→                            interruptions === n
+   476→                              ? n >= 3
+   477→                                ? 'border-rose-400 bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400'
+   478→                                : 'border-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400'
+   479→                              : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600'
+   480→                          }`}
+   481→                        >
+   482→                          {n === 3 ? '3+' : n}
+   483→                        </button>
+   484→                      ))}
+   485→                    </div>
+   486→                  </div>
+   487→
+   488→                  {/* Notes */}
+   489→                  <div className="space-y-1.5">
+   490→                    <Label htmlFor="notes" className="text-xs font-medium text-gray-700 dark:text-gray-300">
+   491→                      Notes (optional)
+   492→                    </Label>
+   493→                    <Textarea
+   494→                      id="notes"
+   495→                      value={notes}
+   496→                      onChange={(e) => setNotes(e.target.value)}
+   497→                      placeholder="Any observations about your sleep..."
+   498→                      className="bg-white dark:bg-gray-800 border-emerald-200 dark:border-emerald-800/50 text-sm resize-none"
+   499→                      rows={2}
+   500→                    />
+   501→                  </div>
+   502→
+   503→                  {/* Save Button */}
+   504→                  <Button
+   505→                    onClick={handleSave}
+   506→                    disabled={isSaving}
+   507→                    className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-lg shadow-emerald-500/20"
+   508→                  >
+   509→                    <Save className="w-4 h-4 mr-2" />
+   510→                    {isSaving ? 'Saving...' : 'Save Entry'}
+   511→                  </Button>
+   512→                </div>
+   513→              </motion.div>
+   514→            )}
+   515→          </AnimatePresence>
+   516→
+   517→          {/* ── 7-Day Sleep History ───────────────────────────────────────── */}
+   518→          <motion.div variants={itemVariants}>
+   519→            <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+   520→              <span className="w-1 h-4 rounded-full bg-emerald-500" />
+   521→              7-Day Sleep History
+   522→            </h4>
+   523→            <div className="rounded-xl border border-gray-200/50 dark:border-gray-700/50 bg-gray-50/50 dark:bg-gray-800/30 p-4">
+   524→              {/* Bar chart */}
+   525→              <div className="flex items-end justify-between gap-3 h-40 relative">
+   526→                {/* Y-axis labels */}
+   527→                <div className="absolute left-0 top-0 bottom-6 w-8 flex flex-col justify-between text-[10px] text-gray-400">
+   528→                  <span>10h</span>
+   529→                  <span>8h</span>
+   530→                  <span>6h</span>
+   531→                  <span>4h</span>
+   532→                </div>
+   533→                <div className="ml-9 flex-1 flex items-end justify-between gap-2 h-full relative">
+   534→                  {/* Grid lines */}
+   535→                  <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
+   536→                    {[0, 1, 2, 3].map((i) => (
+   537→                      <div key={i} className="border-t border-dashed border-gray-200 dark:border-gray-700/50" />
+   538→                    ))}
+   539→                  </div>
+   540→
+   541→                  {sleepData.map((entry, i) => {
+   542→                    const heightPct = (entry.durationHrs / 10) * 100;
+   543→                    return (
+   544→                      <div
+   545→                        key={entry.id}
+   546→                        className="flex-1 flex flex-col items-center relative z-10"
+   547→                        onMouseEnter={() => setHoveredBar(i)}
+   548→                        onMouseLeave={() => setHoveredBar(null)}
+   549→                      >
+   550→                        {/* Tooltip */}
+   551→                        <AnimatePresence>
+   552→                          {hoveredBar === i && (
+   553→                            <motion.div
+   554→                              initial={{ opacity: 0, y: 5 }}
+   555→                              animate={{ opacity: 1, y: 0 }}
+   556→                              exit={{ opacity: 0, y: 5 }}
+   557→                              className="absolute -top-20 left-1/2 -translate-x-1/2 z-20 bg-gray-900 dark:bg-gray-700 text-white text-[11px] rounded-lg px-3 py-2 shadow-xl whitespace-nowrap"
+   558→                            >
+   559→                              <p className="font-semibold">{entry.dayLabel}</p>
+   560→                              <p>{entry.durationHrs}h sleep · Quality: {entry.quality}/10</p>
+   561→                              <p className="text-gray-400">{entry.bedTime} → {entry.wakeTime}</p>
+   562→                              <p className="text-gray-400">
+   563→                                {feelingEmojis[entry.wakeFeeling].emoji} {feelingEmojis[entry.wakeFeeling].label}
+   564→                                {entry.interruptions > 0 ? ` · ${entry.interruptions} interruptions` : ''}
+   565→                              </p>
+   566→                            </motion.div>
+   567→                          )}
+   568→                        </AnimatePresence>
+   569→
+   570→                        <div className="w-full flex justify-center" style={{ height: 'calc(100% - 24px)' }}>
+   571→                          <motion.div
+   572→                            className="w-full max-w-[40px] rounded-t-lg relative cursor-pointer transition-transform hover:scale-105"
+   573→                            style={{
+   574→                              height: `${heightPct}%`,
+   575→                              alignSelf: 'flex-end',
+   576→                              background: `linear-gradient(to top, ${
+   577→                                entry.durationHrs < 6 ? '#f43f5e, #fb7185' :
+   578→                                entry.durationHrs < 7 ? '#f59e0b, #fbbf24' :
+   579→                                entry.durationHrs <= 9 ? '#10b981, #34d399' :
+   580→                                '#14b8a6, #2dd4bf'
+   581→                              })`,
+   582→                            }}
+   583→                            custom={i}
+   584→                            variants={barVariants}
+   585→                            initial="hidden"
+   586→                            animate="visible"
+   587→                          >
+   588→                            {/* Duration label on bar */}
+   589→                            <span className="absolute -top-5 left-1/2 -translate-x-1/2 text-[10px] font-bold text-gray-600 dark:text-gray-300">
+   590→                              {entry.durationHrs}h
+   591→                            </span>
+   592→                          </motion.div>
+   593→                        </div>
+   594→                        <span className="text-[11px] text-gray-500 dark:text-gray-400 mt-1 font-medium">
+   595→                          {entry.day}
+   596→                        </span>
+   597→                      </div>
+   598→                    );
+   599→                  })}
+   600→                </div>
+   601→              </div>
+   602→
+   603→              {/* Color legend */}
+   604→              <div className="flex items-center justify-center gap-4 mt-4 text-[10px] text-gray-500">
+   605→                <div className="flex items-center gap-1">
+   606→                  <div className="w-2.5 h-2.5 rounded-sm bg-rose-500" />
+   607→                  <span>&lt;6h</span>
+   608→                </div>
+   609→                <div className="flex items-center gap-1">
+   610→                  <div className="w-2.5 h-2.5 rounded-sm bg-amber-500" />
+   611→                  <span>6-7h</span>
+   612→                </div>
+   613→                <div className="flex items-center gap-1">
+   614→                  <div className="w-2.5 h-2.5 rounded-sm bg-emerald-500" />
+   615→                  <span>7-9h</span>
+   616→                </div>
+   617→                <div className="flex items-center gap-1">
+   618→                  <div className="w-2.5 h-2.5 rounded-sm bg-teal-500" />
+   619→                  <span>&gt;9h</span>
+   620→                </div>
+   621→              </div>
+   622→            </div>
+   623→          </motion.div>
+   624→
+   625→          {/* ── Sleep Insights ───────────────────────────────────────────── */}
+   626→          <motion.div variants={itemVariants}>
+   627→            <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+   628→              <span className="w-1 h-4 rounded-full bg-teal-500" />
+   629→              Sleep Insights
+   630→            </h4>
+   631→            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+   632→              {/* Average Duration */}
+   633→              <div className="rounded-xl border border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-br from-emerald-50/60 to-teal-50/30 dark:from-emerald-950/20 dark:to-teal-950/10 p-3 text-center">
+   634→                <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+   635→                  {insights.avgDuration.toFixed(1)}h
+   636→                </p>
+   637→                <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">Avg Duration</p>
+   638→              </div>
+   639→
+   640→              {/* Average Quality */}
+   641→              <div className="rounded-xl border border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-br from-teal-50/60 to-emerald-50/30 dark:from-teal-950/20 dark:to-emerald-950/10 p-3 text-center">
+   642→                <p className="text-2xl font-bold text-teal-600 dark:text-teal-400">
+   643→                  {insights.avgQuality.toFixed(1)}
+   644→                  <span className="text-sm ml-0.5">{getQualityEmoji(Math.round(insights.avgQuality))}</span>
+   645→                </p>
+   646→                <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">Avg Quality</p>
+   647→              </div>
+   648→
+   649→              {/* Best Night */}
+   650→              <div className="rounded-xl border border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-br from-emerald-50/60 to-teal-50/30 dark:from-emerald-950/20 dark:to-teal-950/10 p-3 text-center">
+   651→                <p className="text-lg font-bold text-emerald-700 dark:text-emerald-300">
+   652→                  {insights.best.day}
+   653→                </p>
+   654→                <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">
+   655→                  Best Night ({insights.best.quality}/10)
+   656→                </p>
+   657→              </div>
+   658→
+   659→              {/* Worst Night */}
+   660→              <div className="rounded-xl border border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-br from-rose-50/60 to-amber-50/30 dark:from-rose-950/20 dark:to-amber-950/10 p-3 text-center">
+   661→                <p className="text-lg font-bold text-rose-600 dark:text-rose-400">
+   662→                  {insights.worst.day}
+   663→                </p>
+   664→                <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">
+   665→                  Worst Night ({insights.worst.quality}/10)
+   666→                </p>
+   667→              </div>
+   668→            </div>
+   669→
+   670→            {/* Trend & Recommendation */}
+   671→            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+   672→              {/* Trend */}
+   673→              <div className={`rounded-xl border p-3 flex items-center gap-3 ${
+   674→                insights.trend === 'improving'
+   675→                  ? 'border-emerald-200/50 dark:border-emerald-800/40 bg-emerald-50/50 dark:bg-emerald-950/20'
+   676→                  : insights.trend === 'declining'
+   677→                  ? 'border-rose-200/50 dark:border-rose-800/40 bg-rose-50/50 dark:bg-rose-950/20'
+   678→                  : 'border-amber-200/50 dark:border-amber-800/40 bg-amber-50/50 dark:bg-amber-950/20'
+   679→              }`}>
+   680→                <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${
+   681→                  insights.trend === 'improving'
+   682→                    ? 'bg-emerald-100 dark:bg-emerald-900/40'
+   683→                    : insights.trend === 'declining'
+   684→                    ? 'bg-rose-100 dark:bg-rose-900/40'
+   685→                    : 'bg-amber-100 dark:bg-amber-900/40'
+   686→                }`}>
+   687→                  {insights.trend === 'improving' ? (
+   688→                    <TrendingUp className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+   689→                  ) : insights.trend === 'declining' ? (
+   690→                    <TrendingDown className="w-5 h-5 text-rose-600 dark:text-rose-400" />
+   691→                  ) : (
+   692→                    <Minus className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+   693→                  )}
+   694→                </div>
+   695→                <div>
+   696→                  <p className={`text-sm font-semibold capitalize ${
+   697→                    insights.trend === 'improving'
+   698→                      ? 'text-emerald-700 dark:text-emerald-300'
+   699→                      : insights.trend === 'declining'
+   700→                      ? 'text-rose-700 dark:text-rose-300'
+   701→                      : 'text-amber-700 dark:text-amber-300'
+   702→                  }`}>
+   703→                    {insights.trend}
+   704→                  </p>
+   705→                  <p className="text-[10px] text-gray-500 dark:text-gray-400">Sleep quality trend</p>
+   706→                </div>
+   707→              </div>
+   708→
+   709→              {/* Recommendation */}
+   710→              <div className="rounded-xl border border-teal-200/50 dark:border-teal-800/40 bg-gradient-to-br from-teal-50/50 to-emerald-50/30 dark:from-teal-950/20 dark:to-emerald-950/10 p-3 flex items-start gap-3">
+   711→                <div className="w-9 h-9 rounded-lg bg-teal-100 dark:bg-teal-900/40 flex items-center justify-center flex-shrink-0">
+   712→                  <Sparkles className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+   713→                </div>
+   714→                <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed">
+   715→                  {insights.recommendation}
+   716→                </p>
+   717→              </div>
+   718→            </div>
+   719→          </motion.div>
+   720→        </CardContent>
+   721→      </Card>
+   722→    </motion.div>
+   723→  );
+   724→}
+   725→

@@ -1,0 +1,1687 @@
+✓ AdaptiFit - AI Adaptive Fitness & Rehabilitation
+  http://localhost:3000/
+- banner
+  - generic [ref=e2] clickable [cursor:pointer, onclick]
+    - heading "AdaptiFit" [level=1, ref=e16]
+      - StaticText "AdaptiFit"
+    - paragraph
+      - StaticText "AI Adaptive Fitness & Rehab"
+  - navigation
+    - button "Dashboard" [ref=e17]
+      - StaticText "Dashboard"
+    - button "Body Scan" [ref=e18]
+      - StaticText "Body Scan"
+    - button "Exercises" [ref=e19]
+      - StaticText "Exercises"
+    - button "Mood" [ref=e20]
+      - StaticText "Mood"
+    - button "Nutrition" [ref=e21]
+      - StaticText "Nutrition"
+    - button "Community" [ref=e22]
+      - StaticText "Community"
+    - button "Wearable" [ref=e23]
+      - StaticText "Wearable"
+  - button [ref=e3]
+  - button [ref=e4]
+  - button "3" [ref=e24]
+    - StaticText "3"
+  - StaticText "Pro Plan"
+  - generic [ref=e5] clickable [cursor:pointer, onclick]
+    - StaticText "A"
+  - button "Get Started" [ref=e6]
+- main
+  - generic
+    - generic
+      - generic
+      - StaticText "SCROLL TO EXPLORE"
+      - StaticText "AI-Powered Inclusive Fitness"
+      - heading "Adaptive Fitness For Every Body" [level=1, ref=e53]
+        - StaticText "Adaptive Fitness"
+        - LineBreak "\n"
+        - StaticText "For Every Body"
+      - StaticText "AI Monitoring Active"
+      - paragraph
+        - StaticText "Personalized rehabilitation and fitness for people with disabilities, injured soldiers, and Paralympic athletes. AI motion tracking, mood monitoring, and smart nutrition — all in one affordable platform."
+      - button "Start Your Journey" [ref=e54]
+      - button "Try Body Scan" [ref=e55]
+      - StaticText "23"
+      - StaticText "K+"
+      - StaticText "Active Users"
+      - StaticText "93"
+      - StaticText "+"
+      - StaticText "Adaptive Exercises"
+      - StaticText "45"
+      - StaticText "%"
+      - StaticText "Form Accuracy"
+      - StaticText "14"
+      - StaticText "/7"
+      - StaticText "AI Monitoring"
+      - generic
+        - generic
+          - image "AdaptiFit - Inclusive adaptive fitness platform"
+        - paragraph
+          - StaticText "Form Accuracy"
+        - paragraph
+          - StaticText "98%"
+        - paragraph
+          - StaticText "Mood Score"
+        - paragraph
+          - StaticText "8.5/10"
+        - paragraph
+          - StaticText "Heart Rate"
+        - paragraph
+          - StaticText "72 BPM"
+    - StaticText "Comprehensive Features"
+    - heading "Everything You Need for Inclusive Rehabilitation" [level=2, ref=e45]
+      - StaticText "Everything You Need for"
+      - LineBreak "\n"
+      - StaticText "Inclusive Rehabilitation"
+    - paragraph
+      - StaticText "From AI motion tracking to mood monitoring, nutrition planning to community support — AdaptiFit replaces expensive therapy with affordable, customized care."
+    - generic [ref=e46] clickable [cursor:pointer, onclick]
+      - StaticText "NEW"
+      - heading "Body Scan & Motion Tracking" [level=3, ref=e56]
+      - paragraph
+        - StaticText "AI-powered camera tracking with real-time form feedback for adaptive exercises"
+      - StaticText "Explore"
+    - generic [ref=e47] clickable [cursor:pointer, onclick]
+      - heading "Adaptive Exercise Library" [level=3, ref=e57]
+      - paragraph
+        - StaticText "Personalized exercises for injuries, disabilities, and Paralympic training"
+      - StaticText "Explore"
+    - generic [ref=e48] clickable [cursor:pointer, onclick]
+      - StaticText "Popular"
+      - heading "Mood & Emotion Monitor" [level=3, ref=e58]
+      - paragraph
+        - StaticText "AI emotion tracking with anti-suicide prevention and wellness alerts"
+      - StaticText "Explore"
+    - generic [ref=e49] clickable [cursor:pointer, onclick]
+      - heading "AI Food & Diet Planning" [level=3, ref=e59]
+      - paragraph
+        - StaticText "Smart food logging, calorie tracking, and diet plans with delivery integration"
+      - StaticText "Explore"
+    - generic [ref=e50] clickable [cursor:pointer, onclick]
+      - heading "Smart Wearable Integration" [level=3, ref=e60]
+      - paragraph
+        - StaticText "Real-time heart rate, SpO2, and blood pressure from your smart devices"
+      - StaticText "Explore"
+    - generic [ref=e51] clickable [cursor:pointer, onclick]
+      - heading "Community & Peer Support" [level=3, ref=e61]
+      - paragraph
+        - StaticText "Connect with peers, expert coaching, and accessible rehabilitation support"
+      - StaticText "Explore"
+    - heading "Built For You" [level=2, ref=e52]
+      - StaticText "Built For You"
+    - paragraph
+      - StaticText "Whether you're recovering from injury, training for the Paralympics, or managing a disability — AdaptiFit adapts to you."
+    - generic
+      - StaticText "🎖️"
+      - heading "Injured Soldiers" [level=3, ref=e62]
+      - paragraph
+        - StaticText "Combat injury rehabilitation with customized therapy plans and progress tracking."
+      - list
+        - listitem [level=1]
+          - StaticText "Combat injury rehab"
+        - listitem [level=1]
+          - StaticText "PTSD mood monitoring"
+        - listitem [level=1]
+          - StaticText "Adaptive strength training"
+      - paragraph
+        - StaticText "“AdaptiFit helped me recover from my combat injury faster than traditional therapy. The AI form tracking is incredible.”"
+      - paragraph
+        - StaticText "— Sgt. M. Rodriguez"
+    - generic
+      - StaticText "🏅"
+      - heading "Paralympic Athletes" [level=3, ref=e63]
+      - paragraph
+        - StaticText "Professional-grade training adapted for your category and classification."
+      - list
+        - listitem [level=1]
+          - StaticText "Sport-specific training"
+        - listitem [level=1]
+          - StaticText "Performance analytics"
+        - listitem [level=1]
+          - StaticText "Competition preparation"
+      - paragraph
+        - StaticText "“Training for Tokyo was transformed by AdaptiFit. My performance analytics improved 40% in just 3 months.”"
+      - paragraph
+        - StaticText "— J. Chen, Paralympic Swimmer"
+    - generic
+      - StaticText "♿"
+      - heading "People with Disabilities" [level=3, ref=e64]
+      - paragraph
+        - StaticText "Inclusive fitness programs designed around your abilities, not limitations."
+      - list
+        - listitem [level=1]
+          - StaticText "Full body adaptations"
+        - listitem [level=1]
+          - StaticText "Seated exercises"
+        - listitem [level=1]
+          - StaticText "Assistive tech integration"
+      - paragraph
+        - StaticText "“Finally, a fitness app that understands my wheelchair. The seated exercises are perfectly designed.”"
+      - paragraph
+        - StaticText "— S. Patel, Community Member"
+    - generic
+      - generic
+      - generic
+        - heading "Start Your Recovery Today" [level=2, ref=e66]
+        - paragraph
+          - StaticText "Join thousands who have transformed their rehabilitation journey with AdaptiFit. Affordable, accessible, and always adapted to you."
+        - button "Get Started Free" [ref=e67]
+        - button "Try Body Scan Demo" [ref=e68]
+        - StaticText "HIPAA Compliant"
+        - StaticText "AI-Powered"
+        - StaticText "24/7 Support"
+- contentinfo
+  - StaticText "AdaptiFit"
+  - heading "Platform" [level=4, ref=e7]
+  - list
+    - listitem [level=1, ref=e25] clickable [cursor:pointer]
+      - StaticText "Dashboard"
+    - listitem [level=1, ref=e26] clickable [cursor:pointer]
+      - StaticText "Body Scan"
+    - listitem [level=1, ref=e27] clickable [cursor:pointer]
+      - StaticText "Exercise Library"
+    - listitem [level=1, ref=e28] clickable [cursor:pointer]
+      - StaticText "Mood Monitor"
+    - listitem [level=1, ref=e29] clickable [cursor:pointer]
+      - StaticText "Nutrition"
+  - heading "Resources" [level=4, ref=e8]
+  - list
+    - listitem [level=1, ref=e30] clickable [cursor:pointer]
+      - StaticText "Documentation"
+    - listitem [level=1, ref=e31] clickable [cursor:pointer]
+      - StaticText "API Reference"
+    - listitem [level=1, ref=e32] clickable [cursor:pointer]
+      - StaticText "Video Tutorials"
+    - listitem [level=1, ref=e33] clickable [cursor:pointer]
+      - StaticText "Blog"
+    - listitem [level=1, ref=e34] clickable [cursor:pointer]
+      - StaticText "Help Center"
+  - heading "Community" [level=4, ref=e9]
+  - list
+    - listitem [level=1, ref=e35] clickable [cursor:pointer]
+      - StaticText "Peer Support"
+    - listitem [level=1, ref=e36] clickable [cursor:pointer]
+      - StaticText "Expert Coaching"
+    - listitem [level=1, ref=e37] clickable [cursor:pointer]
+      - StaticText "Success Stories"
+    - listitem [level=1, ref=e38] clickable [cursor:pointer]
+      - StaticText "Events"
+    - listitem [level=1, ref=e39] clickable [cursor:pointer]
+      - StaticText "Ambassador Program"
+  - heading "Legal" [level=4, ref=e10]
+  - list
+    - listitem [level=1, ref=e40] clickable [cursor:pointer]
+      - StaticText "Privacy Policy"
+    - listitem [level=1, ref=e41] clickable [cursor:pointer]
+      - StaticText "Terms of Service"
+    - listitem [level=1, ref=e42] clickable [cursor:pointer]
+      - StaticText "HIPAA Compliance"
+    - listitem [level=1, ref=e43] clickable [cursor:pointer]
+      - StaticText "Cookie Policy"
+    - listitem [level=1, ref=e44] clickable [cursor:pointer]
+      - StaticText "Accessibility"
+  - StaticText "© 2024 AdaptiFit — Inclusive Fitness for All"
+  - button [ref=e11]
+  - button [ref=e12]
+  - button [ref=e13]
+  - button [ref=e14]
+  - StaticText "Built with empathy"
+  - StaticText "•"
+  - StaticText "988 Suicide & Crisis Lifeline"
+- button "Open AdaptiFit AI Chat" [ref=e15]
+- region "Notifications (F8)" [ref=e1]
+  - list
+- button "Open Next.js Dev Tools" [expanded=false, ref=e65]
+  - image
+- alert
+✓ Done
+✅ e17
+✓ AdaptiFit - AI Adaptive Fitness & Rehabilitation
+  http://localhost:3000/
+- banner
+  - generic [ref=e2] clickable [cursor:pointer, onclick]
+    - heading "AdaptiFit" [level=1, ref=e16]
+      - StaticText "AdaptiFit"
+    - paragraph
+      - StaticText "AI Adaptive Fitness & Rehab"
+  - navigation
+    - button "Dashboard" [ref=e17]
+      - StaticText "Dashboard"
+    - button "Body Scan" [ref=e18]
+      - StaticText "Body Scan"
+    - button "Exercises" [ref=e19]
+      - StaticText "Exercises"
+    - button "Mood" [ref=e20]
+      - StaticText "Mood"
+    - button "Nutrition" [ref=e21]
+      - StaticText "Nutrition"
+    - button "Community" [ref=e22]
+      - StaticText "Community"
+    - button "Wearable" [ref=e23]
+      - StaticText "Wearable"
+  - button [ref=e3]
+  - button [ref=e4]
+  - button "3" [ref=e24]
+    - StaticText "3"
+  - StaticText "Pro Plan"
+  - generic [ref=e5] clickable [cursor:pointer, onclick]
+    - StaticText "A"
+  - button "Get Started" [ref=e6]
+- main
+  - generic
+    - generic
+      - generic
+      - StaticText "SCROLL TO EXPLORE"
+      - StaticText "AI-Powered Inclusive Fitness"
+      - heading "Adaptive Fitness For Every Body" [level=1, ref=e53]
+        - StaticText "Adaptive Fitness"
+        - LineBreak "\n"
+        - StaticText "For Every Body"
+      - StaticText "AI Monitoring Active"
+      - paragraph
+        - StaticText "Personalized rehabilitation and fitness for people with disabilities, injured soldiers, and Paralympic athletes. AI motion tracking, mood monitoring, and smart nutrition — all in one affordable platform."
+      - button "Start Your Journey" [ref=e54]
+      - button "Try Body Scan" [ref=e55]
+      - StaticText "23"
+      - StaticText "K+"
+      - StaticText "Active Users"
+      - StaticText "94"
+      - StaticText "+"
+      - StaticText "Adaptive Exercises"
+      - StaticText "46"
+      - StaticText "%"
+      - StaticText "Form Accuracy"
+      - StaticText "15"
+      - StaticText "/7"
+      - StaticText "AI Monitoring"
+      - generic
+        - generic
+          - image "AdaptiFit - Inclusive adaptive fitness platform"
+        - paragraph
+          - StaticText "Form Accuracy"
+        - paragraph
+          - StaticText "98%"
+        - paragraph
+          - StaticText "Mood Score"
+        - paragraph
+          - StaticText "8.5/10"
+        - paragraph
+          - StaticText "Heart Rate"
+        - paragraph
+          - StaticText "72 BPM"
+    - StaticText "Comprehensive Features"
+    - heading "Everything You Need for Inclusive Rehabilitation" [level=2, ref=e45]
+      - StaticText "Everything You Need for"
+      - LineBreak "\n"
+      - StaticText "Inclusive Rehabilitation"
+    - paragraph
+      - StaticText "From AI motion tracking to mood monitoring, nutrition planning to community support — AdaptiFit replaces expensive therapy with affordable, customized care."
+    - generic [ref=e46] clickable [cursor:pointer, onclick]
+      - StaticText "NEW"
+      - heading "Body Scan & Motion Tracking" [level=3, ref=e56]
+      - paragraph
+        - StaticText "AI-powered camera tracking with real-time form feedback for adaptive exercises"
+      - StaticText "Explore"
+    - generic [ref=e47] clickable [cursor:pointer, onclick]
+      - heading "Adaptive Exercise Library" [level=3, ref=e57]
+      - paragraph
+        - StaticText "Personalized exercises for injuries, disabilities, and Paralympic training"
+      - StaticText "Explore"
+    - generic [ref=e48] clickable [cursor:pointer, onclick]
+      - StaticText "Popular"
+      - heading "Mood & Emotion Monitor" [level=3, ref=e58]
+      - paragraph
+        - StaticText "AI emotion tracking with anti-suicide prevention and wellness alerts"
+      - StaticText "Explore"
+    - generic [ref=e49] clickable [cursor:pointer, onclick]
+      - heading "AI Food & Diet Planning" [level=3, ref=e59]
+      - paragraph
+        - StaticText "Smart food logging, calorie tracking, and diet plans with delivery integration"
+      - StaticText "Explore"
+    - generic [ref=e50] clickable [cursor:pointer, onclick]
+      - heading "Smart Wearable Integration" [level=3, ref=e60]
+      - paragraph
+        - StaticText "Real-time heart rate, SpO2, and blood pressure from your smart devices"
+      - StaticText "Explore"
+    - generic [ref=e51] clickable [cursor:pointer, onclick]
+      - heading "Community & Peer Support" [level=3, ref=e61]
+      - paragraph
+        - StaticText "Connect with peers, expert coaching, and accessible rehabilitation support"
+      - StaticText "Explore"
+    - heading "Built For You" [level=2, ref=e52]
+      - StaticText "Built For You"
+    - paragraph
+      - StaticText "Whether you're recovering from injury, training for the Paralympics, or managing a disability — AdaptiFit adapts to you."
+    - generic
+      - StaticText "🎖️"
+      - heading "Injured Soldiers" [level=3, ref=e62]
+      - paragraph
+        - StaticText "Combat injury rehabilitation with customized therapy plans and progress tracking."
+      - list
+        - listitem [level=1]
+          - StaticText "Combat injury rehab"
+        - listitem [level=1]
+          - StaticText "PTSD mood monitoring"
+        - listitem [level=1]
+          - StaticText "Adaptive strength training"
+      - paragraph
+        - StaticText "“AdaptiFit helped me recover from my combat injury faster than traditional therapy. The AI form tracking is incredible.”"
+      - paragraph
+        - StaticText "— Sgt. M. Rodriguez"
+    - generic
+      - StaticText "🏅"
+      - heading "Paralympic Athletes" [level=3, ref=e63]
+      - paragraph
+        - StaticText "Professional-grade training adapted for your category and classification."
+      - list
+        - listitem [level=1]
+          - StaticText "Sport-specific training"
+        - listitem [level=1]
+          - StaticText "Performance analytics"
+        - listitem [level=1]
+          - StaticText "Competition preparation"
+      - paragraph
+        - StaticText "“Training for Tokyo was transformed by AdaptiFit. My performance analytics improved 40% in just 3 months.”"
+      - paragraph
+        - StaticText "— J. Chen, Paralympic Swimmer"
+    - generic
+      - StaticText "♿"
+      - heading "People with Disabilities" [level=3, ref=e64]
+      - paragraph
+        - StaticText "Inclusive fitness programs designed around your abilities, not limitations."
+      - list
+        - listitem [level=1]
+          - StaticText "Full body adaptations"
+        - listitem [level=1]
+          - StaticText "Seated exercises"
+        - listitem [level=1]
+          - StaticText "Assistive tech integration"
+      - paragraph
+        - StaticText "“Finally, a fitness app that understands my wheelchair. The seated exercises are perfectly designed.”"
+      - paragraph
+        - StaticText "— S. Patel, Community Member"
+    - generic
+      - generic
+      - generic
+        - heading "Start Your Recovery Today" [level=2, ref=e66]
+        - paragraph
+          - StaticText "Join thousands who have transformed their rehabilitation journey with AdaptiFit. Affordable, accessible, and always adapted to you."
+        - button "Get Started Free" [ref=e67]
+        - button "Try Body Scan Demo" [ref=e68]
+        - StaticText "HIPAA Compliant"
+        - StaticText "AI-Powered"
+        - StaticText "24/7 Support"
+- contentinfo
+  - StaticText "AdaptiFit"
+  - heading "Platform" [level=4, ref=e7]
+  - list
+    - listitem [level=1, ref=e25] clickable [cursor:pointer]
+      - StaticText "Dashboard"
+    - listitem [level=1, ref=e26] clickable [cursor:pointer]
+      - StaticText "Body Scan"
+    - listitem [level=1, ref=e27] clickable [cursor:pointer]
+      - StaticText "Exercise Library"
+    - listitem [level=1, ref=e28] clickable [cursor:pointer]
+      - StaticText "Mood Monitor"
+    - listitem [level=1, ref=e29] clickable [cursor:pointer]
+      - StaticText "Nutrition"
+  - heading "Resources" [level=4, ref=e8]
+  - list
+    - listitem [level=1, ref=e30] clickable [cursor:pointer]
+      - StaticText "Documentation"
+    - listitem [level=1, ref=e31] clickable [cursor:pointer]
+      - StaticText "API Reference"
+    - listitem [level=1, ref=e32] clickable [cursor:pointer]
+      - StaticText "Video Tutorials"
+    - listitem [level=1, ref=e33] clickable [cursor:pointer]
+      - StaticText "Blog"
+    - listitem [level=1, ref=e34] clickable [cursor:pointer]
+      - StaticText "Help Center"
+  - heading "Community" [level=4, ref=e9]
+  - list
+    - listitem [level=1, ref=e35] clickable [cursor:pointer]
+      - StaticText "Peer Support"
+    - listitem [level=1, ref=e36] clickable [cursor:pointer]
+      - StaticText "Expert Coaching"
+    - listitem [level=1, ref=e37] clickable [cursor:pointer]
+      - StaticText "Success Stories"
+    - listitem [level=1, ref=e38] clickable [cursor:pointer]
+      - StaticText "Events"
+    - listitem [level=1, ref=e39] clickable [cursor:pointer]
+      - StaticText "Ambassador Program"
+  - heading "Legal" [level=4, ref=e10]
+  - list
+    - listitem [level=1, ref=e40] clickable [cursor:pointer]
+      - StaticText "Privacy Policy"
+    - listitem [level=1, ref=e41] clickable [cursor:pointer]
+      - StaticText "Terms of Service"
+    - listitem [level=1, ref=e42] clickable [cursor:pointer]
+      - StaticText "HIPAA Compliance"
+    - listitem [level=1, ref=e43] clickable [cursor:pointer]
+      - StaticText "Cookie Policy"
+    - listitem [level=1, ref=e44] clickable [cursor:pointer]
+      - StaticText "Accessibility"
+  - StaticText "© 2024 AdaptiFit — Inclusive Fitness for All"
+  - button [ref=e11]
+  - button [ref=e12]
+  - button [ref=e13]
+  - button [ref=e14]
+  - StaticText "Built with empathy"
+  - StaticText "•"
+  - StaticText "988 Suicide & Crisis Lifeline"
+- button "Open AdaptiFit AI Chat" [ref=e15]
+- region "Notifications (F8)" [ref=e1]
+  - list
+- button "Open Next.js Dev Tools" [expanded=false, ref=e65]
+  - image
+- alert
+✓ Done
+✅ e18
+✓ AdaptiFit - AI Adaptive Fitness & Rehabilitation
+  http://localhost:3000/
+- banner
+  - generic [ref=e2] clickable [cursor:pointer, onclick]
+    - heading "AdaptiFit" [level=1, ref=e16]
+      - StaticText "AdaptiFit"
+    - paragraph
+      - StaticText "AI Adaptive Fitness & Rehab"
+  - navigation
+    - button "Dashboard" [ref=e17]
+      - StaticText "Dashboard"
+    - button "Body Scan" [ref=e18]
+      - StaticText "Body Scan"
+    - button "Exercises" [ref=e19]
+      - StaticText "Exercises"
+    - button "Mood" [ref=e20]
+      - StaticText "Mood"
+    - button "Nutrition" [ref=e21]
+      - StaticText "Nutrition"
+    - button "Community" [ref=e22]
+      - StaticText "Community"
+    - button "Wearable" [ref=e23]
+      - StaticText "Wearable"
+  - button [ref=e3]
+  - button [ref=e4]
+  - button "3" [ref=e24]
+    - StaticText "3"
+  - StaticText "Pro Plan"
+  - generic [ref=e5] clickable [cursor:pointer, onclick]
+    - StaticText "A"
+  - button "Get Started" [ref=e6]
+- main
+  - generic
+    - generic
+      - generic
+      - StaticText "SCROLL TO EXPLORE"
+      - StaticText "AI-Powered Inclusive Fitness"
+      - heading "Adaptive Fitness For Every Body" [level=1, ref=e53]
+        - StaticText "Adaptive Fitness"
+        - LineBreak "\n"
+        - StaticText "For Every Body"
+      - StaticText "AI Monitoring Active"
+      - paragraph
+        - StaticText "Personalized rehabilitation and fitness for people with disabilities, injured soldiers, and Paralympic athletes. AI motion tracking, mood monitoring, and smart nutrition — all in one affordable platform."
+      - button "Start Your Journey" [ref=e54]
+      - button "Try Body Scan" [ref=e55]
+      - StaticText "23"
+      - StaticText "K+"
+      - StaticText "Active Users"
+      - StaticText "94"
+      - StaticText "+"
+      - StaticText "Adaptive Exercises"
+      - StaticText "46"
+      - StaticText "%"
+      - StaticText "Form Accuracy"
+      - StaticText "15"
+      - StaticText "/7"
+      - StaticText "AI Monitoring"
+      - generic
+        - generic
+          - image "AdaptiFit - Inclusive adaptive fitness platform"
+        - paragraph
+          - StaticText "Form Accuracy"
+        - paragraph
+          - StaticText "98%"
+        - paragraph
+          - StaticText "Mood Score"
+        - paragraph
+          - StaticText "8.5/10"
+        - paragraph
+          - StaticText "Heart Rate"
+        - paragraph
+          - StaticText "72 BPM"
+    - StaticText "Comprehensive Features"
+    - heading "Everything You Need for Inclusive Rehabilitation" [level=2, ref=e45]
+      - StaticText "Everything You Need for"
+      - LineBreak "\n"
+      - StaticText "Inclusive Rehabilitation"
+    - paragraph
+      - StaticText "From AI motion tracking to mood monitoring, nutrition planning to community support — AdaptiFit replaces expensive therapy with affordable, customized care."
+    - generic [ref=e46] clickable [cursor:pointer, onclick]
+      - StaticText "NEW"
+      - heading "Body Scan & Motion Tracking" [level=3, ref=e56]
+      - paragraph
+        - StaticText "AI-powered camera tracking with real-time form feedback for adaptive exercises"
+      - StaticText "Explore"
+    - generic [ref=e47] clickable [cursor:pointer, onclick]
+      - heading "Adaptive Exercise Library" [level=3, ref=e57]
+      - paragraph
+        - StaticText "Personalized exercises for injuries, disabilities, and Paralympic training"
+      - StaticText "Explore"
+    - generic [ref=e48] clickable [cursor:pointer, onclick]
+      - StaticText "Popular"
+      - heading "Mood & Emotion Monitor" [level=3, ref=e58]
+      - paragraph
+        - StaticText "AI emotion tracking with anti-suicide prevention and wellness alerts"
+      - StaticText "Explore"
+    - generic [ref=e49] clickable [cursor:pointer, onclick]
+      - heading "AI Food & Diet Planning" [level=3, ref=e59]
+      - paragraph
+        - StaticText "Smart food logging, calorie tracking, and diet plans with delivery integration"
+      - StaticText "Explore"
+    - generic [ref=e50] clickable [cursor:pointer, onclick]
+      - heading "Smart Wearable Integration" [level=3, ref=e60]
+      - paragraph
+        - StaticText "Real-time heart rate, SpO2, and blood pressure from your smart devices"
+      - StaticText "Explore"
+    - generic [ref=e51] clickable [cursor:pointer, onclick]
+      - heading "Community & Peer Support" [level=3, ref=e61]
+      - paragraph
+        - StaticText "Connect with peers, expert coaching, and accessible rehabilitation support"
+      - StaticText "Explore"
+    - heading "Built For You" [level=2, ref=e52]
+      - StaticText "Built For You"
+    - paragraph
+      - StaticText "Whether you're recovering from injury, training for the Paralympics, or managing a disability — AdaptiFit adapts to you."
+    - generic
+      - StaticText "🎖️"
+      - heading "Injured Soldiers" [level=3, ref=e62]
+      - paragraph
+        - StaticText "Combat injury rehabilitation with customized therapy plans and progress tracking."
+      - list
+        - listitem [level=1]
+          - StaticText "Combat injury rehab"
+        - listitem [level=1]
+          - StaticText "PTSD mood monitoring"
+        - listitem [level=1]
+          - StaticText "Adaptive strength training"
+      - paragraph
+        - StaticText "“AdaptiFit helped me recover from my combat injury faster than traditional therapy. The AI form tracking is incredible.”"
+      - paragraph
+        - StaticText "— Sgt. M. Rodriguez"
+    - generic
+      - StaticText "🏅"
+      - heading "Paralympic Athletes" [level=3, ref=e63]
+      - paragraph
+        - StaticText "Professional-grade training adapted for your category and classification."
+      - list
+        - listitem [level=1]
+          - StaticText "Sport-specific training"
+        - listitem [level=1]
+          - StaticText "Performance analytics"
+        - listitem [level=1]
+          - StaticText "Competition preparation"
+      - paragraph
+        - StaticText "“Training for Tokyo was transformed by AdaptiFit. My performance analytics improved 40% in just 3 months.”"
+      - paragraph
+        - StaticText "— J. Chen, Paralympic Swimmer"
+    - generic
+      - StaticText "♿"
+      - heading "People with Disabilities" [level=3, ref=e64]
+      - paragraph
+        - StaticText "Inclusive fitness programs designed around your abilities, not limitations."
+      - list
+        - listitem [level=1]
+          - StaticText "Full body adaptations"
+        - listitem [level=1]
+          - StaticText "Seated exercises"
+        - listitem [level=1]
+          - StaticText "Assistive tech integration"
+      - paragraph
+        - StaticText "“Finally, a fitness app that understands my wheelchair. The seated exercises are perfectly designed.”"
+      - paragraph
+        - StaticText "— S. Patel, Community Member"
+    - generic
+      - generic
+      - generic
+        - heading "Start Your Recovery Today" [level=2, ref=e66]
+        - paragraph
+          - StaticText "Join thousands who have transformed their rehabilitation journey with AdaptiFit. Affordable, accessible, and always adapted to you."
+        - button "Get Started Free" [ref=e67]
+        - button "Try Body Scan Demo" [ref=e68]
+        - StaticText "HIPAA Compliant"
+        - StaticText "AI-Powered"
+        - StaticText "24/7 Support"
+- contentinfo
+  - StaticText "AdaptiFit"
+  - heading "Platform" [level=4, ref=e7]
+  - list
+    - listitem [level=1, ref=e25] clickable [cursor:pointer]
+      - StaticText "Dashboard"
+    - listitem [level=1, ref=e26] clickable [cursor:pointer]
+      - StaticText "Body Scan"
+    - listitem [level=1, ref=e27] clickable [cursor:pointer]
+      - StaticText "Exercise Library"
+    - listitem [level=1, ref=e28] clickable [cursor:pointer]
+      - StaticText "Mood Monitor"
+    - listitem [level=1, ref=e29] clickable [cursor:pointer]
+      - StaticText "Nutrition"
+  - heading "Resources" [level=4, ref=e8]
+  - list
+    - listitem [level=1, ref=e30] clickable [cursor:pointer]
+      - StaticText "Documentation"
+    - listitem [level=1, ref=e31] clickable [cursor:pointer]
+      - StaticText "API Reference"
+    - listitem [level=1, ref=e32] clickable [cursor:pointer]
+      - StaticText "Video Tutorials"
+    - listitem [level=1, ref=e33] clickable [cursor:pointer]
+      - StaticText "Blog"
+    - listitem [level=1, ref=e34] clickable [cursor:pointer]
+      - StaticText "Help Center"
+  - heading "Community" [level=4, ref=e9]
+  - list
+    - listitem [level=1, ref=e35] clickable [cursor:pointer]
+      - StaticText "Peer Support"
+    - listitem [level=1, ref=e36] clickable [cursor:pointer]
+      - StaticText "Expert Coaching"
+    - listitem [level=1, ref=e37] clickable [cursor:pointer]
+      - StaticText "Success Stories"
+    - listitem [level=1, ref=e38] clickable [cursor:pointer]
+      - StaticText "Events"
+    - listitem [level=1, ref=e39] clickable [cursor:pointer]
+      - StaticText "Ambassador Program"
+  - heading "Legal" [level=4, ref=e10]
+  - list
+    - listitem [level=1, ref=e40] clickable [cursor:pointer]
+      - StaticText "Privacy Policy"
+    - listitem [level=1, ref=e41] clickable [cursor:pointer]
+      - StaticText "Terms of Service"
+    - listitem [level=1, ref=e42] clickable [cursor:pointer]
+      - StaticText "HIPAA Compliance"
+    - listitem [level=1, ref=e43] clickable [cursor:pointer]
+      - StaticText "Cookie Policy"
+    - listitem [level=1, ref=e44] clickable [cursor:pointer]
+      - StaticText "Accessibility"
+  - StaticText "© 2024 AdaptiFit — Inclusive Fitness for All"
+  - button [ref=e11]
+  - button [ref=e12]
+  - button [ref=e13]
+  - button [ref=e14]
+  - StaticText "Built with empathy"
+  - StaticText "•"
+  - StaticText "988 Suicide & Crisis Lifeline"
+- button "Open AdaptiFit AI Chat" [ref=e15]
+- region "Notifications (F8)" [ref=e1]
+  - list
+- button "Open Next.js Dev Tools" [expanded=false, ref=e65]
+  - image
+- alert
+✓ Done
+✅ e19
+✓ AdaptiFit - AI Adaptive Fitness & Rehabilitation
+  http://localhost:3000/
+- banner
+  - generic [ref=e2] clickable [cursor:pointer, onclick]
+    - heading "AdaptiFit" [level=1, ref=e16]
+      - StaticText "AdaptiFit"
+    - paragraph
+      - StaticText "AI Adaptive Fitness & Rehab"
+  - navigation
+    - button "Dashboard" [ref=e17]
+      - StaticText "Dashboard"
+    - button "Body Scan" [ref=e18]
+      - StaticText "Body Scan"
+    - button "Exercises" [ref=e19]
+      - StaticText "Exercises"
+    - button "Mood" [ref=e20]
+      - StaticText "Mood"
+    - button "Nutrition" [ref=e21]
+      - StaticText "Nutrition"
+    - button "Community" [ref=e22]
+      - StaticText "Community"
+    - button "Wearable" [ref=e23]
+      - StaticText "Wearable"
+  - button [ref=e3]
+  - button [ref=e4]
+  - button "3" [ref=e24]
+    - StaticText "3"
+  - StaticText "Pro Plan"
+  - generic [ref=e5] clickable [cursor:pointer, onclick]
+    - StaticText "A"
+  - button "Get Started" [ref=e6]
+- main
+  - generic
+    - generic
+      - generic
+      - StaticText "SCROLL TO EXPLORE"
+      - StaticText "AI-Powered Inclusive Fitness"
+      - heading "Adaptive Fitness For Every Body" [level=1, ref=e53]
+        - StaticText "Adaptive Fitness"
+        - LineBreak "\n"
+        - StaticText "For Every Body"
+      - StaticText "AI Monitoring Active"
+      - paragraph
+        - StaticText "Personalized rehabilitation and fitness for people with disabilities, injured soldiers, and Paralympic athletes. AI motion tracking, mood monitoring, and smart nutrition — all in one affordable platform."
+      - button "Start Your Journey" [ref=e54]
+      - button "Try Body Scan" [ref=e55]
+      - StaticText "23"
+      - StaticText "K+"
+      - StaticText "Active Users"
+      - StaticText "93"
+      - StaticText "+"
+      - StaticText "Adaptive Exercises"
+      - StaticText "45"
+      - StaticText "%"
+      - StaticText "Form Accuracy"
+      - StaticText "14"
+      - StaticText "/7"
+      - StaticText "AI Monitoring"
+      - generic
+        - generic
+          - image "AdaptiFit - Inclusive adaptive fitness platform"
+        - paragraph
+          - StaticText "Form Accuracy"
+        - paragraph
+          - StaticText "98%"
+        - paragraph
+          - StaticText "Mood Score"
+        - paragraph
+          - StaticText "8.5/10"
+        - paragraph
+          - StaticText "Heart Rate"
+        - paragraph
+          - StaticText "72 BPM"
+    - StaticText "Comprehensive Features"
+    - heading "Everything You Need for Inclusive Rehabilitation" [level=2, ref=e45]
+      - StaticText "Everything You Need for"
+      - LineBreak "\n"
+      - StaticText "Inclusive Rehabilitation"
+    - paragraph
+      - StaticText "From AI motion tracking to mood monitoring, nutrition planning to community support — AdaptiFit replaces expensive therapy with affordable, customized care."
+    - generic [ref=e46] clickable [cursor:pointer, onclick]
+      - StaticText "NEW"
+      - heading "Body Scan & Motion Tracking" [level=3, ref=e56]
+      - paragraph
+        - StaticText "AI-powered camera tracking with real-time form feedback for adaptive exercises"
+      - StaticText "Explore"
+    - generic [ref=e47] clickable [cursor:pointer, onclick]
+      - heading "Adaptive Exercise Library" [level=3, ref=e57]
+      - paragraph
+        - StaticText "Personalized exercises for injuries, disabilities, and Paralympic training"
+      - StaticText "Explore"
+    - generic [ref=e48] clickable [cursor:pointer, onclick]
+      - StaticText "Popular"
+      - heading "Mood & Emotion Monitor" [level=3, ref=e58]
+      - paragraph
+        - StaticText "AI emotion tracking with anti-suicide prevention and wellness alerts"
+      - StaticText "Explore"
+    - generic [ref=e49] clickable [cursor:pointer, onclick]
+      - heading "AI Food & Diet Planning" [level=3, ref=e59]
+      - paragraph
+        - StaticText "Smart food logging, calorie tracking, and diet plans with delivery integration"
+      - StaticText "Explore"
+    - generic [ref=e50] clickable [cursor:pointer, onclick]
+      - heading "Smart Wearable Integration" [level=3, ref=e60]
+      - paragraph
+        - StaticText "Real-time heart rate, SpO2, and blood pressure from your smart devices"
+      - StaticText "Explore"
+    - generic [ref=e51] clickable [cursor:pointer, onclick]
+      - heading "Community & Peer Support" [level=3, ref=e61]
+      - paragraph
+        - StaticText "Connect with peers, expert coaching, and accessible rehabilitation support"
+      - StaticText "Explore"
+    - heading "Built For You" [level=2, ref=e52]
+      - StaticText "Built For You"
+    - paragraph
+      - StaticText "Whether you're recovering from injury, training for the Paralympics, or managing a disability — AdaptiFit adapts to you."
+    - generic
+      - StaticText "🎖️"
+      - heading "Injured Soldiers" [level=3, ref=e62]
+      - paragraph
+        - StaticText "Combat injury rehabilitation with customized therapy plans and progress tracking."
+      - list
+        - listitem [level=1]
+          - StaticText "Combat injury rehab"
+        - listitem [level=1]
+          - StaticText "PTSD mood monitoring"
+        - listitem [level=1]
+          - StaticText "Adaptive strength training"
+      - paragraph
+        - StaticText "“AdaptiFit helped me recover from my combat injury faster than traditional therapy. The AI form tracking is incredible.”"
+      - paragraph
+        - StaticText "— Sgt. M. Rodriguez"
+    - generic
+      - StaticText "🏅"
+      - heading "Paralympic Athletes" [level=3, ref=e63]
+      - paragraph
+        - StaticText "Professional-grade training adapted for your category and classification."
+      - list
+        - listitem [level=1]
+          - StaticText "Sport-specific training"
+        - listitem [level=1]
+          - StaticText "Performance analytics"
+        - listitem [level=1]
+          - StaticText "Competition preparation"
+      - paragraph
+        - StaticText "“Training for Tokyo was transformed by AdaptiFit. My performance analytics improved 40% in just 3 months.”"
+      - paragraph
+        - StaticText "— J. Chen, Paralympic Swimmer"
+    - generic
+      - StaticText "♿"
+      - heading "People with Disabilities" [level=3, ref=e64]
+      - paragraph
+        - StaticText "Inclusive fitness programs designed around your abilities, not limitations."
+      - list
+        - listitem [level=1]
+          - StaticText "Full body adaptations"
+        - listitem [level=1]
+          - StaticText "Seated exercises"
+        - listitem [level=1]
+          - StaticText "Assistive tech integration"
+      - paragraph
+        - StaticText "“Finally, a fitness app that understands my wheelchair. The seated exercises are perfectly designed.”"
+      - paragraph
+        - StaticText "— S. Patel, Community Member"
+    - generic
+      - generic
+      - generic
+        - heading "Start Your Recovery Today" [level=2, ref=e66]
+        - paragraph
+          - StaticText "Join thousands who have transformed their rehabilitation journey with AdaptiFit. Affordable, accessible, and always adapted to you."
+        - button "Get Started Free" [ref=e67]
+        - button "Try Body Scan Demo" [ref=e68]
+        - StaticText "HIPAA Compliant"
+        - StaticText "AI-Powered"
+        - StaticText "24/7 Support"
+- contentinfo
+  - StaticText "AdaptiFit"
+  - heading "Platform" [level=4, ref=e7]
+  - list
+    - listitem [level=1, ref=e25] clickable [cursor:pointer]
+      - StaticText "Dashboard"
+    - listitem [level=1, ref=e26] clickable [cursor:pointer]
+      - StaticText "Body Scan"
+    - listitem [level=1, ref=e27] clickable [cursor:pointer]
+      - StaticText "Exercise Library"
+    - listitem [level=1, ref=e28] clickable [cursor:pointer]
+      - StaticText "Mood Monitor"
+    - listitem [level=1, ref=e29] clickable [cursor:pointer]
+      - StaticText "Nutrition"
+  - heading "Resources" [level=4, ref=e8]
+  - list
+    - listitem [level=1, ref=e30] clickable [cursor:pointer]
+      - StaticText "Documentation"
+    - listitem [level=1, ref=e31] clickable [cursor:pointer]
+      - StaticText "API Reference"
+    - listitem [level=1, ref=e32] clickable [cursor:pointer]
+      - StaticText "Video Tutorials"
+    - listitem [level=1, ref=e33] clickable [cursor:pointer]
+      - StaticText "Blog"
+    - listitem [level=1, ref=e34] clickable [cursor:pointer]
+      - StaticText "Help Center"
+  - heading "Community" [level=4, ref=e9]
+  - list
+    - listitem [level=1, ref=e35] clickable [cursor:pointer]
+      - StaticText "Peer Support"
+    - listitem [level=1, ref=e36] clickable [cursor:pointer]
+      - StaticText "Expert Coaching"
+    - listitem [level=1, ref=e37] clickable [cursor:pointer]
+      - StaticText "Success Stories"
+    - listitem [level=1, ref=e38] clickable [cursor:pointer]
+      - StaticText "Events"
+    - listitem [level=1, ref=e39] clickable [cursor:pointer]
+      - StaticText "Ambassador Program"
+  - heading "Legal" [level=4, ref=e10]
+  - list
+    - listitem [level=1, ref=e40] clickable [cursor:pointer]
+      - StaticText "Privacy Policy"
+    - listitem [level=1, ref=e41] clickable [cursor:pointer]
+      - StaticText "Terms of Service"
+    - listitem [level=1, ref=e42] clickable [cursor:pointer]
+      - StaticText "HIPAA Compliance"
+    - listitem [level=1, ref=e43] clickable [cursor:pointer]
+      - StaticText "Cookie Policy"
+    - listitem [level=1, ref=e44] clickable [cursor:pointer]
+      - StaticText "Accessibility"
+  - StaticText "© 2024 AdaptiFit — Inclusive Fitness for All"
+  - button [ref=e11]
+  - button [ref=e12]
+  - button [ref=e13]
+  - button [ref=e14]
+  - StaticText "Built with empathy"
+  - StaticText "•"
+  - StaticText "988 Suicide & Crisis Lifeline"
+- button "Open AdaptiFit AI Chat" [ref=e15]
+- region "Notifications (F8)" [ref=e1]
+  - list
+- button "Open Next.js Dev Tools" [expanded=false, ref=e65]
+  - image
+- alert
+✓ Done
+✅ e20
+✓ AdaptiFit - AI Adaptive Fitness & Rehabilitation
+  http://localhost:3000/
+- banner
+  - generic [ref=e2] clickable [cursor:pointer, onclick]
+    - heading "AdaptiFit" [level=1, ref=e16]
+      - StaticText "AdaptiFit"
+    - paragraph
+      - StaticText "AI Adaptive Fitness & Rehab"
+  - navigation
+    - button "Dashboard" [ref=e17]
+      - StaticText "Dashboard"
+    - button "Body Scan" [ref=e18]
+      - StaticText "Body Scan"
+    - button "Exercises" [ref=e19]
+      - StaticText "Exercises"
+    - button "Mood" [ref=e20]
+      - StaticText "Mood"
+    - button "Nutrition" [ref=e21]
+      - StaticText "Nutrition"
+    - button "Community" [ref=e22]
+      - StaticText "Community"
+    - button "Wearable" [ref=e23]
+      - StaticText "Wearable"
+  - button [ref=e3]
+  - button [ref=e4]
+  - button "3" [ref=e24]
+    - StaticText "3"
+  - StaticText "Pro Plan"
+  - generic [ref=e5] clickable [cursor:pointer, onclick]
+    - StaticText "A"
+  - button "Get Started" [ref=e6]
+- main
+  - generic
+    - generic
+      - generic
+      - StaticText "SCROLL TO EXPLORE"
+      - StaticText "AI-Powered Inclusive Fitness"
+      - heading "Adaptive Fitness For Every Body" [level=1, ref=e53]
+        - StaticText "Adaptive Fitness"
+        - LineBreak "\n"
+        - StaticText "For Every Body"
+      - StaticText "AI Monitoring Active"
+      - paragraph
+        - StaticText "Personalized rehabilitation and fitness for people with disabilities, injured soldiers, and Paralympic athletes. AI motion tracking, mood monitoring, and smart nutrition — all in one affordable platform."
+      - button "Start Your Journey" [ref=e54]
+      - button "Try Body Scan" [ref=e55]
+      - StaticText "23"
+      - StaticText "K+"
+      - StaticText "Active Users"
+      - StaticText "95"
+      - StaticText "+"
+      - StaticText "Adaptive Exercises"
+      - StaticText "46"
+      - StaticText "%"
+      - StaticText "Form Accuracy"
+      - StaticText "15"
+      - StaticText "/7"
+      - StaticText "AI Monitoring"
+      - generic
+        - generic
+          - image "AdaptiFit - Inclusive adaptive fitness platform"
+        - paragraph
+          - StaticText "Form Accuracy"
+        - paragraph
+          - StaticText "98%"
+        - paragraph
+          - StaticText "Mood Score"
+        - paragraph
+          - StaticText "8.5/10"
+        - paragraph
+          - StaticText "Heart Rate"
+        - paragraph
+          - StaticText "72 BPM"
+    - StaticText "Comprehensive Features"
+    - heading "Everything You Need for Inclusive Rehabilitation" [level=2, ref=e45]
+      - StaticText "Everything You Need for"
+      - LineBreak "\n"
+      - StaticText "Inclusive Rehabilitation"
+    - paragraph
+      - StaticText "From AI motion tracking to mood monitoring, nutrition planning to community support — AdaptiFit replaces expensive therapy with affordable, customized care."
+    - generic [ref=e46] clickable [cursor:pointer, onclick]
+      - StaticText "NEW"
+      - heading "Body Scan & Motion Tracking" [level=3, ref=e56]
+      - paragraph
+        - StaticText "AI-powered camera tracking with real-time form feedback for adaptive exercises"
+      - StaticText "Explore"
+    - generic [ref=e47] clickable [cursor:pointer, onclick]
+      - heading "Adaptive Exercise Library" [level=3, ref=e57]
+      - paragraph
+        - StaticText "Personalized exercises for injuries, disabilities, and Paralympic training"
+      - StaticText "Explore"
+    - generic [ref=e48] clickable [cursor:pointer, onclick]
+      - StaticText "Popular"
+      - heading "Mood & Emotion Monitor" [level=3, ref=e58]
+      - paragraph
+        - StaticText "AI emotion tracking with anti-suicide prevention and wellness alerts"
+      - StaticText "Explore"
+    - generic [ref=e49] clickable [cursor:pointer, onclick]
+      - heading "AI Food & Diet Planning" [level=3, ref=e59]
+      - paragraph
+        - StaticText "Smart food logging, calorie tracking, and diet plans with delivery integration"
+      - StaticText "Explore"
+    - generic [ref=e50] clickable [cursor:pointer, onclick]
+      - heading "Smart Wearable Integration" [level=3, ref=e60]
+      - paragraph
+        - StaticText "Real-time heart rate, SpO2, and blood pressure from your smart devices"
+      - StaticText "Explore"
+    - generic [ref=e51] clickable [cursor:pointer, onclick]
+      - heading "Community & Peer Support" [level=3, ref=e61]
+      - paragraph
+        - StaticText "Connect with peers, expert coaching, and accessible rehabilitation support"
+      - StaticText "Explore"
+    - heading "Built For You" [level=2, ref=e52]
+      - StaticText "Built For You"
+    - paragraph
+      - StaticText "Whether you're recovering from injury, training for the Paralympics, or managing a disability — AdaptiFit adapts to you."
+    - generic
+      - StaticText "🎖️"
+      - heading "Injured Soldiers" [level=3, ref=e62]
+      - paragraph
+        - StaticText "Combat injury rehabilitation with customized therapy plans and progress tracking."
+      - list
+        - listitem [level=1]
+          - StaticText "Combat injury rehab"
+        - listitem [level=1]
+          - StaticText "PTSD mood monitoring"
+        - listitem [level=1]
+          - StaticText "Adaptive strength training"
+      - paragraph
+        - StaticText "“AdaptiFit helped me recover from my combat injury faster than traditional therapy. The AI form tracking is incredible.”"
+      - paragraph
+        - StaticText "— Sgt. M. Rodriguez"
+    - generic
+      - StaticText "🏅"
+      - heading "Paralympic Athletes" [level=3, ref=e63]
+      - paragraph
+        - StaticText "Professional-grade training adapted for your category and classification."
+      - list
+        - listitem [level=1]
+          - StaticText "Sport-specific training"
+        - listitem [level=1]
+          - StaticText "Performance analytics"
+        - listitem [level=1]
+          - StaticText "Competition preparation"
+      - paragraph
+        - StaticText "“Training for Tokyo was transformed by AdaptiFit. My performance analytics improved 40% in just 3 months.”"
+      - paragraph
+        - StaticText "— J. Chen, Paralympic Swimmer"
+    - generic
+      - StaticText "♿"
+      - heading "People with Disabilities" [level=3, ref=e64]
+      - paragraph
+        - StaticText "Inclusive fitness programs designed around your abilities, not limitations."
+      - list
+        - listitem [level=1]
+          - StaticText "Full body adaptations"
+        - listitem [level=1]
+          - StaticText "Seated exercises"
+        - listitem [level=1]
+          - StaticText "Assistive tech integration"
+      - paragraph
+        - StaticText "“Finally, a fitness app that understands my wheelchair. The seated exercises are perfectly designed.”"
+      - paragraph
+        - StaticText "— S. Patel, Community Member"
+    - generic
+      - generic
+      - generic
+        - heading "Start Your Recovery Today" [level=2, ref=e66]
+        - paragraph
+          - StaticText "Join thousands who have transformed their rehabilitation journey with AdaptiFit. Affordable, accessible, and always adapted to you."
+        - button "Get Started Free" [ref=e67]
+        - button "Try Body Scan Demo" [ref=e68]
+        - StaticText "HIPAA Compliant"
+        - StaticText "AI-Powered"
+        - StaticText "24/7 Support"
+- contentinfo
+  - StaticText "AdaptiFit"
+  - heading "Platform" [level=4, ref=e7]
+  - list
+    - listitem [level=1, ref=e25] clickable [cursor:pointer]
+      - StaticText "Dashboard"
+    - listitem [level=1, ref=e26] clickable [cursor:pointer]
+      - StaticText "Body Scan"
+    - listitem [level=1, ref=e27] clickable [cursor:pointer]
+      - StaticText "Exercise Library"
+    - listitem [level=1, ref=e28] clickable [cursor:pointer]
+      - StaticText "Mood Monitor"
+    - listitem [level=1, ref=e29] clickable [cursor:pointer]
+      - StaticText "Nutrition"
+  - heading "Resources" [level=4, ref=e8]
+  - list
+    - listitem [level=1, ref=e30] clickable [cursor:pointer]
+      - StaticText "Documentation"
+    - listitem [level=1, ref=e31] clickable [cursor:pointer]
+      - StaticText "API Reference"
+    - listitem [level=1, ref=e32] clickable [cursor:pointer]
+      - StaticText "Video Tutorials"
+    - listitem [level=1, ref=e33] clickable [cursor:pointer]
+      - StaticText "Blog"
+    - listitem [level=1, ref=e34] clickable [cursor:pointer]
+      - StaticText "Help Center"
+  - heading "Community" [level=4, ref=e9]
+  - list
+    - listitem [level=1, ref=e35] clickable [cursor:pointer]
+      - StaticText "Peer Support"
+    - listitem [level=1, ref=e36] clickable [cursor:pointer]
+      - StaticText "Expert Coaching"
+    - listitem [level=1, ref=e37] clickable [cursor:pointer]
+      - StaticText "Success Stories"
+    - listitem [level=1, ref=e38] clickable [cursor:pointer]
+      - StaticText "Events"
+    - listitem [level=1, ref=e39] clickable [cursor:pointer]
+      - StaticText "Ambassador Program"
+  - heading "Legal" [level=4, ref=e10]
+  - list
+    - listitem [level=1, ref=e40] clickable [cursor:pointer]
+      - StaticText "Privacy Policy"
+    - listitem [level=1, ref=e41] clickable [cursor:pointer]
+      - StaticText "Terms of Service"
+    - listitem [level=1, ref=e42] clickable [cursor:pointer]
+      - StaticText "HIPAA Compliance"
+    - listitem [level=1, ref=e43] clickable [cursor:pointer]
+      - StaticText "Cookie Policy"
+    - listitem [level=1, ref=e44] clickable [cursor:pointer]
+      - StaticText "Accessibility"
+  - StaticText "© 2024 AdaptiFit — Inclusive Fitness for All"
+  - button [ref=e11]
+  - button [ref=e12]
+  - button [ref=e13]
+  - button [ref=e14]
+  - StaticText "Built with empathy"
+  - StaticText "•"
+  - StaticText "988 Suicide & Crisis Lifeline"
+- button "Open AdaptiFit AI Chat" [ref=e15]
+- region "Notifications (F8)" [ref=e1]
+  - list
+- button "Open Next.js Dev Tools" [expanded=false, ref=e65]
+  - image
+- alert
+✓ Done
+✅ e21
+✓ AdaptiFit - AI Adaptive Fitness & Rehabilitation
+  http://localhost:3000/
+- banner
+  - generic [ref=e2] clickable [cursor:pointer, onclick]
+    - heading "AdaptiFit" [level=1, ref=e16]
+      - StaticText "AdaptiFit"
+    - paragraph
+      - StaticText "AI Adaptive Fitness & Rehab"
+  - navigation
+    - button "Dashboard" [ref=e17]
+      - StaticText "Dashboard"
+    - button "Body Scan" [ref=e18]
+      - StaticText "Body Scan"
+    - button "Exercises" [ref=e19]
+      - StaticText "Exercises"
+    - button "Mood" [ref=e20]
+      - StaticText "Mood"
+    - button "Nutrition" [ref=e21]
+      - StaticText "Nutrition"
+    - button "Community" [ref=e22]
+      - StaticText "Community"
+    - button "Wearable" [ref=e23]
+      - StaticText "Wearable"
+  - button [ref=e3]
+  - button [ref=e4]
+  - button "3" [ref=e24]
+    - StaticText "3"
+  - StaticText "Pro Plan"
+  - generic [ref=e5] clickable [cursor:pointer, onclick]
+    - StaticText "A"
+  - button "Get Started" [ref=e6]
+- main
+  - generic
+    - generic
+      - generic
+      - StaticText "SCROLL TO EXPLORE"
+      - StaticText "AI-Powered Inclusive Fitness"
+      - heading "Adaptive Fitness For Every Body" [level=1, ref=e53]
+        - StaticText "Adaptive Fitness"
+        - LineBreak "\n"
+        - StaticText "For Every Body"
+      - StaticText "AI Monitoring Active"
+      - paragraph
+        - StaticText "Personalized rehabilitation and fitness for people with disabilities, injured soldiers, and Paralympic athletes. AI motion tracking, mood monitoring, and smart nutrition — all in one affordable platform."
+      - button "Start Your Journey" [ref=e54]
+      - button "Try Body Scan" [ref=e55]
+      - StaticText "23"
+      - StaticText "K+"
+      - StaticText "Active Users"
+      - StaticText "95"
+      - StaticText "+"
+      - StaticText "Adaptive Exercises"
+      - StaticText "46"
+      - StaticText "%"
+      - StaticText "Form Accuracy"
+      - StaticText "15"
+      - StaticText "/7"
+      - StaticText "AI Monitoring"
+      - generic
+        - generic
+          - image "AdaptiFit - Inclusive adaptive fitness platform"
+        - paragraph
+          - StaticText "Form Accuracy"
+        - paragraph
+          - StaticText "98%"
+        - paragraph
+          - StaticText "Mood Score"
+        - paragraph
+          - StaticText "8.5/10"
+        - paragraph
+          - StaticText "Heart Rate"
+        - paragraph
+          - StaticText "72 BPM"
+    - StaticText "Comprehensive Features"
+    - heading "Everything You Need for Inclusive Rehabilitation" [level=2, ref=e45]
+      - StaticText "Everything You Need for"
+      - LineBreak "\n"
+      - StaticText "Inclusive Rehabilitation"
+    - paragraph
+      - StaticText "From AI motion tracking to mood monitoring, nutrition planning to community support — AdaptiFit replaces expensive therapy with affordable, customized care."
+    - generic [ref=e46] clickable [cursor:pointer, onclick]
+      - StaticText "NEW"
+      - heading "Body Scan & Motion Tracking" [level=3, ref=e56]
+      - paragraph
+        - StaticText "AI-powered camera tracking with real-time form feedback for adaptive exercises"
+      - StaticText "Explore"
+    - generic [ref=e47] clickable [cursor:pointer, onclick]
+      - heading "Adaptive Exercise Library" [level=3, ref=e57]
+      - paragraph
+        - StaticText "Personalized exercises for injuries, disabilities, and Paralympic training"
+      - StaticText "Explore"
+    - generic [ref=e48] clickable [cursor:pointer, onclick]
+      - StaticText "Popular"
+      - heading "Mood & Emotion Monitor" [level=3, ref=e58]
+      - paragraph
+        - StaticText "AI emotion tracking with anti-suicide prevention and wellness alerts"
+      - StaticText "Explore"
+    - generic [ref=e49] clickable [cursor:pointer, onclick]
+      - heading "AI Food & Diet Planning" [level=3, ref=e59]
+      - paragraph
+        - StaticText "Smart food logging, calorie tracking, and diet plans with delivery integration"
+      - StaticText "Explore"
+    - generic [ref=e50] clickable [cursor:pointer, onclick]
+      - heading "Smart Wearable Integration" [level=3, ref=e60]
+      - paragraph
+        - StaticText "Real-time heart rate, SpO2, and blood pressure from your smart devices"
+      - StaticText "Explore"
+    - generic [ref=e51] clickable [cursor:pointer, onclick]
+      - heading "Community & Peer Support" [level=3, ref=e61]
+      - paragraph
+        - StaticText "Connect with peers, expert coaching, and accessible rehabilitation support"
+      - StaticText "Explore"
+    - heading "Built For You" [level=2, ref=e52]
+      - StaticText "Built For You"
+    - paragraph
+      - StaticText "Whether you're recovering from injury, training for the Paralympics, or managing a disability — AdaptiFit adapts to you."
+    - generic
+      - StaticText "🎖️"
+      - heading "Injured Soldiers" [level=3, ref=e62]
+      - paragraph
+        - StaticText "Combat injury rehabilitation with customized therapy plans and progress tracking."
+      - list
+        - listitem [level=1]
+          - StaticText "Combat injury rehab"
+        - listitem [level=1]
+          - StaticText "PTSD mood monitoring"
+        - listitem [level=1]
+          - StaticText "Adaptive strength training"
+      - paragraph
+        - StaticText "“AdaptiFit helped me recover from my combat injury faster than traditional therapy. The AI form tracking is incredible.”"
+      - paragraph
+        - StaticText "— Sgt. M. Rodriguez"
+    - generic
+      - StaticText "🏅"
+      - heading "Paralympic Athletes" [level=3, ref=e63]
+      - paragraph
+        - StaticText "Professional-grade training adapted for your category and classification."
+      - list
+        - listitem [level=1]
+          - StaticText "Sport-specific training"
+        - listitem [level=1]
+          - StaticText "Performance analytics"
+        - listitem [level=1]
+          - StaticText "Competition preparation"
+      - paragraph
+        - StaticText "“Training for Tokyo was transformed by AdaptiFit. My performance analytics improved 40% in just 3 months.”"
+      - paragraph
+        - StaticText "— J. Chen, Paralympic Swimmer"
+    - generic
+      - StaticText "♿"
+      - heading "People with Disabilities" [level=3, ref=e64]
+      - paragraph
+        - StaticText "Inclusive fitness programs designed around your abilities, not limitations."
+      - list
+        - listitem [level=1]
+          - StaticText "Full body adaptations"
+        - listitem [level=1]
+          - StaticText "Seated exercises"
+        - listitem [level=1]
+          - StaticText "Assistive tech integration"
+      - paragraph
+        - StaticText "“Finally, a fitness app that understands my wheelchair. The seated exercises are perfectly designed.”"
+      - paragraph
+        - StaticText "— S. Patel, Community Member"
+    - generic
+      - generic
+      - generic
+        - heading "Start Your Recovery Today" [level=2, ref=e66]
+        - paragraph
+          - StaticText "Join thousands who have transformed their rehabilitation journey with AdaptiFit. Affordable, accessible, and always adapted to you."
+        - button "Get Started Free" [ref=e67]
+        - button "Try Body Scan Demo" [ref=e68]
+        - StaticText "HIPAA Compliant"
+        - StaticText "AI-Powered"
+        - StaticText "24/7 Support"
+- contentinfo
+  - StaticText "AdaptiFit"
+  - heading "Platform" [level=4, ref=e7]
+  - list
+    - listitem [level=1, ref=e25] clickable [cursor:pointer]
+      - StaticText "Dashboard"
+    - listitem [level=1, ref=e26] clickable [cursor:pointer]
+      - StaticText "Body Scan"
+    - listitem [level=1, ref=e27] clickable [cursor:pointer]
+      - StaticText "Exercise Library"
+    - listitem [level=1, ref=e28] clickable [cursor:pointer]
+      - StaticText "Mood Monitor"
+    - listitem [level=1, ref=e29] clickable [cursor:pointer]
+      - StaticText "Nutrition"
+  - heading "Resources" [level=4, ref=e8]
+  - list
+    - listitem [level=1, ref=e30] clickable [cursor:pointer]
+      - StaticText "Documentation"
+    - listitem [level=1, ref=e31] clickable [cursor:pointer]
+      - StaticText "API Reference"
+    - listitem [level=1, ref=e32] clickable [cursor:pointer]
+      - StaticText "Video Tutorials"
+    - listitem [level=1, ref=e33] clickable [cursor:pointer]
+      - StaticText "Blog"
+    - listitem [level=1, ref=e34] clickable [cursor:pointer]
+      - StaticText "Help Center"
+  - heading "Community" [level=4, ref=e9]
+  - list
+    - listitem [level=1, ref=e35] clickable [cursor:pointer]
+      - StaticText "Peer Support"
+    - listitem [level=1, ref=e36] clickable [cursor:pointer]
+      - StaticText "Expert Coaching"
+    - listitem [level=1, ref=e37] clickable [cursor:pointer]
+      - StaticText "Success Stories"
+    - listitem [level=1, ref=e38] clickable [cursor:pointer]
+      - StaticText "Events"
+    - listitem [level=1, ref=e39] clickable [cursor:pointer]
+      - StaticText "Ambassador Program"
+  - heading "Legal" [level=4, ref=e10]
+  - list
+    - listitem [level=1, ref=e40] clickable [cursor:pointer]
+      - StaticText "Privacy Policy"
+    - listitem [level=1, ref=e41] clickable [cursor:pointer]
+      - StaticText "Terms of Service"
+    - listitem [level=1, ref=e42] clickable [cursor:pointer]
+      - StaticText "HIPAA Compliance"
+    - listitem [level=1, ref=e43] clickable [cursor:pointer]
+      - StaticText "Cookie Policy"
+    - listitem [level=1, ref=e44] clickable [cursor:pointer]
+      - StaticText "Accessibility"
+  - StaticText "© 2024 AdaptiFit — Inclusive Fitness for All"
+  - button [ref=e11]
+  - button [ref=e12]
+  - button [ref=e13]
+  - button [ref=e14]
+  - StaticText "Built with empathy"
+  - StaticText "•"
+  - StaticText "988 Suicide & Crisis Lifeline"
+- button "Open AdaptiFit AI Chat" [ref=e15]
+- region "Notifications (F8)" [ref=e1]
+  - list
+- button "Open Next.js Dev Tools" [expanded=false, ref=e65]
+  - image
+- alert
+✓ Done
+✅ e22
+✓ AdaptiFit - AI Adaptive Fitness & Rehabilitation
+  http://localhost:3000/
+- banner
+  - generic [ref=e2] clickable [cursor:pointer, onclick]
+    - heading "AdaptiFit" [level=1, ref=e16]
+      - StaticText "AdaptiFit"
+    - paragraph
+      - StaticText "AI Adaptive Fitness & Rehab"
+  - navigation
+    - button "Dashboard" [ref=e17]
+      - StaticText "Dashboard"
+    - button "Body Scan" [ref=e18]
+      - StaticText "Body Scan"
+    - button "Exercises" [ref=e19]
+      - StaticText "Exercises"
+    - button "Mood" [ref=e20]
+      - StaticText "Mood"
+    - button "Nutrition" [ref=e21]
+      - StaticText "Nutrition"
+    - button "Community" [ref=e22]
+      - StaticText "Community"
+    - button "Wearable" [ref=e23]
+      - StaticText "Wearable"
+  - button [ref=e3]
+  - button [ref=e4]
+  - button "3" [ref=e24]
+    - StaticText "3"
+  - StaticText "Pro Plan"
+  - generic [ref=e5] clickable [cursor:pointer, onclick]
+    - StaticText "A"
+  - button "Get Started" [ref=e6]
+- main
+  - generic
+    - generic
+      - generic
+      - StaticText "SCROLL TO EXPLORE"
+      - StaticText "AI-Powered Inclusive Fitness"
+      - heading "Adaptive Fitness For Every Body" [level=1, ref=e53]
+        - StaticText "Adaptive Fitness"
+        - LineBreak "\n"
+        - StaticText "For Every Body"
+      - StaticText "AI Monitoring Active"
+      - paragraph
+        - StaticText "Personalized rehabilitation and fitness for people with disabilities, injured soldiers, and Paralympic athletes. AI motion tracking, mood monitoring, and smart nutrition — all in one affordable platform."
+      - button "Start Your Journey" [ref=e54]
+      - button "Try Body Scan" [ref=e55]
+      - StaticText "24"
+      - StaticText "K+"
+      - StaticText "Active Users"
+      - StaticText "96"
+      - StaticText "+"
+      - StaticText "Adaptive Exercises"
+      - StaticText "47"
+      - StaticText "%"
+      - StaticText "Form Accuracy"
+      - StaticText "15"
+      - StaticText "/7"
+      - StaticText "AI Monitoring"
+      - generic
+        - generic
+          - image "AdaptiFit - Inclusive adaptive fitness platform"
+        - paragraph
+          - StaticText "Form Accuracy"
+        - paragraph
+          - StaticText "98%"
+        - paragraph
+          - StaticText "Mood Score"
+        - paragraph
+          - StaticText "8.5/10"
+        - paragraph
+          - StaticText "Heart Rate"
+        - paragraph
+          - StaticText "72 BPM"
+    - StaticText "Comprehensive Features"
+    - heading "Everything You Need for Inclusive Rehabilitation" [level=2, ref=e45]
+      - StaticText "Everything You Need for"
+      - LineBreak "\n"
+      - StaticText "Inclusive Rehabilitation"
+    - paragraph
+      - StaticText "From AI motion tracking to mood monitoring, nutrition planning to community support — AdaptiFit replaces expensive therapy with affordable, customized care."
+    - generic [ref=e46] clickable [cursor:pointer, onclick]
+      - StaticText "NEW"
+      - heading "Body Scan & Motion Tracking" [level=3, ref=e56]
+      - paragraph
+        - StaticText "AI-powered camera tracking with real-time form feedback for adaptive exercises"
+      - StaticText "Explore"
+    - generic [ref=e47] clickable [cursor:pointer, onclick]
+      - heading "Adaptive Exercise Library" [level=3, ref=e57]
+      - paragraph
+        - StaticText "Personalized exercises for injuries, disabilities, and Paralympic training"
+      - StaticText "Explore"
+    - generic [ref=e48] clickable [cursor:pointer, onclick]
+      - StaticText "Popular"
+      - heading "Mood & Emotion Monitor" [level=3, ref=e58]
+      - paragraph
+        - StaticText "AI emotion tracking with anti-suicide prevention and wellness alerts"
+      - StaticText "Explore"
+    - generic [ref=e49] clickable [cursor:pointer, onclick]
+      - heading "AI Food & Diet Planning" [level=3, ref=e59]
+      - paragraph
+        - StaticText "Smart food logging, calorie tracking, and diet plans with delivery integration"
+      - StaticText "Explore"
+    - generic [ref=e50] clickable [cursor:pointer, onclick]
+      - heading "Smart Wearable Integration" [level=3, ref=e60]
+      - paragraph
+        - StaticText "Real-time heart rate, SpO2, and blood pressure from your smart devices"
+      - StaticText "Explore"
+    - generic [ref=e51] clickable [cursor:pointer, onclick]
+      - heading "Community & Peer Support" [level=3, ref=e61]
+      - paragraph
+        - StaticText "Connect with peers, expert coaching, and accessible rehabilitation support"
+      - StaticText "Explore"
+    - heading "Built For You" [level=2, ref=e52]
+      - StaticText "Built For You"
+    - paragraph
+      - StaticText "Whether you're recovering from injury, training for the Paralympics, or managing a disability — AdaptiFit adapts to you."
+    - generic
+      - StaticText "🎖️"
+      - heading "Injured Soldiers" [level=3, ref=e62]
+      - paragraph
+        - StaticText "Combat injury rehabilitation with customized therapy plans and progress tracking."
+      - list
+        - listitem [level=1]
+          - StaticText "Combat injury rehab"
+        - listitem [level=1]
+          - StaticText "PTSD mood monitoring"
+        - listitem [level=1]
+          - StaticText "Adaptive strength training"
+      - paragraph
+        - StaticText "“AdaptiFit helped me recover from my combat injury faster than traditional therapy. The AI form tracking is incredible.”"
+      - paragraph
+        - StaticText "— Sgt. M. Rodriguez"
+    - generic
+      - StaticText "🏅"
+      - heading "Paralympic Athletes" [level=3, ref=e63]
+      - paragraph
+        - StaticText "Professional-grade training adapted for your category and classification."
+      - list
+        - listitem [level=1]
+          - StaticText "Sport-specific training"
+        - listitem [level=1]
+          - StaticText "Performance analytics"
+        - listitem [level=1]
+          - StaticText "Competition preparation"
+      - paragraph
+        - StaticText "“Training for Tokyo was transformed by AdaptiFit. My performance analytics improved 40% in just 3 months.”"
+      - paragraph
+        - StaticText "— J. Chen, Paralympic Swimmer"
+    - generic
+      - StaticText "♿"
+      - heading "People with Disabilities" [level=3, ref=e64]
+      - paragraph
+        - StaticText "Inclusive fitness programs designed around your abilities, not limitations."
+      - list
+        - listitem [level=1]
+          - StaticText "Full body adaptations"
+        - listitem [level=1]
+          - StaticText "Seated exercises"
+        - listitem [level=1]
+          - StaticText "Assistive tech integration"
+      - paragraph
+        - StaticText "“Finally, a fitness app that understands my wheelchair. The seated exercises are perfectly designed.”"
+      - paragraph
+        - StaticText "— S. Patel, Community Member"
+    - generic
+      - generic
+      - generic
+        - heading "Start Your Recovery Today" [level=2, ref=e66]
+        - paragraph
+          - StaticText "Join thousands who have transformed their rehabilitation journey with AdaptiFit. Affordable, accessible, and always adapted to you."
+        - button "Get Started Free" [ref=e67]
+        - button "Try Body Scan Demo" [ref=e68]
+        - StaticText "HIPAA Compliant"
+        - StaticText "AI-Powered"
+        - StaticText "24/7 Support"
+- contentinfo
+  - StaticText "AdaptiFit"
+  - heading "Platform" [level=4, ref=e7]
+  - list
+    - listitem [level=1, ref=e25] clickable [cursor:pointer]
+      - StaticText "Dashboard"
+    - listitem [level=1, ref=e26] clickable [cursor:pointer]
+      - StaticText "Body Scan"
+    - listitem [level=1, ref=e27] clickable [cursor:pointer]
+      - StaticText "Exercise Library"
+    - listitem [level=1, ref=e28] clickable [cursor:pointer]
+      - StaticText "Mood Monitor"
+    - listitem [level=1, ref=e29] clickable [cursor:pointer]
+      - StaticText "Nutrition"
+  - heading "Resources" [level=4, ref=e8]
+  - list
+    - listitem [level=1, ref=e30] clickable [cursor:pointer]
+      - StaticText "Documentation"
+    - listitem [level=1, ref=e31] clickable [cursor:pointer]
+      - StaticText "API Reference"
+    - listitem [level=1, ref=e32] clickable [cursor:pointer]
+      - StaticText "Video Tutorials"
+    - listitem [level=1, ref=e33] clickable [cursor:pointer]
+      - StaticText "Blog"
+    - listitem [level=1, ref=e34] clickable [cursor:pointer]
+      - StaticText "Help Center"
+  - heading "Community" [level=4, ref=e9]
+  - list
+    - listitem [level=1, ref=e35] clickable [cursor:pointer]
+      - StaticText "Peer Support"
+    - listitem [level=1, ref=e36] clickable [cursor:pointer]
+      - StaticText "Expert Coaching"
+    - listitem [level=1, ref=e37] clickable [cursor:pointer]
+      - StaticText "Success Stories"
+    - listitem [level=1, ref=e38] clickable [cursor:pointer]
+      - StaticText "Events"
+    - listitem [level=1, ref=e39] clickable [cursor:pointer]
+      - StaticText "Ambassador Program"
+  - heading "Legal" [level=4, ref=e10]
+  - list
+    - listitem [level=1, ref=e40] clickable [cursor:pointer]
+      - StaticText "Privacy Policy"
+    - listitem [level=1, ref=e41] clickable [cursor:pointer]
+      - StaticText "Terms of Service"
+    - listitem [level=1, ref=e42] clickable [cursor:pointer]
+      - StaticText "HIPAA Compliance"
+    - listitem [level=1, ref=e43] clickable [cursor:pointer]
+      - StaticText "Cookie Policy"
+    - listitem [level=1, ref=e44] clickable [cursor:pointer]
+      - StaticText "Accessibility"
+  - StaticText "© 2024 AdaptiFit — Inclusive Fitness for All"
+  - button [ref=e11]
+  - button [ref=e12]
+  - button [ref=e13]
+  - button [ref=e14]
+  - StaticText "Built with empathy"
+  - StaticText "•"
+  - StaticText "988 Suicide & Crisis Lifeline"
+- button "Open AdaptiFit AI Chat" [ref=e15]
+- region "Notifications (F8)" [ref=e1]
+  - list
+- button "Open Next.js Dev Tools" [expanded=false, ref=e65]
+  - image
+- alert
+✓ Done
+✅ e23

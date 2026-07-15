@@ -1,0 +1,1288 @@
+     1→'use client';
+     2→
+     3→import { useState, useEffect, useCallback } from 'react';
+     4→import { motion, AnimatePresence } from 'framer-motion';
+     5→import { useTheme } from 'next-themes';
+     6→import { useAppStore, type AppSection } from '@/stores/app-store';
+     7→import Dashboard from '@/components/features/dashboard';
+     8→import BodyScan from '@/components/features/body-scan';
+     9→import ExerciseLibrary from '@/components/features/exercise-library';
+    10→import MoodMonitor from '@/components/features/mood-monitor';
+    11→import Nutrition from '@/components/features/nutrition';
+    12→import Community from '@/components/features/community';
+    13→import Wearable from '@/components/features/wearable';
+    14→import BreathingExercise from '@/components/features/breathing-exercise';
+    15→import CrisisSupport from '@/components/features/crisis-support';
+    16→import AIChat from '@/components/features/ai-chat';
+    17→import ProfileSetup from '@/components/features/profile-setup';
+    18→import NotificationCenter from '@/components/features/notification-center';
+    19→import VoiceInput from '@/components/features/voice-input';
+    20→import VoiceSettings from '@/components/features/voice-settings';
+    21→import ToastProvider from '@/components/features/toast-provider';
+    22→import { Button } from '@/components/ui/button';
+    23→import { Badge } from '@/components/ui/badge';
+    24→import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+    25→import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+    26→import {
+    27→  LayoutDashboard,
+    28→  ScanLine,
+    29→  Dumbbell,
+    30→  Brain,
+    31→  Apple,
+    32→  Users,
+    33→  Watch,
+    34→  Menu,
+    35→  Heart,
+    36→  Accessibility,
+    37→  Shield,
+    38→  Sparkles,
+    39→  ArrowRight,
+    40→  ChevronRight,
+    41→  Star,
+    42→  Zap,
+    43→  Target,
+    44→  Activity,
+    45→  Sun,
+    46→  Moon,
+    47→  Bell,
+    48→  Volume2,
+    49→  ArrowUp,
+    50→  Instagram,
+    51→  Twitter,
+    52→  Linkedin,
+    53→  Youtube,
+    54→  CheckCircle2,
+    55→  Lock,
+    56→  Headphones,
+    57→  Quote,
+    58→  Wind,
+    59→  TrendingUp,
+    60→  Mic,
+    61→} from 'lucide-react';
+    62→
+    63→const navItems: { id: AppSection; label: string; icon: React.ReactNode; color: string }[] = [
+    64→  { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" />, color: 'emerald' },
+    65→  { id: 'body-scan', label: 'Body Scan', icon: <ScanLine className="w-5 h-5" />, color: 'cyan' },
+    66→  { id: 'exercises', label: 'Exercises', icon: <Dumbbell className="w-5 h-5" />, color: 'amber' },
+    67→  { id: 'breathing', label: 'Breathing', icon: <Wind className="w-5 h-5" />, color: 'teal' },
+    68→  { id: 'mood', label: 'Mood', icon: <Brain className="w-5 h-5" />, color: 'rose' },
+    69→  { id: 'nutrition', label: 'Nutrition', icon: <Apple className="w-5 h-5" />, color: 'orange' },
+    70→  { id: 'community', label: 'Community', icon: <Users className="w-5 h-5" />, color: 'violet' },
+    71→  { id: 'wearable', label: 'Wearable', icon: <Watch className="w-5 h-5" />, color: 'teal' },
+    72→  { id: 'crisis', label: 'Crisis', icon: <Shield className="w-5 h-5" />, color: 'emerald' },
+    73→];
+    74→
+    75→const colorMap: Record<string, string> = {
+    76→  emerald: 'from-emerald-500 to-emerald-600',
+    77→  cyan: 'from-cyan-500 to-cyan-600',
+    78→  amber: 'from-amber-500 to-amber-600',
+    79→  rose: 'from-rose-500 to-rose-600',
+    80→  orange: 'from-orange-500 to-orange-600',
+    81→  violet: 'from-violet-500 to-violet-600',
+    82→  teal: 'from-teal-500 to-teal-600',
+    83→};
+    84→
+    85→const colorMapBg: Record<string, string> = {
+    86→  emerald: 'bg-emerald-500',
+    87→  cyan: 'bg-cyan-500',
+    88→  amber: 'bg-amber-500',
+    89→  rose: 'bg-rose-500',
+    90→  orange: 'bg-orange-500',
+    91→  violet: 'bg-violet-500',
+    92→  teal: 'bg-teal-500',
+    93→};
+    94→
+    95→const colorMapText: Record<string, string> = {
+    96→  emerald: 'text-emerald-500',
+    97→  cyan: 'text-cyan-500',
+    98→  amber: 'text-amber-500',
+    99→  rose: 'text-rose-500',
+   100→  orange: 'text-orange-500',
+   101→  violet: 'text-violet-500',
+   102→  teal: 'text-teal-500',
+   103→};
+   104→
+   105→const colorMapBorder: Record<string, string> = {
+   106→  emerald: 'border-emerald-500',
+   107→  cyan: 'border-cyan-500',
+   108→  amber: 'border-amber-500',
+   109→  rose: 'border-rose-500',
+   110→  orange: 'border-orange-500',
+   111→  violet: 'border-violet-500',
+   112→  teal: 'border-teal-500',
+   113→};
+   114→
+   115→// Animated counter component with ease-out cubic easing
+   116→function AnimatedCounter({ target, suffix = '', prefix = '' }: { target: number; suffix?: string; prefix?: string }) {
+   117→  const [count, setCount] = useState(0);
+   118→
+   119→  useEffect(() => {
+   120→    let frame: number;
+   121→    const duration = 2000;
+   122→    const startTime = performance.now();
+   123→
+   124→    function animate(currentTime: number) {
+   125→      const elapsed = currentTime - startTime;
+   126→      const progress = Math.min(elapsed / duration, 1);
+   127→      const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+   128→      setCount(Math.round(eased * target));
+   129→      if (progress < 1) {
+   130→        frame = requestAnimationFrame(animate);
+   131→      }
+   132→    }
+   133→
+   134→    frame = requestAnimationFrame(animate);
+   135→    return () => cancelAnimationFrame(frame);
+   136→  }, [target]);
+   137→
+   138→  return <>{prefix}{count}{suffix}</>;
+   139→}
+   140→
+   141→// Floating particles component (SSR-safe with deterministic values)
+   142→const PARTICLES = Array.from({ length: 20 }, (_, i) => ({
+   143→  id: i,
+   144→  x: ((i * 37 + 13) % 97) + 1,
+   145→  y: ((i * 53 + 7) % 93) + 3,
+   146→  size: (i % 5) + 2,
+   147→  duration: (i % 7) + 6,
+   148→  delay: (i % 4),
+   149→}));
+   150→
+   151→function FloatingParticles() {
+   152→
+   153→  return (
+   154→    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+   155→      {PARTICLES.map((p) => (
+   156→        <motion.div
+   157→          key={p.id}
+   158→          className="absolute rounded-full bg-emerald-400/20 dark:bg-emerald-400/10"
+   159→          style={{
+   160→            left: `${p.x}%`,
+   161→            top: `${p.y}%`,
+   162→            width: p.size,
+   163→            height: p.size,
+   164→          }}
+   165→          animate={{
+   166→            y: [0, -30, 0],
+   167→            opacity: [0.3, 0.7, 0.3],
+   168→          }}
+   169→          transition={{
+   170→            duration: p.duration,
+   171→            repeat: Infinity,
+   172→            delay: p.delay,
+   173→            ease: 'easeInOut',
+   174→          }}
+   175→        />
+   176→      ))}
+   177→    </div>
+   178→  );
+   179→}
+   180→
+   181→// Theme toggle button
+   182→function ThemeToggle() {
+   183→  const { theme, setTheme } = useTheme();
+   184→  const [mounted, setMounted] = useState(false);
+   185→
+   186→  useEffect(() => {
+   187→    const id = requestAnimationFrame(() => setMounted(true));
+   188→    return () => cancelAnimationFrame(id);
+   189→  }, []);
+   190→
+   191→  if (!mounted) {
+   192→    return (
+   193→      <Button variant="ghost" size="icon" className="h-9 w-9">
+   194→        <Sun className="w-4 h-4" />
+   195→      </Button>
+   196→    );
+   197→  }
+   198→
+   199→  return (
+   200→    <Button
+   201→      variant="ghost"
+   202→      size="icon"
+   203→      className="h-9 w-9 relative"
+   204→      onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+   205→    >
+   206→      <AnimatePresence mode="wait">
+   207→        {theme === 'dark' ? (
+   208→          <motion.div
+   209→            key="sun"
+   210→            initial={{ rotate: -90, scale: 0 }}
+   211→            animate={{ rotate: 0, scale: 1 }}
+   212→            exit={{ rotate: 90, scale: 0 }}
+   213→            transition={{ duration: 0.2 }}
+   214→          >
+   215→            <Sun className="w-4 h-4" />
+   216→          </motion.div>
+   217→        ) : (
+   218→          <motion.div
+   219→            key="moon"
+   220→            initial={{ rotate: 90, scale: 0 }}
+   221→            animate={{ rotate: 0, scale: 1 }}
+   222→            exit={{ rotate: -90, scale: 0 }}
+   223→            transition={{ duration: 0.2 }}
+   224→          >
+   225→            <Moon className="w-4 h-4" />
+   226→          </motion.div>
+   227→        )}
+   228→      </AnimatePresence>
+   229→    </Button>
+   230→  );
+   231→}
+   232→
+   233→export default function Home() {
+   234→  const { activeSection, setActiveSection } = useAppStore();
+   235→  const [showBackToTop, setShowBackToTop] = useState(false);
+   236→  const [notificationsOpen, setNotificationsOpen] = useState(false);
+   237→  const [voiceSettingsOpen, setVoiceSettingsOpen] = useState(false);
+   238→
+   239→  useEffect(() => {
+   240→    const handleScroll = () => {
+   241→      setShowBackToTop(window.scrollY > 400);
+   242→    };
+   243→    window.addEventListener('scroll', handleScroll);
+   244→    return () => window.removeEventListener('scroll', handleScroll);
+   245→  }, []);
+   246→
+   247→  const scrollToTop = useCallback(() => {
+   248→    window.scrollTo({ top: 0, behavior: 'smooth' });
+   249→  }, []);
+   250→
+   251→  // Voice navigation: recognize spoken section names
+   252→  const handleVoiceNavigation = useCallback((text: string) => {
+   253→    const lower = text.toLowerCase().trim();
+   254→    const voiceCommands: Record<string, AppSection> = {
+   255→      'dashboard': 'dashboard',
+   256→      'home': 'home',
+   257→      'body scan': 'body-scan',
+   258→      'scan': 'body-scan',
+   259→      'exercise': 'exercises',
+   260→      'exercises': 'exercises',
+   261→      'workout': 'exercises',
+   262→      'breathing': 'breathing',
+   263→      'breathe': 'breathing',
+   264→      'mood': 'mood',
+   265→      'emotions': 'mood',
+   266→      'nutrition': 'nutrition',
+   267→      'food': 'nutrition',
+   268→      'diet': 'nutrition',
+   269→      'community': 'community',
+   270→      'forum': 'community',
+   271→      'wearable': 'wearable',
+   272→      'device': 'wearable',
+   273→      'watch': 'wearable',
+   274→      'crisis': 'crisis',
+   275→      'emergency': 'crisis',
+   276→      'help': 'crisis',
+   277→      'support': 'crisis',
+   278→    };
+   279→    for (const [keyword, section] of Object.entries(voiceCommands)) {
+   280→      if (lower.includes(keyword)) {
+   281→        setActiveSection(section);
+   282→        return;
+   283→      }
+   284→    }
+   285→  }, [setActiveSection]);
+   286→
+   287→  const renderSection = () => {
+   288→    switch (activeSection) {
+   289→      case 'dashboard': return <Dashboard />;
+   290→      case 'body-scan': return <BodyScan />;
+   291→      case 'exercises': return <ExerciseLibrary />;
+   292→      case 'breathing': return <BreathingExercise />;
+   293→      case 'mood': return <MoodMonitor />;
+   294→      case 'nutrition': return <Nutrition />;
+   295→      case 'community': return <Community />;
+   296→      case 'wearable': return <Wearable />;
+   297→      case 'crisis': return <CrisisSupport />;
+   298→      default: return <HeroSection onNavigate={setActiveSection} />;
+   299→    }
+   300→  };
+   301→
+   302→  return (
+   303→    <div className="min-h-screen flex flex-col bg-background">
+   304→      {/* Header */}
+   305→      <header className="sticky top-0 z-50 glass-nav border-b border-border/50">
+   306→        <div className="max-w-[1600px] mx-auto px-4 sm:px-6">
+   307→          <div className="flex items-center justify-between h-16">
+   308→            {/* Logo */}
+   309→            <motion.div
+   310→              initial={{ opacity: 0, x: -20 }}
+   311→              animate={{ opacity: 1, x: 0 }}
+   312→              className="flex items-center gap-2 cursor-pointer group"
+   313→              onClick={() => setActiveSection('home')}
+   314→            >
+   315→              <motion.div
+   316→                className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20"
+   317→                animate={{ y: [0, -3, 0] }}
+   318→                transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+   319→              >
+   320→                <Accessibility className="w-5 h-5 text-white" />
+   321→              </motion.div>
+   322→              <div>
+   323→                <h1 className="text-lg font-bold tracking-tight">
+   324→                  Adapti<span className="text-emerald-500">Fit</span>
+   325→                </h1>
+   326→                <p className="text-[10px] text-muted-foreground -mt-1 hidden sm:block">AI Adaptive Fitness & Rehab</p>
+   327→              </div>
+   328→            </motion.div>
+   329→
+   330→            {/* Desktop Navigation */}
+   331→            <nav className="hidden lg:flex items-center gap-1">
+   332→              {navItems.map((item) => (
+   333→                <motion.button
+   334→                  key={item.id}
+   335→                  whileHover={{ scale: 1.05 }}
+   336→                  whileTap={{ scale: 0.95 }}
+   337→                  onClick={() => setActiveSection(item.id)}
+   338→                  className={`
+   339→                    relative flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200
+   340→                    ${activeSection === item.id
+   341→                      ? `${colorMapBg[item.color]} text-white shadow-lg`
+   342→                      : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+   343→                    }
+   344→                  `}
+   345→                >
+   346→                  {item.icon}
+   347→                  <span className="hidden xl:inline">{item.label}</span>
+   348→                  {/* Underline slide effect on hover */}
+   349→                  {activeSection !== item.id && (
+   350→                    <motion.div
+   351→                      className="absolute bottom-0 left-1/2 h-0.5 bg-emerald-500 rounded-full"
+   352→                      initial={{ width: 0, x: '-50%' }}
+   353→                      whileHover={{ width: '60%', x: '-30%' }}
+   354→                      transition={{ duration: 0.2 }}
+   355→                    />
+   356→                  )}
+   357→                </motion.button>
+   358→              ))}
+   359→            </nav>
+   360→
+   361→            {/* Right Side */}
+   362→            <div className="flex items-center gap-2">
+   363→              <ThemeToggle />
+   364→
+   365→              {/* Voice Navigation (ASR) */}
+   366→              <VoiceInput onTranscription={handleVoiceNavigation} size="sm" />
+   367→
+   368→              {/* Voice Settings Button */}
+   369→              <Button
+   370→                variant="ghost"
+   371→                size="icon"
+   372→                className="h-9 w-9 relative"
+   373→                onClick={() => setVoiceSettingsOpen(true)}
+   374→              >
+   375→                <Volume2 className="w-4 h-4" />
+   376→              </Button>
+   377→
+   378→              {/* Notification Bell */}
+   379→              <div className="relative">
+   380→                <Button variant="ghost" size="icon" className="h-9 w-9 relative" onClick={() => setNotificationsOpen(!notificationsOpen)}>
+   381→                  <Bell className="w-4 h-4" />
+   382→                  <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+   383→                    3
+   384→                  </span>
+   385→                </Button>
+   386→                <NotificationCenter isOpen={notificationsOpen} onClose={() => setNotificationsOpen(false)} />
+   387→              </div>
+   388→
+   389→              <VoiceSettings isOpen={voiceSettingsOpen} onClose={() => setVoiceSettingsOpen(false)} />
+   390→
+   391→              <Badge variant="outline" className="hidden sm:flex gap-1 text-xs">
+   392→                <Shield className="w-3 h-3 text-emerald-500" />
+   393→                Pro Plan
+   394→              </Badge>
+   395→
+   396→              {/* User Avatar */}
+   397→              <Avatar
+   398→                className="h-8 w-8 cursor-pointer ring-2 ring-emerald-500/30 hover:ring-emerald-500/60 transition-all"
+   399→                onClick={() => useAppStore.getState().setProfileSetupOpen(true)}
+   400→              >
+   401→                <AvatarFallback className="bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 text-xs font-bold">
+   402→                  A
+   403→                </AvatarFallback>
+   404→              </Avatar>
+   405→
+   406→              <Button
+   407→                size="sm"
+   408→                className="hidden sm:flex bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-lg shadow-emerald-500/20"
+   409→                onClick={() => setActiveSection('dashboard')}
+   410→              >
+   411→                <Sparkles className="w-4 h-4 mr-1" />
+   412→                Get Started
+   413→              </Button>
+   414→
+   415→              {/* Mobile Menu */}
+   416→              <Sheet>
+   417→                <SheetTrigger asChild>
+   418→                  <Button variant="ghost" size="icon" className="lg:hidden">
+   419→                    <Menu className="w-5 h-5" />
+   420→                  </Button>
+   421→                </SheetTrigger>
+   422→                <SheetContent side="left" className="w-80 p-0">
+   423→                  <div className="flex flex-col h-full">
+   424→                    {/* Logo Header */}
+   425→                    <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-border/50">
+   426→                      <div className="flex items-center gap-2">
+   427→                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+   428→                          <Accessibility className="w-5 h-5 text-white" />
+   429→                        </div>
+   430→                        <h2 className="text-lg font-bold">
+   431→                          Adapti<span className="gradient-text">Fit</span>
+   432→                        </h2>
+   433→                      </div>
+   434→                    </div>
+   435→
+   436→                    {/* Nav Items */}
+   437→                    <div className="flex-1 overflow-y-auto px-3 py-4">
+   438→                      <div className="flex flex-col gap-1">
+   439→                        {navItems.map((item) => (
+   440→                          <motion.button
+   441→                            key={item.id}
+   442→                            whileTap={{ scale: 0.97 }}
+   443→                            onClick={() => { setActiveSection(item.id); }}
+   444→                            className={`
+   445→                              w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium transition-all duration-200
+   446→                              ${activeSection === item.id
+   447→                                ? `bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 nav-glow-active`
+   448→                                : 'hover:bg-muted text-muted-foreground hover:text-foreground border border-transparent'
+   449→                              }
+   450→                            `}
+   451→                          >
+   452→                            <span className={`flex items-center justify-center w-8 h-8 rounded-lg ${activeSection === item.id ? 'bg-emerald-500 text-white' : 'bg-muted'}`}>
+   453→                              {item.icon}
+   454→                            </span>
+   455→                            <span>{item.label}</span>
+   456→                            {activeSection === item.id && (
+   457→                              <ChevronRight className="w-4 h-4 ml-auto text-emerald-500" />
+   458→                            )}
+   459→                          </motion.button>
+   460→                        ))}
+   461→                      </div>
+   462→                    </div>
+   463→
+   464→                    {/* User Profile Section */}
+   465→                    <div className="border-t border-border/50 px-4 py-4">
+   466→                      <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50">
+   467→                        <Avatar className="h-10 w-10 ring-2 ring-emerald-500/30">
+   468→                          <AvatarFallback className="bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 text-sm font-bold">
+   469→                            A
+   470→                          </AvatarFallback>
+   471→                        </Avatar>
+   472→                        <div className="flex-1 min-w-0">
+   473→                          <p className="text-sm font-semibold truncate">AdaptiFit User</p>
+   474→                          <p className="text-xs text-muted-foreground">Pro Plan</p>
+   475→                        </div>
+   476→                        <Badge variant="outline" className="text-[10px] gap-0.5 shrink-0">
+   477→                          <Shield className="w-2.5 h-2.5 text-emerald-500" />
+   478→                          Pro
+   479→                        </Badge>
+   480→                      </div>
+   481→                    </div>
+   482→                  </div>
+   483→                </SheetContent>
+   484→              </Sheet>
+   485→            </div>
+   486→          </div>
+   487→        </div>
+   488→      </header>
+   489→
+   490→      {/* Main Content */}
+   491→      <main className="flex-1">
+   492→        <AnimatePresence mode="wait">
+   493→          <motion.div
+   494→            key={activeSection}
+   495→            initial={{ opacity: 0, y: 20, scale: 0.98 }}
+   496→            animate={{ opacity: 1, y: 0, scale: 1 }}
+   497→            exit={{ opacity: 0, y: -20, scale: 0.98 }}
+   498→            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+   499→          >
+   500→            {renderSection()}
+   501→          </motion.div>
+   502→        </AnimatePresence>
+   503→      </main>
+   504→
+   505→      {/* Footer */}
+   506→      <footer className="mt-auto">
+   507→        {/* Wavy Divider */}
+   508→        <div className="wavy-divider" />
+   509→        <div className="bg-muted/30">
+   510→        {/* Gradient accent line */}
+   511→        <div className="h-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500" />
+   512→        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-10">
+   513→          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
+   514→            {/* Platform */}
+   515→            <div>
+   516→              <div className="flex items-center gap-2 mb-4">
+   517→                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+   518→                  <Accessibility className="w-4 h-4 text-white" />
+   519→                </div>
+   520→                <span className="font-bold text-sm">AdaptiFit</span>
+   521→              </div>
+   522→              <h4 className="font-semibold text-sm mb-3">Platform</h4>
+   523→              <ul className="space-y-2 text-sm text-muted-foreground">
+   524→                <li className="hover:text-foreground cursor-pointer transition-colors">Dashboard</li>
+   525→                <li className="hover:text-foreground cursor-pointer transition-colors">Body Scan</li>
+   526→                <li className="hover:text-foreground cursor-pointer transition-colors">Exercise Library</li>
+   527→                <li className="hover:text-foreground cursor-pointer transition-colors">Mood Monitor</li>
+   528→                <li className="hover:text-foreground cursor-pointer transition-colors">Nutrition</li>
+   529→              </ul>
+   530→            </div>
+   531→
+   532→            {/* Resources */}
+   533→            <div>
+   534→              <h4 className="font-semibold text-sm mb-3">Resources</h4>
+   535→              <ul className="space-y-2 text-sm text-muted-foreground">
+   536→                <li className="hover:text-foreground cursor-pointer transition-colors">Documentation</li>
+   537→                <li className="hover:text-foreground cursor-pointer transition-colors">API Reference</li>
+   538→                <li className="hover:text-foreground cursor-pointer transition-colors">Video Tutorials</li>
+   539→                <li className="hover:text-foreground cursor-pointer transition-colors">Blog</li>
+   540→                <li className="hover:text-foreground cursor-pointer transition-colors">Help Center</li>
+   541→              </ul>
+   542→            </div>
+   543→
+   544→            {/* Community */}
+   545→            <div>
+   546→              <h4 className="font-semibold text-sm mb-3">Community</h4>
+   547→              <ul className="space-y-2 text-sm text-muted-foreground">
+   548→                <li className="hover:text-foreground cursor-pointer transition-colors">Peer Support</li>
+   549→                <li className="hover:text-foreground cursor-pointer transition-colors">Expert Coaching</li>
+   550→                <li className="hover:text-foreground cursor-pointer transition-colors">Success Stories</li>
+   551→                <li className="hover:text-foreground cursor-pointer transition-colors">Events</li>
+   552→                <li className="hover:text-foreground cursor-pointer transition-colors">Ambassador Program</li>
+   553→              </ul>
+   554→            </div>
+   555→
+   556→            {/* Legal */}
+   557→            <div>
+   558→              <h4 className="font-semibold text-sm mb-3">Legal</h4>
+   559→              <ul className="space-y-2 text-sm text-muted-foreground">
+   560→                <li className="hover:text-foreground cursor-pointer transition-colors">Privacy Policy</li>
+   561→                <li className="hover:text-foreground cursor-pointer transition-colors">Terms of Service</li>
+   562→                <li className="hover:text-foreground cursor-pointer transition-colors">HIPAA Compliance</li>
+   563→                <li className="hover:text-foreground cursor-pointer transition-colors">Cookie Policy</li>
+   564→                <li className="hover:text-foreground cursor-pointer transition-colors">Accessibility</li>
+   565→              </ul>
+   566→            </div>
+   567→          </div>
+   568→
+   569→          {/* Divider */}
+   570→          <div className="border-t border-border/50 pt-6">
+   571→            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+   572→              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+   573→                <Accessibility className="w-4 h-4" />
+   574→                <span>&copy; 2024 AdaptiFit — Inclusive Fitness for All</span>
+   575→              </div>
+   576→
+   577→              {/* Social Icons */}
+   578→              <div className="flex items-center gap-3">
+   579→                <motion.div whileHover={{ scale: 1.2 }} transition={{ type: 'spring', stiffness: 400, damping: 17 }}>
+   580→                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-cyan-500 transition-colors">
+   581→                    <Twitter className="w-4 h-4" />
+   582→                  </Button>
+   583→                </motion.div>
+   584→                <motion.div whileHover={{ scale: 1.2 }} transition={{ type: 'spring', stiffness: 400, damping: 17 }}>
+   585→                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-rose-500 transition-colors">
+   586→                    <Instagram className="w-4 h-4" />
+   587→                  </Button>
+   588→                </motion.div>
+   589→                <motion.div whileHover={{ scale: 1.2 }} transition={{ type: 'spring', stiffness: 400, damping: 17 }}>
+   590→                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-red-500 transition-colors">
+   591→                    <Youtube className="w-4 h-4" />
+   592→                  </Button>
+   593→                </motion.div>
+   594→                <motion.div whileHover={{ scale: 1.2 }} transition={{ type: 'spring', stiffness: 400, damping: 17 }}>
+   595→                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-teal-500 transition-colors">
+   596→                    <Linkedin className="w-4 h-4" />
+   597→                  </Button>
+   598→                </motion.div>
+   599→              </div>
+   600→
+   601→              {/* Crisis Lifeline */}
+   602→              <div className="flex items-center gap-3 text-xs text-muted-foreground">
+   603→                <span className="flex items-center gap-1">
+   604→                  <Heart className="w-3 h-3 text-rose-500" />
+   605→                  Built with empathy
+   606→                </span>
+   607→                <span>&bull;</span>
+   608→                <a
+   609→                  href="tel:988"
+   610→                  className="font-semibold text-rose-500 hover:text-rose-600 transition-colors animate-pulse"
+   611→                  aria-label="988 Suicide and Crisis Lifeline - call for help"
+   612→                >
+   613→                  988 Suicide &amp; Crisis Lifeline
+   614→                </a>
+   615→              </div>
+   616→            </div>
+   617→          </div>
+   618→        </div>
+   619→        </div>
+   620→      </footer>
+   621→
+   622→      {/* Back to Top */}
+   623→      <AnimatePresence>
+   624→        {showBackToTop && (
+   625→          <motion.div
+   626→            initial={{ opacity: 0, scale: 0.8 }}
+   627→            animate={{ opacity: 1, scale: 1 }}
+   628→            exit={{ opacity: 0, scale: 0.8 }}
+   629→            className="fixed bottom-6 left-6 z-40"
+   630→          >
+   631→            <Button
+   632→              size="icon"
+   633→              variant="outline"
+   634→              className="rounded-full shadow-lg bg-background/80 backdrop-blur-sm"
+   635→              onClick={scrollToTop}
+   636→            >
+   637→              <ArrowUp className="w-4 h-4" />
+   638→            </Button>
+   639→          </motion.div>
+   640→        )}
+   641→      </AnimatePresence>
+   642→
+   643→      {/* AI Chat */}
+   644→      <AIChat />
+   645→
+   646→      {/* Profile Setup Dialog */}
+   647→      <ProfileSetup />
+   648→
+   649→      {/* Toast Notifications */}
+   650→      <ToastProvider />
+   651→    </div>
+   652→  );
+   653→}
+   654→
+   655→// Hero Section Component
+   656→function HeroSection({ onNavigate }: { onNavigate: (section: AppSection) => void }) {
+   657→  const [statsInView, setStatsInView] = useState(false);
+   658→
+   659→  const statValues = [
+   660→    { target: 50, suffix: 'K+', label: 'Active Users', icon: <Users className="w-4 h-4" /> },
+   661→    { target: 200, suffix: '+', label: 'Adaptive Exercises', icon: <Dumbbell className="w-4 h-4" /> },
+   662→    { target: 98, suffix: '%', label: 'Form Accuracy', icon: <Target className="w-4 h-4" /> },
+   663→    { target: 24, suffix: '/7', label: 'AI Monitoring', icon: <Activity className="w-4 h-4" /> },
+   664→  ];
+   665→
+   666→  const features = [
+   667→    {
+   668→      icon: <ScanLine className="w-6 h-6" />,
+   669→      title: 'Body Scan & Motion Tracking',
+   670→      description: 'AI-powered camera tracking with real-time form feedback for adaptive exercises',
+   671→      section: 'body-scan' as AppSection,
+   672→      color: 'cyan',
+   673→      gradient: 'from-cyan-500/10 to-cyan-500/5',
+   674→      border: 'border-cyan-500/20',
+   675→      badge: 'NEW',
+   676→    },
+   677→    {
+   678→      icon: <Dumbbell className="w-6 h-6" />,
+   679→      title: 'Adaptive Exercise Library',
+   680→      description: 'Personalized exercises for injuries, disabilities, and Paralympic training',
+   681→      section: 'exercises' as AppSection,
+   682→      color: 'amber',
+   683→      gradient: 'from-amber-500/10 to-amber-500/5',
+   684→      border: 'border-amber-500/20',
+   685→      badge: null,
+   686→    },
+   687→    {
+   688→      icon: <Brain className="w-6 h-6" />,
+   689→      title: 'Mood & Emotion Monitor',
+   690→      description: 'AI emotion tracking with anti-suicide prevention and wellness alerts',
+   691→      section: 'mood' as AppSection,
+   692→      color: 'rose',
+   693→      gradient: 'from-rose-500/10 to-rose-500/5',
+   694→      border: 'border-rose-500/20',
+   695→      badge: 'Popular',
+   696→    },
+   697→    {
+   698→      icon: <Apple className="w-6 h-6" />,
+   699→      title: 'AI Food & Diet Planning',
+   700→      description: 'Smart food logging, calorie tracking, and diet plans with delivery integration',
+   701→      section: 'nutrition' as AppSection,
+   702→      color: 'orange',
+   703→      gradient: 'from-orange-500/10 to-orange-500/5',
+   704→      border: 'border-orange-500/20',
+   705→      badge: null,
+   706→    },
+   707→    {
+   708→      icon: <Wind className="w-6 h-6" />,
+   709→      title: 'Guided Breathing Exercises',
+   710→      description: 'Mindful breathing patterns for relaxation, stress relief, and recovery support',
+   711→      section: 'breathing' as AppSection,
+   712→      color: 'teal',
+   713→      gradient: 'from-teal-500/10 to-teal-500/5',
+   714→      border: 'border-teal-500/20',
+   715→      badge: 'NEW',
+   716→    },
+   717→    {
+   718→      icon: <Watch className="w-6 h-6" />,
+   719→      title: 'Smart Wearable Integration',
+   720→      description: 'Real-time heart rate, SpO2, and blood pressure from your smart devices',
+   721→      section: 'wearable' as AppSection,
+   722→      color: 'teal',
+   723→      gradient: 'from-teal-500/10 to-teal-500/5',
+   724→      border: 'border-teal-500/20',
+   725→      badge: null,
+   726→    },
+   727→    {
+   728→      icon: <Users className="w-6 h-6" />,
+   729→      title: 'Community & Peer Support',
+   730→      description: 'Connect with peers, expert coaching, and accessible rehabilitation support',
+   731→      section: 'community' as AppSection,
+   732→      color: 'violet',
+   733→      gradient: 'from-violet-500/10 to-violet-500/5',
+   734→      border: 'border-violet-500/20',
+   735→      badge: null,
+   736→    },
+   737→    {
+   738→      icon: <Shield className="w-6 h-6" />,
+   739→      title: 'Crisis Support & Safety',
+   740→      description: 'Emergency contacts, grounding exercises, wellness checks, and safety planning',
+   741→      section: 'crisis' as AppSection,
+   742→      color: 'emerald',
+   743→      gradient: 'from-emerald-500/10 to-teal-500/5',
+   744→      border: 'border-emerald-500/20',
+   745→      badge: 'Critical',
+   746→    },
+   747→  ];
+   748→
+   749→  const audienceData = [
+   750→    {
+   751→      emoji: '🎖️',
+   752→      title: 'Injured Soldiers',
+   753→      description: 'Combat injury rehabilitation with customized therapy plans and progress tracking.',
+   754→      features: ['Combat injury rehab', 'PTSD mood monitoring', 'Adaptive strength training'],
+   755→      testimonial: {
+   756→        quote: 'AdaptiFit helped me recover from my combat injury faster than traditional therapy. The AI form tracking is incredible.',
+   757→        author: 'Sgt. M. Rodriguez',
+   758→      },
+   759→    },
+   760→    {
+   761→      emoji: '🏅',
+   762→      title: 'Paralympic Athletes',
+   763→      description: 'Professional-grade training adapted for your category and classification.',
+   764→      features: ['Sport-specific training', 'Performance analytics', 'Competition preparation'],
+   765→      testimonial: {
+   766→        quote: 'Training for Tokyo was transformed by AdaptiFit. My performance analytics improved 40% in just 3 months.',
+   767→        author: 'J. Chen, Paralympic Swimmer',
+   768→      },
+   769→    },
+   770→    {
+   771→      emoji: '♿',
+   772→      title: 'People with Disabilities',
+   773→      description: 'Inclusive fitness programs designed around your abilities, not limitations.',
+   774→      features: ['Full body adaptations', 'Seated exercises', 'Assistive tech integration'],
+   775→      testimonial: {
+   776→        quote: 'Finally, a fitness app that understands my wheelchair. The seated exercises are perfectly designed.',
+   777→        author: 'S. Patel, Community Member',
+   778→      },
+   779→    },
+   780→  ];
+   781→
+   782→  return (
+   783→    <div className="overflow-hidden">
+   784→      {/* Hero Section */}
+   785→      <section className="relative">
+   786→        {/* Background Gradient */}
+   787→        <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 dark:from-emerald-950/30 dark:via-teal-950/20 dark:to-cyan-950/10" />
+   788→        {/* Aurora Effect */}
+   789→        <div className="absolute inset-0 aurora-bg" />
+   790→        {/* Mesh Gradient Overlay */}
+   791→        <div className="absolute inset-0 mesh-gradient" />
+   792→        <div className="absolute top-20 right-10 w-72 h-72 bg-emerald-500/10 rounded-full blur-3xl" />
+   793→        <div className="absolute bottom-10 left-10 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl" />
+   794→        <div className="absolute top-1/3 left-1/4 w-48 h-48 bg-cyan-500/8 rounded-full blur-2xl" />
+   795→
+   796→        {/* Floating Particles */}
+   797→        <FloatingParticles />
+   798→
+   799→        {/* Parallax hint - subtle scroll indicator */}
+   800→        <motion.div
+   801→          className="absolute bottom-4 left-1/2 -translate-x-1/2 hidden lg:flex flex-col items-center gap-1 text-muted-foreground/50"
+   802→          animate={{ y: [0, 8, 0] }}
+   803→          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+   804→        >
+   805→          <span className="text-[10px] uppercase tracking-widest">Scroll to explore</span>
+   806→          <ChevronRight className="w-3 h-3 rotate-90" />
+   807→        </motion.div>
+   808→
+   809→        <div className="relative max-w-[1600px] mx-auto px-4 sm:px-6 pt-12 pb-16 lg:pt-20 lg:pb-24">
+   810→          <div className="grid lg:grid-cols-2 gap-12 items-center">
+   811→            {/* Left Content */}
+   812→            <motion.div
+   813→              initial={{ opacity: 0, x: -40 }}
+   814→              animate={{ opacity: 1, x: 0 }}
+   815→              transition={{ duration: 0.7, ease: 'easeOut' }}
+   816→            >
+   817→              <Badge className="mb-4 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20">
+   818→                <Sparkles className="w-3 h-3 mr-1" />
+   819→                AI-Powered Inclusive Fitness
+   820→              </Badge>
+   821→
+   822→              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-tight mb-6">
+   823→                Adaptive Fitness
+   824→                <br />
+   825→                <span className="gradient-text">
+   826→                  For Every Body
+   827→                </span>
+   828→              </h1>
+   829→
+   830→              {/* AI Monitoring Active indicator */}
+   831→              <div className="flex items-center gap-2 mb-4">
+   832→                <span className="relative flex h-2.5 w-2.5">
+   833→                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+   834→                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
+   835→                </span>
+   836→                <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">AI Monitoring Active</span>
+   837→              </div>
+   838→
+   839→              <p className="text-lg text-muted-foreground mb-8 max-w-lg leading-relaxed">
+   840→                Personalized rehabilitation and fitness for people with disabilities, injured soldiers,
+   841→                and Paralympic athletes. AI motion tracking, mood monitoring, and smart nutrition —
+   842→                all in one affordable platform.
+   843→              </p>
+   844→
+   845→              <div className="flex flex-wrap gap-4 mb-10">
+   846→                <Button
+   847→                  size="lg"
+   848→                  className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-xl shadow-emerald-500/25 group"
+   849→                  onClick={() => onNavigate('dashboard')}
+   850→                >
+   851→                  Start Your Journey
+   852→                  <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+   853→                </Button>
+   854→                <Button
+   855→                  size="lg"
+   856→                  variant="outline"
+   857→                  className="group"
+   858→                  onClick={() => onNavigate('body-scan')}
+   859→                >
+   860→                  <ScanLine className="w-4 h-4 mr-2" />
+   861→                  Try Body Scan
+   862→                </Button>
+   863→              </div>
+   864→
+   865→              {/* Stats with animated counters */}
+   866→              <div
+   867→                className="grid grid-cols-4 gap-4"
+   868→                ref={(node) => {
+   869→                  if (node) {
+   870→                    const observer = new IntersectionObserver(
+   871→                      ([entry]) => { if (entry.isIntersecting) setStatsInView(true); },
+   872→                      { threshold: 0.5 }
+   873→                    );
+   874→                    observer.observe(node);
+   875→                  }
+   876→                }}
+   877→              >
+   878→                {statValues.map((stat, i) => (
+   879→                  <motion.div
+   880→                    key={stat.label}
+   881→                    initial={{ opacity: 0, y: 20 }}
+   882→                    animate={statsInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+   883→                    transition={{ delay: 0.5 + i * 0.1, duration: 0.5 }}
+   884→                    className="text-center glass-card rounded-xl p-3 stat-glow-hover"
+   885→                  >
+   886→                    <div className="flex items-center justify-center gap-1 mb-1">
+   887→                      {stat.icon}
+   888→                      <span className="text-2xl font-bold neon-glow">
+   889→                        {statsInView ? <AnimatedCounter target={stat.target} suffix={stat.suffix} /> : `0${stat.suffix}`}
+   890→                      </span>
+   891→                    </div>
+   892→                    <span className="text-xs text-muted-foreground">{stat.label}</span>
+   893→                  </motion.div>
+   894→                ))}
+   895→              </div>
+   896→            </motion.div>
+   897→
+   898→            {/* Right - Hero Image */}
+   899→            <motion.div
+   900→              initial={{ opacity: 0, x: 40 }}
+   901→              animate={{ opacity: 1, x: 0 }}
+   902→              transition={{ duration: 0.7, delay: 0.2 }}
+   903→              className="relative hidden lg:block"
+   904→            >
+   905→              <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-emerald-500/10">
+   906→                <img
+   907→                  src="/images/hero.png"
+   908→                  alt="AdaptiFit - Inclusive adaptive fitness platform"
+   909→                  className="w-full h-auto object-cover rounded-2xl"
+   910→                />
+   911→                {/* Overlay gradient */}
+   912→                <div className="absolute inset-0 bg-gradient-to-t from-emerald-500/20 to-transparent" />
+   913→              </div>
+   914→
+   915→              {/* Floating Cards - Glass Morphism */}
+   916→              <motion.div
+   917→                initial={{ opacity: 0, y: 20 }}
+   918→                animate={{ opacity: 1, y: 0 }}
+   919→                transition={{ delay: 1 }}
+   920→                className="absolute -bottom-4 -left-4 glass rounded-xl p-3 shadow-xl"
+   921→              >
+   922→                <div className="flex items-center gap-2">
+   923→                  <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center">
+   924→                    <Star className="w-4 h-4 text-emerald-500" />
+   925→                  </div>
+   926→                  <div>
+   927→                    <p className="text-xs font-semibold">Form Accuracy</p>
+   928→                    <p className="text-lg font-bold text-emerald-500">98%</p>
+   929→                  </div>
+   930→                </div>
+   931→              </motion.div>
+   932→
+   933→              <motion.div
+   934→                initial={{ opacity: 0, y: -20 }}
+   935→                animate={{ opacity: 1, y: 0 }}
+   936→                transition={{ delay: 1.2 }}
+   937→                className="absolute -top-4 -right-4 glass rounded-xl p-3 shadow-xl"
+   938→              >
+   939→                <div className="flex items-center gap-2">
+   940→                  <div className="w-8 h-8 rounded-full bg-rose-500/10 flex items-center justify-center">
+   941→                    <Heart className="w-4 h-4 text-rose-500" />
+   942→                  </div>
+   943→                  <div>
+   944→                    <p className="text-xs font-semibold">Mood Score</p>
+   945→                    <p className="text-lg font-bold text-rose-500">8.5/10</p>
+   946→                  </div>
+   947→                </div>
+   948→              </motion.div>
+   949→
+   950→              <motion.div
+   951→                initial={{ opacity: 0, x: 20 }}
+   952→                animate={{ opacity: 1, x: 0 }}
+   953→                transition={{ delay: 1.4 }}
+   954→                className="absolute top-1/2 -right-6 glass rounded-xl p-3 shadow-xl"
+   955→              >
+   956→                <div className="flex items-center gap-2">
+   957→                  <div className="w-8 h-8 rounded-full bg-teal-500/10 flex items-center justify-center">
+   958→                    <Zap className="w-4 h-4 text-teal-500" />
+   959→                  </div>
+   960→                  <div>
+   961→                    <p className="text-xs font-semibold">Heart Rate</p>
+   962→                    <p className="text-lg font-bold text-teal-500">72 BPM</p>
+   963→                  </div>
+   964→                </div>
+   965→              </motion.div>
+   966→            </motion.div>
+   967→          </div>
+   968→        </div>
+   969→      </section>
+   970→
+   971→      {/* Features Grid */}
+   972→      <section className="py-16 lg:py-24 relative">
+   973→        {/* Subtle background mesh */}
+   974→        <div className="absolute inset-0 mesh-gradient opacity-50" />
+   975→        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 relative z-10">
+   976→          <motion.div
+   977→            initial={{ opacity: 0, y: 20 }}
+   978→            whileInView={{ opacity: 1, y: 0 }}
+   979→            viewport={{ once: true }}
+   980→            className="text-center mb-12"
+   981→          >
+   982→            <Badge variant="outline" className="mb-4">
+   983→              <Zap className="w-3 h-3 mr-1" />
+   984→              Comprehensive Features
+   985→            </Badge>
+   986→            <h2 className="text-3xl sm:text-4xl font-bold mb-4">
+   987→              Everything You Need for
+   988→              <br />
+   989→              <span className="gradient-text">
+   990→                Inclusive Rehabilitation
+   991→              </span>
+   992→            </h2>
+   993→            <p className="text-muted-foreground max-w-2xl mx-auto">
+   994→              From AI motion tracking to mood monitoring, nutrition planning to community support —
+   995→              AdaptiFit replaces expensive therapy with affordable, customized care.
+   996→            </p>
+   997→          </motion.div>
+   998→
+   999→          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+  1000→            {features.map((feature, i) => (
+  1001→              <motion.div
+  1002→                key={feature.title}
+  1003→                initial={{ opacity: 0, y: 30 }}
+  1004→                whileInView={{ opacity: 1, y: 0 }}
+  1005→                viewport={{ once: true }}
+  1006→                transition={{ delay: i * 0.1 }}
+  1007→                whileHover={{ scale: 1.02, y: -4 }}
+  1008→                onClick={() => onNavigate(feature.section)}
+  1009→                className={`
+  1010→                  cursor-pointer rounded-2xl border ${feature.border} bg-gradient-to-br ${feature.gradient}
+  1011→                  p-6 transition-all duration-300 hover:shadow-xl group gradient-border-card relative overflow-hidden
+  1012→                `}
+  1013→              >
+  1014→                {/* Badge */}
+  1015→                {feature.badge && (
+  1016→                  <div className={`absolute top-3 right-3 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+  1017→                    feature.badge === 'NEW'
+  1018→                      ? 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20'
+  1019→                      : feature.badge === 'Critical'
+  1020→                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 dot-pulse'
+  1021→                      : feature.badge === 'Popular'
+  1022→                      ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
+  1023→                      : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
+  1024→                  }`}>
+  1025→                    {feature.badge}
+  1026→                  </div>
+  1027→                )}
+  1028→
+  1029→                {/* Animated icon container */}
+  1030→                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${colorMap[feature.color]} flex items-center justify-center text-white mb-4 shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-all duration-300`}>
+  1031→                  {feature.icon}
+  1032→                </div>
+  1033→                <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
+  1034→                <p className="text-sm text-muted-foreground mb-4">{feature.description}</p>
+  1035→                <div className={`flex items-center gap-1 text-sm font-medium ${colorMapText[feature.color]} group-hover:gap-2 transition-all`}>
+  1036→                  Explore
+  1037→                  <ChevronRight className="w-4 h-4" />
+  1038→                </div>
+  1039→              </motion.div>
+  1040→            ))}
+  1041→          </div>
+  1042→        </div>
+  1043→      </section>
+  1044→
+  1045→      {/* How It Works */}
+  1046→      <section className="py-16 lg:py-24 relative">
+  1047→        <div className="absolute inset-0 aurora-bg opacity-30" />
+  1048→        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 relative z-10">
+  1049→          <motion.div
+  1050→            initial={{ opacity: 0, y: 20 }}
+  1051→            whileInView={{ opacity: 1, y: 0 }}
+  1052→            viewport={{ once: true }}
+  1053→            className="text-center mb-12"
+  1054→          >
+  1055→            <Badge variant="outline" className="mb-4">
+  1056→              <Activity className="w-3 h-3 mr-1" />
+  1057→              Simple Process
+  1058→            </Badge>
+  1059→            <h2 className="text-3xl sm:text-4xl font-bold mb-4">
+  1060→              How <span className="gradient-text">AdaptiFit</span> Works
+  1061→            </h2>
+  1062→            <p className="text-muted-foreground max-w-lg mx-auto">
+  1063→              Get started in minutes with our AI-powered adaptive fitness platform
+  1064→            </p>
+  1065→          </motion.div>
+  1066→
+  1067→          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+  1068→            {[
+  1069→              {
+  1070→                step: '01',
+  1071→                title: 'Set Your Profile',
+  1072→                description: 'Tell us about your abilities, goals, and any conditions. Our AI customizes everything for you.',
+  1073→                icon: <Accessibility className="w-6 h-6" />,
+  1074→                color: 'emerald',
+  1075→              },
+  1076→              {
+  1077→                step: '02',
+  1078→                title: 'Get Your Plan',
+  1079→                description: 'AI generates a personalized exercise, nutrition, and mood monitoring plan adapted to you.',
+  1080→                icon: <Sparkles className="w-6 h-6" />,
+  1081→                color: 'teal',
+  1082→              },
+  1083→              {
+  1084→                step: '03',
+  1085→                title: 'Track & Exercise',
+  1086→                description: 'Follow guided exercises with real-time AI form tracking and voice feedback.',
+  1087→                icon: <ScanLine className="w-6 h-6" />,
+  1088→                color: 'cyan',
+  1089→              },
+  1090→              {
+  1091→                step: '04',
+  1092→                title: 'Recover & Grow',
+  1093→                description: 'Monitor progress, celebrate achievements, and adapt your plan as you improve.',
+  1094→                icon: <TrendingUp className="w-6 h-6" />,
+  1095→                color: 'amber',
+  1096→              },
+  1097→            ].map((item, i) => (
+  1098→              <motion.div
+  1099→                key={item.step}
+  1100→                initial={{ opacity: 0, y: 30 }}
+  1101→                whileInView={{ opacity: 1, y: 0 }}
+  1102→                viewport={{ once: true }}
+  1103→                transition={{ delay: i * 0.15 }}
+  1104→                className="relative text-center group"
+  1105→              >
+  1106→                {/* Connecting line */}
+  1107→                {i < 3 && (
+  1108→                  <div className="hidden md:block absolute top-10 left-[60%] w-[80%] h-px bg-gradient-to-r from-emerald-500/30 to-transparent" />
+  1109→                )}
+  1110→                {/* Step number */}
+  1111→                <div className="relative mx-auto mb-4">
+  1112→                  <div className={`w-20 h-20 rounded-2xl bg-gradient-to-br ${colorMap[item.color]} flex items-center justify-center text-white shadow-lg mx-auto group-hover:scale-110 group-hover:rotate-3 transition-all duration-300`}>
+  1113→                    {item.icon}
+  1114→                  </div>
+  1115→                  <span className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-background border-2 border-emerald-500 text-emerald-600 text-xs font-bold flex items-center justify-center">
+  1116→                    {item.step}
+  1117→                  </span>
+  1118→                </div>
+  1119→                <h3 className="text-lg font-semibold mb-2">{item.title}</h3>
+  1120→                <p className="text-sm text-muted-foreground leading-relaxed">{item.description}</p>
+  1121→              </motion.div>
+  1122→            ))}
+  1123→          </div>
+  1124→        </div>
+  1125→      </section>
+  1126→
+  1127→      {/* Target Audience */}
+  1128→      <section className="py-16 bg-muted/30 relative overflow-hidden">
+  1129→        {/* Decorative dots pattern */}
+  1130→        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+  1131→        <div className="max-w-[1600px] mx-auto px-4 sm:px-6">
+  1132→          <motion.div
+  1133→            initial={{ opacity: 0, y: 20 }}
+  1134→            whileInView={{ opacity: 1, y: 0 }}
+  1135→            viewport={{ once: true }}
+  1136→            className="text-center mb-12"
+  1137→          >
+  1138→            <h2 className="text-3xl sm:text-4xl font-bold mb-4">
+  1139→              Built For <span className="text-emerald-500">You</span>
+  1140→            </h2>
+  1141→            <p className="text-muted-foreground max-w-lg mx-auto">
+  1142→              Whether you&apos;re recovering from injury, training for the Paralympics, or managing a disability — AdaptiFit adapts to you.
+  1143→            </p>
+  1144→          </motion.div>
+  1145→
+  1146→          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+  1147→            {audienceData.map((item, i) => (
+  1148→              <motion.div
+  1149→                key={item.title}
+  1150→                initial={{ opacity: 0, y: 30 }}
+  1151→                whileInView={{ opacity: 1, y: 0 }}
+  1152→                viewport={{ once: true }}
+  1153→                transition={{ delay: i * 0.15 }}
+  1154→                className="bg-background rounded-2xl p-6 hover:shadow-lg transition-all border-gradient relative group"
+  1155→              >
+  1156→                <div className="absolute inset-0 rounded-2xl border-2 border-transparent bg-gradient-to-br from-emerald-500/20 via-teal-500/20 to-cyan-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10" />
+  1157→
+  1158→                <motion.div
+  1159→                  className="text-4xl mb-4"
+  1160→                  animate={{ y: [0, -4, 0] }}
+  1161→                  transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut', delay: i * 0.3 }}
+  1162→                >
+  1163→                  {item.emoji}
+  1164→                </motion.div>
+  1165→                <h3 className="text-xl font-bold mb-2">{item.title}</h3>
+  1166→                <p className="text-sm text-muted-foreground mb-4">{item.description}</p>
+  1167→                <ul className="space-y-2 mb-6">
+  1168→                  {item.features.map((f) => (
+  1169→                    <li key={f} className="flex items-center gap-2 text-sm">
+  1170→                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+  1171→                      {f}
+  1172→                    </li>
+  1173→                  ))}
+  1174→                </ul>
+  1175→
+  1176→                {/* Testimonial */}
+  1177→                <div className="border-t border-border/50 pt-4 mt-auto">
+  1178→                  <Quote className="w-4 h-4 text-emerald-500/40 mb-2" />
+  1179→                  <p className="text-xs text-muted-foreground italic leading-relaxed mb-2">
+  1180→                    &ldquo;{item.testimonial.quote}&rdquo;
+  1181→                  </p>
+  1182→                  <p className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+  1183→                    — {item.testimonial.author}
+  1184→                  </p>
+  1185→                </div>
+  1186→              </motion.div>
+  1187→            ))}
+  1188→          </div>
+  1189→        </div>
+  1190→      </section>
+  1191→
+  1192→      {/* CTA Section */}
+  1193→      <section className="py-16 lg:py-24">
+  1194→        <div className="max-w-[1600px] mx-auto px-4 sm:px-6">
+  1195→          <motion.div
+  1196→            initial={{ opacity: 0, scale: 0.95 }}
+  1197→            whileInView={{ opacity: 1, scale: 1 }}
+  1198→            viewport={{ once: true }}
+  1199→            className="relative bg-gradient-to-br from-emerald-500 to-teal-600 rounded-3xl p-8 sm:p-12 lg:p-16 text-white overflow-hidden"
+  1200→          >
+  1201→            {/* Animated geometric shapes */}
+  1202→            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+  1203→              <motion.div
+  1204→                className="absolute top-0 right-0 w-64 h-64 border border-white/10 rounded-full"
+  1205→                animate={{ rotate: 360 }}
+  1206→                transition={{ duration: 30, repeat: Infinity, ease: 'linear' }}
+  1207→              />
+  1208→              <motion.div
+  1209→                className="absolute -bottom-10 -left-10 w-40 h-40 border border-white/10 rounded-full"
+  1210→                animate={{ rotate: -360 }}
+  1211→                transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+  1212→              />
+  1213→              <motion.div
+  1214→                className="absolute top-1/3 right-1/4 w-16 h-16 border border-white/10 rotate-45"
+  1215→                animate={{ rotate: [45, 135, 225, 315, 405] }}
+  1216→                transition={{ duration: 15, repeat: Infinity, ease: 'linear' }}
+  1217→              />
+  1218→              <motion.div
+  1219→                className="absolute bottom-1/4 left-1/3 w-8 h-8 border border-white/10"
+  1220→                style={{ clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)' }}
+  1221→                animate={{ rotate: 360 }}
+  1222→                transition={{ duration: 12, repeat: Infinity, ease: 'linear' }}
+  1223→              />
+  1224→              {/* Floating dots */}
+  1225→              <motion.div
+  1226→                className="absolute top-1/4 right-1/6 w-2 h-2 bg-white/20 rounded-full"
+  1227→                animate={{ y: [0, -15, 0] }}
+  1228→                transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+  1229→              />
+  1230→              <motion.div
+  1231→                className="absolute bottom-1/3 left-1/4 w-1.5 h-1.5 bg-white/20 rounded-full"
+  1232→                animate={{ y: [0, -10, 0] }}
+  1233→                transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
+  1234→              />
+  1235→              <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+  1236→              <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
+  1237→            </div>
+  1238→
+  1239→            <div className="relative z-10 max-w-2xl">
+  1240→              <h2 className="text-3xl sm:text-4xl font-bold mb-4">
+  1241→                Start Your Recovery Today
+  1242→              </h2>
+  1243→              <p className="text-emerald-100 text-lg mb-8">
+  1244→                Join thousands who have transformed their rehabilitation journey with AdaptiFit.
+  1245→                Affordable, accessible, and always adapted to you.
+  1246→              </p>
+  1247→              <div className="flex flex-wrap gap-4 mb-8">
+  1248→                <Button
+  1249→                  size="lg"
+  1250→                  className="bg-white text-emerald-700 hover:bg-emerald-50 shadow-xl group shimmer relative overflow-hidden"
+  1251→                  onClick={() => onNavigate('dashboard')}
+  1252→                >
+  1253→                  Get Started Free
+  1254→                  <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+  1255→                </Button>
+  1256→                <Button
+  1257→                  size="lg"
+  1258→                  variant="outline"
+  1259→                  className="border-white/30 text-white hover:bg-white/10"
+  1260→                  onClick={() => onNavigate('body-scan')}
+  1261→                >
+  1262→                  Try Body Scan Demo
+  1263→                </Button>
+  1264→              </div>
+  1265→
+  1266→              {/* Trust Badges */}
+  1267→              <div className="flex flex-wrap gap-4">
+  1268→                <div className="flex items-center gap-2 text-sm text-emerald-100">
+  1269→                  <Lock className="w-4 h-4" />
+  1270→                  <span>HIPAA Compliant</span>
+  1271→                </div>
+  1272→                <div className="flex items-center gap-2 text-sm text-emerald-100">
+  1273→                  <Sparkles className="w-4 h-4" />
+  1274→                  <span>AI-Powered</span>
+  1275→                </div>
+  1276→                <div className="flex items-center gap-2 text-sm text-emerald-100">
+  1277→                  <Headphones className="w-4 h-4" />
+  1278→                  <span>24/7 Support</span>
+  1279→                </div>
+  1280→              </div>
+  1281→            </div>
+  1282→          </motion.div>
+  1283→        </div>
+  1284→      </section>
+  1285→    </div>
+  1286→  );
+  1287→}
+  1288→

@@ -1,0 +1,623 @@
+- generic:
+  - generic:
+    - banner:
+      - generic:
+        - generic:
+          - generic:
+            - generic:
+              - img
+            - generic:
+              - heading [level=1]: AdaptiFit
+              - paragraph: AI Adaptive Fitness & Rehab
+          - navigation:
+            - button:
+              - generic:
+                - img
+              - generic: Dashboard
+            - button:
+              - generic:
+                - img
+              - generic: Body Scan
+            - button:
+              - generic:
+                - img
+              - generic: Live Coach
+            - button:
+              - generic:
+                - img
+              - generic: Exercises
+            - button:
+              - generic:
+                - img
+              - generic: Mind Gym
+            - button:
+              - generic:
+                - img
+              - generic: Breathing
+            - button:
+              - generic:
+                - img
+              - generic: Mood
+            - button:
+              - generic:
+                - img
+              - generic: Nutrition
+            - button:
+              - generic:
+                - img
+              - generic: Community
+            - button:
+              - generic:
+                - img
+              - generic: Wearable
+            - button:
+              - generic:
+                - img
+              - generic: Crisis
+          - generic:
+            - button:
+              - generic:
+                - img
+            - generic:
+              - button:
+                - generic:
+                  - img
+            - button:
+              - img
+            - generic:
+              - button:
+                - img
+                - generic: "3"
+            - generic:
+              - img
+              - text: Pro Plan
+            - generic:
+              - generic: A
+            - button:
+              - img
+              - text: Get Started
+    - main:
+      - generic:
+        - generic:
+          - generic:
+            - generic:
+              - heading [level=2]:
+                - img
+                - text: Adaptive Exercise Library
+              - paragraph: Personalized exercises designed for every ability level
+            - generic:
+              - generic:
+                - img
+                - text: 6 Exercises
+          - generic:
+            - generic:
+              - img
+              - textbox:
+                - /placeholder: Search exercises by name or muscle group...
+            - generic:
+              - button:
+                - generic:
+                  - img
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - button:
+                    - img
+                    - text: All
+                  - button:
+                    - generic: ♿
+                    - text: Adaptive Fitness
+                    - generic: (24)
+                  - button:
+                    - generic: 🩹
+                    - text: Rehabilitation
+                    - generic: (18)
+                  - button:
+                    - generic: 💪
+                    - text: Strength Training
+                    - generic: (32)
+                  - button:
+                    - generic: 🧘
+                    - text: Flexibility & Yoga
+                    - generic: (15)
+                  - button:
+                    - generic: ❤️
+                    - text: Cardio
+                    - generic: (20)
+                  - button:
+                    - generic: ⚖️
+                    - text: Balance & Stability
+                    - generic: (12)
+          - generic:
+            - generic: "Difficulty:"
+            - button: All Levels
+            - button: Easy
+            - button: Medium
+            - button: Hard
+          - generic:
+            - tablist:
+              - tab [selected]:
+                - img
+                - text: Exercises
+              - tab:
+                - img
+                - text: Video Library
+              - tab:
+                - img
+                - text: Workout Plans
+            - tabpanel:
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic: Seated Shoulder Press
+                        - generic: medium
+                      - generic: 💪 Strength Training
+                    - generic:
+                      - generic:
+                        - generic:
+                          - img
+                          - text: Shoulders
+                        - generic:
+                          - img
+                          - text: Triceps
+                        - generic:
+                          - img
+                          - text: Core
+                      - generic:
+                        - generic: Strengthen shoulders while seated. Perfect for wheelchair users or those with lower body limitations.
+                        - button:
+                          - generic:
+                            - img
+                      - generic:
+                        - generic:
+                          - img
+                          - text: 10 min
+                        - generic:
+                          - img
+                          - text: 45 cal
+                        - generic:
+                          - img
+                          - text: "4.6"
+                      - generic:
+                        - paragraph:
+                          - img
+                          - text: Adaptations Available
+                        - list:
+                          - listitem:
+                            - img
+                            - text: Use resistance bands for lighter resistance
+                          - listitem:
+                            - img
+                            - text: One-arm variation for unilateral weakness
+                      - generic:
+                        - button:
+                          - img
+                          - text: Start Exercise
+                        - button:
+                          - img
+                          - text: Watch Video
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic: Resisted Leg Extensions
+                        - generic: easy
+                      - generic: 🩹 Rehabilitation
+                    - generic:
+                      - generic:
+                        - generic:
+                          - img
+                          - text: Quadriceps
+                        - generic:
+                          - img
+                          - text: Hip Flexors
+                      - generic:
+                        - generic: Gentle leg extensions with resistance band for knee rehabilitation and quad strengthening.
+                        - button:
+                          - generic:
+                            - img
+                      - generic:
+                        - generic:
+                          - img
+                          - text: 15 min
+                        - generic:
+                          - img
+                          - text: 35 cal
+                        - generic:
+                          - img
+                          - text: "4.8"
+                      - generic:
+                        - paragraph:
+                          - img
+                          - text: Adaptations Available
+                        - list:
+                          - listitem:
+                            - img
+                            - text: Reduce range of motion for acute injuries
+                          - listitem:
+                            - img
+                            - text: Add ankle weights for progression
+                      - generic:
+                        - button:
+                          - img
+                          - text: Start Exercise
+                        - button:
+                          - img
+                          - text: Watch Video
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic: Wheelchair Yoga Flow
+                        - generic: easy
+                      - generic: 🧘 Flexibility & Yoga
+                    - generic:
+                      - generic:
+                        - generic:
+                          - img
+                          - text: Spine
+                        - generic:
+                          - img
+                          - text: Shoulders
+                        - generic:
+                          - img
+                          - text: Hips
+                      - generic:
+                        - generic: Gentle yoga flow adapted for seated practice. Improves flexibility and reduces stress.
+                        - button:
+                          - generic:
+                            - img
+                      - generic:
+                        - generic:
+                          - img
+                          - text: 20 min
+                        - generic:
+                          - img
+                          - text: 30 cal
+                        - generic:
+                          - img
+                          - text: "4.8"
+                      - generic:
+                        - paragraph:
+                          - img
+                          - text: Adaptations Available
+                        - list:
+                          - listitem:
+                            - img
+                            - text: Reduce hold times for beginners
+                          - listitem:
+                            - img
+                            - text: Use chair with armrests for support
+                      - generic:
+                        - button:
+                          - img
+                          - text: Start Exercise
+                        - button:
+                          - img
+                          - text: Watch Video
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic: Para Swimming Dry Land Training
+                        - generic: hard
+                      - generic: ❤️ Cardio
+                    - generic:
+                      - generic:
+                        - generic:
+                          - img
+                          - text: Lats
+                        - generic:
+                          - img
+                          - text: Shoulders
+                        - generic:
+                          - img
+                          - text: Core
+                        - generic:
+                          - img
+                          - text: Arms
+                      - generic:
+                        - generic: Dry land training for Paralympic swimmers. Simulates swim strokes with resistance bands.
+                        - button:
+                          - generic:
+                            - img
+                      - generic:
+                        - generic:
+                          - img
+                          - text: 25 min
+                        - generic:
+                          - img
+                          - text: 120 cal
+                        - generic:
+                          - img
+                          - text: "4.5"
+                      - generic:
+                        - paragraph:
+                          - img
+                          - text: Adaptations Available
+                        - list:
+                          - listitem:
+                            - img
+                            - text: Seated variation available
+                          - listitem:
+                            - img
+                            - text: Resistance adjustable
+                      - generic:
+                        - button:
+                          - img
+                          - text: Start Exercise
+                        - button:
+                          - img
+                          - text: Watch Video
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic: Balance Board Seated
+                        - generic: medium
+                      - generic: ⚖️ Balance & Stability
+                    - generic:
+                      - generic:
+                        - generic:
+                          - img
+                          - text: Core
+                        - generic:
+                          - img
+                          - text: Stabilizers
+                      - generic:
+                        - generic: Seated balance exercises using an inflatable cushion to improve core stability.
+                        - button:
+                          - generic:
+                            - img
+                      - generic:
+                        - generic:
+                          - img
+                          - text: 12 min
+                        - generic:
+                          - img
+                          - text: 25 cal
+                        - generic:
+                          - img
+                          - text: "4.6"
+                      - generic:
+                        - paragraph:
+                          - img
+                          - text: Adaptations Available
+                        - list:
+                          - listitem:
+                            - img
+                            - text: Use chair with back support
+                          - listitem:
+                            - img
+                            - text: Hand assistance for safety
+                      - generic:
+                        - button:
+                          - img
+                          - text: Start Exercise
+                        - button:
+                          - img
+                          - text: Watch Video
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic: Upper Body Resistance Circuit
+                        - generic: hard
+                      - generic: ♿ Adaptive Fitness
+                    - generic:
+                      - generic:
+                        - generic:
+                          - img
+                          - text: Chest
+                        - generic:
+                          - img
+                          - text: Back
+                        - generic:
+                          - img
+                          - text: Shoulders
+                        - generic:
+                          - img
+                          - text: Arms
+                      - generic:
+                        - generic: Complete upper body circuit using resistance bands. Designed for lower limb amputees.
+                        - button:
+                          - generic:
+                            - img
+                      - generic:
+                        - generic:
+                          - img
+                          - text: 30 min
+                        - generic:
+                          - img
+                          - text: 150 cal
+                        - generic:
+                          - img
+                          - text: "4.5"
+                      - generic:
+                        - paragraph:
+                          - img
+                          - text: Adaptations Available
+                        - list:
+                          - listitem:
+                            - img
+                            - text: Adjustable band resistance
+                          - listitem:
+                            - img
+                            - text: One-sided variations
+                      - generic:
+                        - button:
+                          - img
+                          - text: Start Exercise
+                        - button:
+                          - img
+                          - text: Watch Video
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - img
+                  - generic:
+                    - generic: Health Info Lookup
+                    - generic: Search the web for health & nutrition info
+                - button:
+                  - img
+            - generic:
+              - generic:
+                - img
+                - textbox:
+                  - /placeholder: Search health, nutrition, fitness...
+                  - text: adaptive exercises for disabilities
+              - generic:
+                - button:
+                  - img
+                  - text: Adaptive Exercises
+                - button:
+                  - img
+                  - text: Mental Health
+                - button:
+                  - img
+                  - text: Nutrition Tips
+                - button:
+                  - img
+                  - text: Heart Health
+                - button:
+                  - img
+                  - text: Injury Prevention
+                - button:
+                  - img
+                  - text: Disability Fitness
+              - generic:
+                - generic:
+                  - img
+                  - text: "Recent:"
+                - button:
+                  - img
+                  - text: adaptive exercises for di...
+              - generic:
+                - generic:
+                  - img
+                  - paragraph: No results found
+                  - paragraph: Try a different search term
+    - contentinfo:
+      - generic:
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - img
+                - generic: AdaptiFit
+              - heading [level=4]: Platform
+              - list:
+                - listitem: Dashboard
+                - listitem: Body Scan
+                - listitem: Exercise Library
+                - listitem: Mood Monitor
+                - listitem: Nutrition
+            - generic:
+              - heading [level=4]: Resources
+              - list:
+                - listitem: Documentation
+                - listitem: API Reference
+                - listitem: Video Tutorials
+                - listitem: Blog
+                - listitem: Help Center
+            - generic:
+              - heading [level=4]: Community
+              - list:
+                - listitem: Peer Support
+                - listitem: Expert Coaching
+                - listitem: Success Stories
+                - listitem: Events
+                - listitem: Ambassador Program
+            - generic:
+              - heading [level=4]: Legal
+              - list:
+                - listitem: Privacy Policy
+                - listitem: Terms of Service
+                - listitem: HIPAA Compliance
+                - listitem: Cookie Policy
+                - listitem: Accessibility
+          - generic:
+            - generic:
+              - generic:
+                - img
+                - generic: © 2024 AdaptiFit — Inclusive Fitness for All
+              - generic:
+                - generic:
+                  - button:
+                    - img
+                - generic:
+                  - button:
+                    - img
+                - generic:
+                  - button:
+                    - img
+                - generic:
+                  - button:
+                    - img
+              - generic:
+                - generic:
+                  - img
+                  - text: Built with empathy
+                - generic: •
+                - link:
+                  - /url: tel:988
+                  - text: 988 Suicide & Crisis Lifeline
+    - generic:
+      - button:
+        - img
+    - button:
+      - img
+  - list
+  - button "Open Next.js Dev Tools" [ref=e603] [cursor=pointer]:
+    - img [ref=e604]
+  - alert
+  - dialog "Seated Shoulder Press" [ref=e1232]:
+    - heading "Seated Shoulder Press" [level=2] [ref=e1234]:
+      - img [ref=e1235]
+      - text: Seated Shoulder Press
+    - generic [ref=e1238]:
+      - generic [ref=e1239]:
+        - paragraph [ref=e1240]: Strengthen shoulders while seated. Perfect for wheelchair users or those with lower body limitations.
+        - button [active] [ref=e1241]:
+          - generic [ref=e1242]:
+            - img
+      - generic [ref=e1243]:
+        - generic [ref=e1244]: Shoulders
+        - generic [ref=e1245]: Triceps
+        - generic [ref=e1246]: Core
+      - generic [ref=e1247]:
+        - img [ref=e1248]
+        - generic [ref=e1251]:
+          - generic [ref=e1252]: 09:59
+          - generic [ref=e1253]: remaining
+      - generic [ref=e1254]:
+        - paragraph [ref=e1255]:
+          - img [ref=e1256]
+          - text: Adaptations
+        - list [ref=e1262]:
+          - listitem [ref=e1263]:
+            - img [ref=e1264]
+            - text: Use resistance bands for lighter resistance
+          - listitem [ref=e1266]:
+            - img [ref=e1267]
+            - text: One-arm variation for unilateral weakness
+      - generic [ref=e1269]:
+        - button "Pause" [ref=e1270]:
+          - img
+          - text: Pause
+        - button "Finish now" [ref=e1271]:
+          - img
+          - text: Finish now
+    - button "Close" [ref=e1272]:
+      - img
+      - generic [ref=e1273]: Close
+  - generic [ref=e1274]:
+    - text: Listen aloud
+    - img [ref=e1276]
+    - tooltip "Listen aloud" [ref=e1278]

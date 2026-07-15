@@ -1,0 +1,1763 @@
+     1→'use client'
+     2→
+     3→import React, { useState, useEffect, useRef, useCallback } from 'react'
+     4→import { motion, AnimatePresence } from 'framer-motion'
+     5→import {
+     6→  Camera,
+     7→  Play,
+     8→  Pause,
+     9→  RotateCcw,
+    10→  Activity,
+    11→  Target,
+    12→  AlertTriangle,
+    13→  CheckCircle,
+    14→  Timer,
+    15→  ArrowLeft,
+    16→  ArrowRight,
+    17→  ArrowUp,
+    18→  RotateCw,
+    19→  Armchair,
+    20→  Hand,
+    21→  PersonStanding,
+    22→  CircleDot,
+    23→} from 'lucide-react'
+    24→import {
+    25→  Card,
+    26→  CardHeader,
+    27→  CardTitle,
+    28→  CardContent,
+    29→} from '@/components/ui/card'
+    30→import { Button } from '@/components/ui/button'
+    31→import { Badge } from '@/components/ui/badge'
+    32→import {
+    33→  Select,
+    34→  SelectContent,
+    35→  SelectItem,
+    36→  SelectTrigger,
+    37→  SelectValue,
+    38→} from '@/components/ui/select'
+    39→import { Progress } from '@/components/ui/progress'
+    40→import { ScrollArea } from '@/components/ui/scroll-area'
+    41→import {
+    42→  Tooltip,
+    43→  TooltipContent,
+    44→  TooltipProvider,
+    45→  TooltipTrigger,
+    46→} from '@/components/ui/tooltip'
+    47→
+    48→// Types
+    49→interface JointAngle {
+    50→  name: string
+    51→  angle: number
+    52→  status: 'good' | 'caution' | 'danger'
+    53→}
+    54→
+    55→interface FeedbackMessage {
+    56→  id: number
+    57→  message: string
+    58→  type: 'success' | 'warning' | 'info' | 'error'
+    59→  timestamp: Date
+    60→}
+    61→
+    62→interface SkeletonPoint {
+    63→  x: number
+    64→  y: number
+    65→  label?: string
+    66→}
+    67→
+    68→interface Exercise {
+    69→  id: string
+    70→  name: string
+    71→  description: string
+    72→  icon: React.ReactNode
+    73→  targetAngles: Record<string, { min: number; max: number }>
+    74→  directionHint?: string
+    75→}
+    76→
+    77→// Exercises data
+    78→const EXERCISES: Exercise[] = [
+    79→  {
+    80→    id: 'shoulder-rotation',
+    81→    name: 'Shoulder Rotation',
+    82→    description: 'Circular shoulder mobility exercise',
+    83→    icon: <RotateCw className="size-5" />,
+    84→    targetAngles: {
+    85→      'Left Shoulder': { min: 140, max: 180 },
+    86→      'Right Shoulder': { min: 140, max: 180 },
+    87→      'Left Elbow': { min: 150, max: 180 },
+    88→      'Right Elbow': { min: 150, max: 180 },
+    89→    },
+    90→    directionHint: 'Rotate →',
+    91→  },
+    92→  {
+    93→    id: 'seated-balance',
+    94→    name: 'Seated Balance',
+    95→    description: 'Core stability while seated',
+    96→    icon: <Armchair className="size-5" />,
+    97→    targetAngles: {
+    98→      'Left Hip': { min: 85, max: 100 },
+    99→      'Right Hip': { min: 85, max: 100 },
+   100→      'Left Shoulder': { min: 160, max: 180 },
+   101→      'Right Shoulder': { min: 160, max: 180 },
+   102→    },
+   103→    directionHint: 'Balance ↔',
+   104→  },
+   105→  {
+   106→    id: 'arm-extension',
+   107→    name: 'Arm Extension',
+   108→    description: 'Full arm extension with hold',
+   109→    icon: <Hand className="size-5" />,
+   110→    targetAngles: {
+   111→      'Left Shoulder': { min: 150, max: 180 },
+   112→      'Right Shoulder': { min: 150, max: 180 },
+   113→      'Left Elbow': { min: 160, max: 180 },
+   114→      'Right Elbow': { min: 160, max: 180 },
+   115→    },
+   116→    directionHint: 'Extend ↑',
+   117→  },
+   118→  {
+   119→    id: 'knee-flexion',
+   120→    name: 'Knee Flexion',
+   121→    description: 'Controlled knee bending exercise',
+   122→    icon: <PersonStanding className="size-5" />,
+   123→    targetAngles: {
+   124→      'Left Knee': { min: 70, max: 120 },
+   125→      'Right Knee': { min: 70, max: 120 },
+   126→      'Left Hip': { min: 80, max: 110 },
+   127→      'Right Hip': { min: 80, max: 110 },
+   128→    },
+   129→    directionHint: 'Bend ↓',
+   130→  },
+   131→  {
+   132→    id: 'lateral-lean',
+   133→    name: 'Lateral Lean',
+   134→    description: 'Side-leaning flexibility drill',
+   135→    icon: <ArrowLeft className="size-5" />,
+   136→    targetAngles: {
+   137→      'Left Shoulder': { min: 120, max: 180 },
+   138→      'Right Shoulder': { min: 120, max: 180 },
+   139→      'Left Hip': { min: 75, max: 105 },
+   140→      'Right Hip': { min: 75, max: 105 },
+   141→    },
+   142→    directionHint: '← Lean Right',
+   143→  },
+   144→]
+   145→
+   146→// Feedback messages pool
+   147→const FEEDBACK_POOL = {
+   148→  success: [
+   149→    'Great Form!',
+   150→    'Perfect Hold!',
+   151→    'Excellent Alignment!',
+   152→    'Steady and Strong!',
+   153→    'Looking Great!',
+   154→    'Well Done!',
+   155→    'On Target!',
+   156→  ],
+   157→  warning: [
+   158→    'Lean Left Slightly',
+   159→    'Lean Right Slightly',
+   160→    'Adjust Shoulders',
+   161→    'Hold Position',
+   162→    'Slow Down a Bit',
+   163→    'Straighten Up',
+   164→    'Engage Core More',
+   165→  ],
+   166→  info: [
+   167→    'Tracking Active',
+   168→    'Hold for 3 More Seconds',
+   169→    'Breathe Steadily',
+   170→    'Almost There',
+   171→    'Keep Going',
+   172→    'Maintain Position',
+   173→  ],
+   174→  error: [
+   175→    'Out of Frame',
+   176→    'Adjust Position',
+   177→    'Too Much Strain',
+   178→    'Reset Form',
+   179→  ],
+   180→}
+   181→
+   182→// Directional feedback mapping for the enhanced feedback bar
+   183→const DIRECTIONAL_FEEDBACK: Record<string, { text: string; arrow: 'left' | 'right' | 'up' | 'none'; color: 'green' | 'yellow' | 'red' }> = {
+   184→  'Lean Left Slightly': { text: 'Lean Left', arrow: 'left', color: 'yellow' },
+   185→  'Lean Right Slightly': { text: 'Lean Right', arrow: 'right', color: 'yellow' },
+   186→  'Adjust Shoulders': { text: 'Adjust Shoulders', arrow: 'up', color: 'yellow' },
+   187→  'Straighten Up': { text: 'Straighten Up', arrow: 'up', color: 'yellow' },
+   188→  'Great Form!': { text: 'Great Form', arrow: 'none', color: 'green' },
+   189→  'Perfect Hold!': { text: 'Perfect Hold', arrow: 'none', color: 'green' },
+   190→  'Excellent Alignment!': { text: 'Excellent', arrow: 'none', color: 'green' },
+   191→  'On Target!': { text: 'On Target', arrow: 'none', color: 'green' },
+   192→  'Out of Frame': { text: 'Out of Frame', arrow: 'none', color: 'red' },
+   193→  'Too Much Strain': { text: 'Too Much Strain', arrow: 'none', color: 'red' },
+   194→  'Reset Form': { text: 'Reset Form', arrow: 'none', color: 'red' },
+   195→  'Adjust Position': { text: 'Adjust Position', arrow: 'none', color: 'red' },
+   196→}
+   197→
+   198→// Base skeleton points (normalized 0-1, centered at 0.5)
+   199→const BASE_SKELETON: { joints: Record<string, SkeletonPoint>; connections: [string, string][] } = {
+   200→  joints: {
+   201→    head: { x: 0.5, y: 0.12, label: 'Head' },
+   202→    neck: { x: 0.5, y: 0.2 },
+   203→    leftShoulder: { x: 0.36, y: 0.28, label: 'L.Shoulder' },
+   204→    rightShoulder: { x: 0.64, y: 0.28, label: 'R.Shoulder' },
+   205→    leftElbow: { x: 0.28, y: 0.42, label: 'L.Elbow' },
+   206→    rightElbow: { x: 0.72, y: 0.42, label: 'R.Elbow' },
+   207→    leftWrist: { x: 0.24, y: 0.55, label: 'L.Wrist' },
+   208→    rightWrist: { x: 0.76, y: 0.55, label: 'R.Wrist' },
+   209→    torso: { x: 0.5, y: 0.45 },
+   210→    leftHip: { x: 0.42, y: 0.58, label: 'L.Hip' },
+   211→    rightHip: { x: 0.58, y: 0.58, label: 'R.Hip' },
+   212→    leftKnee: { x: 0.4, y: 0.73, label: 'L.Knee' },
+   213→    rightKnee: { x: 0.6, y: 0.73, label: 'R.Knee' },
+   214→    leftAnkle: { x: 0.38, y: 0.88, label: 'L.Ankle' },
+   215→    rightAnkle: { x: 0.62, y: 0.88, label: 'R.Ankle' },
+   216→  },
+   217→  connections: [
+   218→    ['head', 'neck'],
+   219→    ['neck', 'leftShoulder'],
+   220→    ['neck', 'rightShoulder'],
+   221→    ['leftShoulder', 'leftElbow'],
+   222→    ['rightShoulder', 'rightElbow'],
+   223→    ['leftElbow', 'leftWrist'],
+   224→    ['rightElbow', 'rightWrist'],
+   225→    ['neck', 'torso'],
+   226→    ['torso', 'leftHip'],
+   227→    ['torso', 'rightHip'],
+   228→    ['leftHip', 'leftKnee'],
+   229→    ['rightHip', 'rightKnee'],
+   230→    ['leftKnee', 'leftAnkle'],
+   231→    ['rightKnee', 'rightAnkle'],
+   232→    ['leftShoulder', 'rightShoulder'],
+   233→    ['leftHip', 'rightHip'],
+   234→  ],
+   235→}
+   236→
+   237→// Joint name to SVG body diagram key mapping
+   238→const JOINT_DIAGRAM_MAP: Record<string, { cx: number; cy: number }> = {
+   239→  'Left Shoulder': { cx: 28, cy: 55 },
+   240→  'Right Shoulder': { cx: 72, cy: 55 },
+   241→  'Left Elbow': { cx: 18, cy: 68 },
+   242→  'Right Elbow': { cx: 82, cy: 68 },
+   243→  'Left Hip': { cx: 38, cy: 78 },
+   244→  'Right Hip': { cx: 62, cy: 78 },
+   245→  'Left Knee': { cx: 36, cy: 88 },
+   246→  'Right Knee': { cx: 64, cy: 88 },
+   247→}
+   248→
+   249→function getAngleColor(status: 'good' | 'caution' | 'danger'): string {
+   250→  switch (status) {
+   251→    case 'good':
+   252→      return 'text-emerald-500'
+   253→    case 'caution':
+   254→      return 'text-amber-500'
+   255→    case 'danger':
+   256→      return 'text-red-500'
+   257→  }
+   258→}
+   259→
+   260→function getAngleDotColor(status: 'good' | 'caution' | 'danger'): string {
+   261→  switch (status) {
+   262→    case 'good':
+   263→      return 'bg-emerald-500'
+   264→    case 'caution':
+   265→      return 'bg-amber-500'
+   266→    case 'danger':
+   267→      return 'bg-red-500'
+   268→  }
+   269→}
+   270→
+   271→function getAngleGlow(status: 'good' | 'caution' | 'danger'): string {
+   272→  switch (status) {
+   273→    case 'good':
+   274→      return 'shadow-emerald-500/50'
+   275→    case 'caution':
+   276→      return 'shadow-amber-500/50'
+   277→    case 'danger':
+   278→      return 'shadow-red-500/50'
+   279→  }
+   280→}
+   281→
+   282→function getAngleHex(status: 'good' | 'caution' | 'danger'): string {
+   283→  switch (status) {
+   284→    case 'good':
+   285→      return '#10b981'
+   286→    case 'caution':
+   287→      return '#f59e0b'
+   288→    case 'danger':
+   289→      return '#ef4444'
+   290→  }
+   291→}
+   292→
+   293→function getFeedbackIcon(type: FeedbackMessage['type']) {
+   294→  switch (type) {
+   295→    case 'success':
+   296→      return <CheckCircle className="size-4 text-emerald-500" />
+   297→    case 'warning':
+   298→      return <AlertTriangle className="size-4 text-amber-500" />
+   299→    case 'info':
+   300→      return <Activity className="size-4 text-sky-500" />
+   301→    case 'error':
+   302→      return <AlertTriangle className="size-4 text-red-500" />
+   303→  }
+   304→}
+   305→
+   306→function formatTime(seconds: number): string {
+   307→  const mins = Math.floor(seconds / 60)
+   308→  const secs = seconds % 60
+   309→  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+   310→}
+   311→
+   312→// Circular Progress Component
+   313→function CircularProgress({
+   314→  value,
+   315→  size = 140,
+   316→  strokeWidth = 10,
+   317→}: {
+   318→  value: number
+   319→  size?: number
+   320→  strokeWidth?: number
+   321→}) {
+   322→  const radius = (size - strokeWidth) / 2
+   323→  const circumference = radius * 2 * Math.PI
+   324→  const offset = circumference - (value / 100) * circumference
+   325→
+   326→  const getColor = () => {
+   327→    if (value >= 80) return { stroke: '#10b981', text: 'text-emerald-500', glow: 'drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]' }
+   328→    if (value >= 60) return { stroke: '#f59e0b', text: 'text-amber-500', glow: 'drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]' }
+   329→    return { stroke: '#ef4444', text: 'text-red-500', glow: 'drop-shadow-[0_0_8px_rgba(239,68,68,0.5)]' }
+   330→  }
+   331→
+   332→  const colorInfo = getColor()
+   333→
+   334→  return (
+   335→    <div className="relative inline-flex items-center justify-center" style={{ width: size, height: size }}>
+   336→      <svg width={size} height={size} className={`-rotate-90 ${colorInfo.glow}`}>
+   337→        <circle
+   338→          cx={size / 2}
+   339→          cy={size / 2}
+   340→          r={radius}
+   341→          stroke="currentColor"
+   342→          strokeWidth={strokeWidth}
+   343→          fill="none"
+   344→          className="text-muted/30"
+   345→        />
+   346→        <motion.circle
+   347→          cx={size / 2}
+   348→          cy={size / 2}
+   349→          r={radius}
+   350→          stroke={colorInfo.stroke}
+   351→          strokeWidth={strokeWidth}
+   352→          fill="none"
+   353→          strokeLinecap="round"
+   354→          strokeDasharray={circumference}
+   355→          initial={false}
+   356→          animate={{ strokeDashoffset: offset }}
+   357→          transition={{ duration: 0.8, ease: 'easeOut' }}
+   358→        />
+   359→      </svg>
+   360→      <div className="absolute flex flex-col items-center justify-center">
+   361→        <motion.span
+   362→          className={`text-3xl font-bold ${colorInfo.text}`}
+   363→          key={Math.round(value)}
+   364→          initial={{ scale: 1.1 }}
+   365→          animate={{ scale: 1 }}
+   366→          transition={{ duration: 0.3 }}
+   367→        >
+   368→          {Math.round(value)}%
+   369→        </motion.span>
+   370→        <span className="text-xs text-muted-foreground mt-0.5">Form Accuracy</span>
+   371→      </div>
+   372→    </div>
+   373→  )
+   374→}
+   375→
+   376→// Joint Health SVG Diagram Component
+   377→function JointHealthDiagram({ jointAngles }: { jointAngles: JointAngle[] }) {
+   378→  const angleMap = new Map(jointAngles.map((j) => [j.name, j.status]))
+   379→
+   380→  return (
+   381→    <svg viewBox="0 0 100 100" className="w-full max-w-[200px] mx-auto">
+   382→      {/* Body outline */}
+   383→      {/* Head */}
+   384→      <circle cx="50" cy="18" r="8" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-muted-foreground/40" />
+   385→      {/* Neck */}
+   386→      <line x1="50" y1="26" x2="50" y2="32" stroke="currentColor" strokeWidth="1.5" className="text-muted-foreground/40" />
+   387→      {/* Shoulders */}
+   388→      <line x1="28" y1="38" x2="72" y2="38" stroke="currentColor" strokeWidth="1.5" className="text-muted-foreground/40" />
+   389→      {/* Torso */}
+   390→      <line x1="28" y1="38" x2="38" y2="60" stroke="currentColor" strokeWidth="1.5" className="text-muted-foreground/40" />
+   391→      <line x1="72" y1="38" x2="62" y2="60" stroke="currentColor" strokeWidth="1.5" className="text-muted-foreground/40" />
+   392→      <line x1="38" y1="60" x2="62" y2="60" stroke="currentColor" strokeWidth="1.5" className="text-muted-foreground/40" />
+   393→      {/* Left arm */}
+   394→      <line x1="28" y1="38" x2="18" y2="55" stroke="currentColor" strokeWidth="1.5" className="text-muted-foreground/40" />
+   395→      <line x1="18" y1="55" x2="14" y2="72" stroke="currentColor" strokeWidth="1.5" className="text-muted-foreground/40" />
+   396→      {/* Right arm */}
+   397→      <line x1="72" y1="38" x2="82" y2="55" stroke="currentColor" strokeWidth="1.5" className="text-muted-foreground/40" />
+   398→      <line x1="82" y1="55" x2="86" y2="72" stroke="currentColor" strokeWidth="1.5" className="text-muted-foreground/40" />
+   399→      {/* Left leg */}
+   400→      <line x1="38" y1="60" x2="36" y2="78" stroke="currentColor" strokeWidth="1.5" className="text-muted-foreground/40" />
+   401→      <line x1="36" y1="78" x2="34" y2="96" stroke="currentColor" strokeWidth="1.5" className="text-muted-foreground/40" />
+   402→      {/* Right leg */}
+   403→      <line x1="62" y1="60" x2="64" y2="78" stroke="currentColor" strokeWidth="1.5" className="text-muted-foreground/40" />
+   404→      <line x1="64" y1="78" x2="66" y2="96" stroke="currentColor" strokeWidth="1.5" className="text-muted-foreground/40" />
+   405→
+   406→      {/* Joint health indicators */}
+   407→      {Object.entries(JOINT_DIAGRAM_MAP).map(([name, pos]) => {
+   408→        const status = angleMap.get(name)
+   409→        if (!status) return null
+   410→        const color = getAngleHex(status)
+   411→        return (
+   412→          <g key={name}>
+   413→            {/* Glow */}
+   414→            <circle cx={pos.cx} cy={pos.cy} r="6" fill={color} opacity={0.15} />
+   415→            {/* Dot */}
+   416→            <motion.circle
+   417→              cx={pos.cx}
+   418→              cy={pos.cy}
+   419→              r="3.5"
+   420→              fill={color}
+   421→              stroke={color}
+   422→              strokeWidth="0.5"
+   423→              opacity={0.9}
+   424→              animate={{
+   425→                r: status === 'danger' ? [3.5, 4.5, 3.5] : status === 'caution' ? [3.5, 4, 3.5] : 3.5,
+   426→                opacity: status === 'danger' ? [0.9, 0.5, 0.9] : 0.9,
+   427→              }}
+   428→              transition={{
+   429→                duration: status === 'danger' ? 1 : 2,
+   430→                repeat: Infinity,
+   431→              }}
+   432→            />
+   433→            {/* Center bright */}
+   434→            <circle cx={pos.cx} cy={pos.cy} r="1.5" fill="white" opacity={0.7} />
+   435→            {/* Label */}
+   436→            <text
+   437→              x={pos.cx}
+   438→              y={pos.cy - 7}
+   439→              textAnchor="middle"
+   440→              className="fill-muted-foreground"
+   441→              fontSize="3.5"
+   442→              fontFamily="Inter, sans-serif"
+   443→            >
+   444→              {name.replace('Left ', 'L.').replace('Right ', 'R.')}
+   445→            </text>
+   446→          </g>
+   447→        )
+   448→      })}
+   449→
+   450→      {/* Legend */}
+   451→      <g transform="translate(2, 2)">
+   452→        <circle cx="2" cy="2" r="2" fill="#10b981" />
+   453→        <text x="6" y="3.5" fontSize="3" className="fill-muted-foreground" fontFamily="Inter, sans-serif">Good</text>
+   454→        <circle cx="20" cy="2" r="2" fill="#f59e0b" />
+   455→        <text x="24" y="3.5" fontSize="3" className="fill-muted-foreground" fontFamily="Inter, sans-serif">Caution</text>
+   456→        <circle cx="40" cy="2" r="2" fill="#ef4444" />
+   457→        <text x="44" y="3.5" fontSize="3" className="fill-muted-foreground" fontFamily="Inter, sans-serif">Danger</text>
+   458→      </g>
+   459→    </svg>
+   460→  )
+   461→}
+   462→
+   463→// Animated Counter Component
+   464→function AnimatedCounter({ value, label, format }: { value: number; label: string; format?: (v: number) => string }) {
+   465→  const display = format ? format(value) : String(value)
+   466→  return (
+   467→    <div className="text-center p-3 rounded-lg bg-muted/50">
+   468→      <motion.p
+   469→        className="text-2xl font-bold text-foreground"
+   470→        key={value}
+   471→        initial={{ scale: 1.2, y: -4 }}
+   472→        animate={{ scale: 1, y: 0 }}
+   473→        transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+   474→      >
+   475→        {display}
+   476→      </motion.p>
+   477→      <p className="text-[10px] text-muted-foreground mt-0.5">{label}</p>
+   478→    </div>
+   479→  )
+   480→}
+   481→
+   482→// Rep Counter Component with large display and pulse
+   483→function RepCounter({ reps, pulseKey }: { reps: number; pulseKey: number }) {
+   484→  return (
+   485→    <div className="relative flex flex-col items-center justify-center p-4 rounded-xl bg-gradient-to-b from-muted/80 to-muted/40 border border-border/50">
+   486→      {/* Pulse ring animation on each rep */}
+   487→      <AnimatePresence>
+   488→        <motion.div
+   489→          key={pulseKey}
+   490→          className="absolute inset-0 rounded-xl border-2 border-emerald-400"
+   491→          initial={{ opacity: 0.8, scale: 1 }}
+   492→          animate={{ opacity: 0, scale: 1.15 }}
+   493→          exit={{ opacity: 0 }}
+   494→          transition={{ duration: 0.8, ease: 'easeOut' }}
+   495→        />
+   496→      </AnimatePresence>
+   497→      {/* Glow effect behind the number */}
+   498→      <div className="absolute size-16 rounded-full bg-emerald-500/10 blur-xl" />
+   499→      <motion.p
+   500→        className="relative text-5xl font-black text-foreground tabular-nums"
+   501→        key={reps}
+   502→        initial={{ scale: 1.3, color: '#10b981' }}
+   503→        animate={{ scale: 1, color: 'currentColor' }}
+   504→        transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+   505→      >
+   506→        {reps}
+   507→      </motion.p>
+   508→      <p className="relative text-xs font-medium text-muted-foreground mt-1 uppercase tracking-wider">Reps</p>
+   509→    </div>
+   510→  )
+   511→}
+   512→
+   513→// Directional Arrow Component for feedback bar
+   514→function DirectionalArrow({ direction, color }: { direction: 'left' | 'right' | 'up' | 'none'; color: 'green' | 'yellow' | 'red' }) {
+   515→  const colorClass = color === 'green' ? 'text-emerald-400' : color === 'yellow' ? 'text-amber-400' : 'text-red-400'
+   516→  const iconClass = `size-6 ${colorClass}`
+   517→
+   518→  switch (direction) {
+   519→    case 'left':
+   520→      return <ArrowLeft className={iconClass} />
+   521→    case 'right':
+   522→      return <ArrowRight className={iconClass} />
+   523→    case 'up':
+   524→      return <ArrowUp className={iconClass} />
+   525→    default:
+   526→      return <CheckCircle className={iconClass} />
+   527→  }
+   528→}
+   529→
+   530→export default function BodyScan() {
+   531→  // State
+   532→  const [isTracking, setIsTracking] = useState(false)
+   533→  const [selectedExercise, setSelectedExercise] = useState<string>('shoulder-rotation')
+   534→  const [cameraActive, setCameraActive] = useState(false)
+   535→  const [cameraError, setCameraError] = useState<string | null>(null)
+   536→  const [formAccuracy, setFormAccuracy] = useState(0)
+   537→  const [jointAngles, setJointAngles] = useState<JointAngle[]>([])
+   538→  const [feedbackHistory, setFeedbackHistory] = useState<FeedbackMessage[]>([])
+   539→  const [reps, setReps] = useState(0)
+   540→  const [holdTime, setHoldTime] = useState(0)
+   541→  const [sessionDuration, setSessionDuration] = useState(0)
+   542→  const [skeletonPoints, setSkeletonPoints] = useState<Record<string, SkeletonPoint>>(BASE_SKELETON.joints)
+   543→  const [feedbackId, setFeedbackId] = useState(0)
+   544→  const [currentFeedback, setCurrentFeedback] = useState<string>('Ready to Start')
+   545→  const [currentFeedbackType, setCurrentFeedbackType] = useState<FeedbackMessage['type']>('info')
+   546→  const [repPulseKey, setRepPulseKey] = useState(0)
+   547→  const [holdProgress, setHoldProgress] = useState(0)
+   548→  const [placeholderTick, setPlaceholderTick] = useState(0)
+   549→
+   550→  // Refs
+   551→  const videoRef = useRef<HTMLVideoElement>(null)
+   552→  const canvasRef = useRef<HTMLCanvasElement>(null)
+   553→  const placeholderCanvasRef = useRef<HTMLCanvasElement>(null)
+   554→  const animationRef = useRef<number>(0)
+   555→  const sessionTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+   556→  const holdTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+   557→  const feedbackTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+   558→  const skeletonAnimRef = useRef<ReturnType<typeof setInterval> | null>(null)
+   559→  const streamRef = useRef<MediaStream | null>(null)
+   560→  const placeholderAnimRef = useRef<ReturnType<typeof setInterval> | null>(null)
+   561→
+   562→  // Camera setup
+   563→  const startCamera = useCallback(async () => {
+   564→    try {
+   565→      setCameraError(null)
+   566→      const stream = await navigator.mediaDevices.getUserMedia({
+   567→        video: { width: 640, height: 480, facingMode: 'user' },
+   568→      })
+   569→      streamRef.current = stream
+   570→      if (videoRef.current) {
+   571→        videoRef.current.srcObject = stream
+   572→      }
+   573→      setCameraActive(true)
+   574→    } catch {
+   575→      setCameraError('Camera access denied or unavailable')
+   576→      setCameraActive(false)
+   577→    }
+   578→  }, [])
+   579→
+   580→  const stopCamera = useCallback(() => {
+   581→    if (streamRef.current) {
+   582→      streamRef.current.getTracks().forEach((track) => track.stop())
+   583→      streamRef.current = null
+   584→    }
+   585→    if (videoRef.current) {
+   586→      videoRef.current.srcObject = null
+   587→    }
+   588→    setCameraActive(false)
+   589→  }, [])
+   590→
+   591→  // Simulated joint angles based on exercise
+   592→  const generateSimulatedAngles = useCallback(
+   593→    (exercise: Exercise, tick: number): JointAngle[] => {
+   594→      const allJoints: JointAngle[] = [
+   595→        { name: 'Left Shoulder', angle: 170, status: 'good' },
+   596→        { name: 'Right Shoulder', angle: 168, status: 'good' },
+   597→        { name: 'Left Elbow', angle: 165, status: 'good' },
+   598→        { name: 'Right Elbow', angle: 170, status: 'good' },
+   599→        { name: 'Left Hip', angle: 92, status: 'good' },
+   600→        { name: 'Right Hip', angle: 90, status: 'good' },
+   601→        { name: 'Left Knee', angle: 95, status: 'good' },
+   602→        { name: 'Right Knee', angle: 93, status: 'good' },
+   603→      ]
+   604→
+   605→      return allJoints.map((joint) => {
+   606→        const target = exercise.targetAngles[joint.name]
+   607→        const oscillation = Math.sin(tick * 0.08 + allJoints.indexOf(joint) * 1.2) * 25
+   608→        const noise = (Math.random() - 0.5) * 6
+   609→        let angle: number
+   610→
+   611→        if (target) {
+   612→          const mid = (target.min + target.max) / 2
+   613→          const range = (target.max - target.min) / 2
+   614→          angle = mid + oscillation * 0.4 + noise
+   615→        } else {
+   616→          angle = joint.angle + oscillation * 0.6 + noise
+   617→        }
+   618→
+   619→        angle = Math.max(0, Math.min(180, angle))
+   620→
+   621→        let status: JointAngle['status'] = 'good'
+   622→        if (target) {
+   623→          if (angle >= target.min && angle <= target.max) {
+   624→            status = 'good'
+   625→          } else if (
+   626→            angle >= target.min - 15 &&
+   627→            angle <= target.max + 15
+   628→          ) {
+   629→            status = 'caution'
+   630→          } else {
+   631→            status = 'danger'
+   632→          }
+   633→        } else {
+   634→          if (angle >= 140) status = 'good'
+   635→          else if (angle >= 100) status = 'caution'
+   636→          else status = 'danger'
+   637→        }
+   638→
+   639→        return { ...joint, angle: Math.round(angle), status }
+   640→      })
+   641→    },
+   642→    []
+   643→  )
+   644→
+   645→  // Simulated skeleton animation
+   646→  const generateSkeletonPoints = useCallback(
+   647→    (tick: number): Record<string, SkeletonPoint> => {
+   648→      const points = { ...BASE_SKELETON.joints }
+   649→      const exerciseId = selectedExercise
+   650→
+   651→      // Deep copy to avoid mutation
+   652→      const newPoints: Record<string, SkeletonPoint> = {}
+   653→      Object.keys(points).forEach((key) => {
+   654→        newPoints[key] = { ...points[key] }
+   655→      })
+   656→
+   657→      // Different movement patterns per exercise
+   658→      const swayX = Math.sin(tick * 0.06) * 0.02
+   659→      const swayY = Math.cos(tick * 0.04) * 0.01
+   660→
+   661→      // Apply base sway
+   662→      Object.keys(newPoints).forEach((key) => {
+   663→        newPoints[key] = {
+   664→          ...newPoints[key],
+   665→          x: newPoints[key].x + swayX,
+   666→          y: newPoints[key].y + swayY,
+   667→        }
+   668→      })
+   669→
+   670→      // Exercise-specific movements
+   671→      switch (exerciseId) {
+   672→        case 'shoulder-rotation': {
+   673→          const armSwing = Math.sin(tick * 0.1) * 0.08
+   674→          newPoints.leftShoulder = { ...newPoints.leftShoulder, x: newPoints.leftShoulder.x + armSwing }
+   675→          newPoints.rightShoulder = { ...newPoints.rightShoulder, x: newPoints.rightShoulder.x - armSwing }
+   676→          newPoints.leftElbow = { ...newPoints.leftElbow, y: newPoints.leftElbow.y - Math.abs(armSwing) * 0.5 }
+   677→          newPoints.rightElbow = { ...newPoints.rightElbow, y: newPoints.rightElbow.y - Math.abs(armSwing) * 0.5 }
+   678→          break
+   679→        }
+   680→        case 'seated-balance': {
+   681→          const leanX = Math.sin(tick * 0.05) * 0.04
+   682→          const leanY = Math.sin(tick * 0.07) * 0.02
+   683→          newPoints.head = { ...newPoints.head, x: newPoints.head.x + leanX, y: newPoints.head.y + leanY }
+   684→          newPoints.neck = { ...newPoints.neck, x: newPoints.neck.x + leanX * 0.8 }
+   685→          newPoints.torso = { ...newPoints.torso, x: newPoints.torso.x + leanX * 0.5 }
+   686→          break
+   687→        }
+   688→        case 'arm-extension': {
+   689→          const extend = Math.sin(tick * 0.08) * 0.1
+   690→          newPoints.leftElbow = { ...newPoints.leftElbow, x: newPoints.leftElbow.x - extend }
+   691→          newPoints.rightElbow = { ...newPoints.rightElbow, x: newPoints.rightElbow.x + extend }
+   692→          newPoints.leftWrist = { ...newPoints.leftWrist, x: newPoints.leftWrist.x - extend * 1.2, y: newPoints.leftWrist.y + extend * 0.3 }
+   693→          newPoints.rightWrist = { ...newPoints.rightWrist, x: newPoints.rightWrist.x + extend * 1.2, y: newPoints.rightWrist.y + extend * 0.3 }
+   694→          break
+   695→        }
+   696→        case 'knee-flexion': {
+   697→          const kneeBend = Math.sin(tick * 0.06) * 0.06
+   698→          newPoints.leftKnee = { ...newPoints.leftKnee, y: newPoints.leftKnee.y - kneeBend }
+   699→          newPoints.rightKnee = { ...newPoints.rightKnee, y: newPoints.rightKnee.y - kneeBend }
+   700→          newPoints.leftAnkle = { ...newPoints.leftAnkle, y: newPoints.leftAnkle.y + kneeBend * 0.3 }
+   701→          newPoints.rightAnkle = { ...newPoints.rightAnkle, y: newPoints.rightAnkle.y + kneeBend * 0.3 }
+   702→          break
+   703→        }
+   704→        case 'lateral-lean': {
+   705→          const leanSide = Math.sin(tick * 0.05) * 0.06
+   706→          newPoints.head = { ...newPoints.head, x: newPoints.head.x + leanSide }
+   707→          newPoints.neck = { ...newPoints.neck, x: newPoints.neck.x + leanSide * 0.8 }
+   708→          newPoints.torso = { ...newPoints.torso, x: newPoints.torso.x + leanSide * 0.5 }
+   709→          newPoints.leftShoulder = { ...newPoints.leftShoulder, y: newPoints.leftShoulder.y - Math.abs(leanSide) * 0.3 }
+   710→          newPoints.rightShoulder = { ...newPoints.rightShoulder, y: newPoints.rightShoulder.y + Math.abs(leanSide) * 0.3 }
+   711→          break
+   712→        }
+   713→      }
+   714→
+   715→      // Add micro-noise for realism
+   716→      Object.keys(newPoints).forEach((key) => {
+   717→        newPoints[key] = {
+   718→          ...newPoints[key],
+   719→          x: newPoints[key].x + (Math.random() - 0.5) * 0.005,
+   720→          y: newPoints[key].y + (Math.random() - 0.5) * 0.005,
+   721→        }
+   722→      })
+   723→
+   724→      return newPoints
+   725→    },
+   726→    [selectedExercise]
+   727→  )
+   728→
+   729→  // Generate feedback
+   730→  const generateFeedback = useCallback(
+   731→    (accuracy: number): { message: string; type: FeedbackMessage['type'] } => {
+   732→      const rand = Math.random()
+   733→      if (accuracy >= 80) {
+   734→        if (rand < 0.7) return { message: FEEDBACK_POOL.success[Math.floor(Math.random() * FEEDBACK_POOL.success.length)], type: 'success' }
+   735→        return { message: FEEDBACK_POOL.info[Math.floor(Math.random() * FEEDBACK_POOL.info.length)], type: 'info' }
+   736→      } else if (accuracy >= 50) {
+   737→        if (rand < 0.5) return { message: FEEDBACK_POOL.warning[Math.floor(Math.random() * FEEDBACK_POOL.warning.length)], type: 'warning' }
+   738→        if (rand < 0.8) return { message: FEEDBACK_POOL.info[Math.floor(Math.random() * FEEDBACK_POOL.info.length)], type: 'info' }
+   739→        return { message: FEEDBACK_POOL.success[Math.floor(Math.random() * FEEDBACK_POOL.success.length)], type: 'success' }
+   740→      } else {
+   741→        if (rand < 0.6) return { message: FEEDBACK_POOL.warning[Math.floor(Math.random() * FEEDBACK_POOL.warning.length)], type: 'warning' }
+   742→        if (rand < 0.9) return { message: FEEDBACK_POOL.error[Math.floor(Math.random() * FEEDBACK_POOL.error.length)], type: 'error' }
+   743→        return { message: FEEDBACK_POOL.info[Math.floor(Math.random() * FEEDBACK_POOL.info.length)], type: 'info' }
+   744→      }
+   745→    },
+   746→    []
+   747→  )
+   748→
+   749→  // Draw skeleton on canvas
+   750→  const drawSkeleton = useCallback(
+   751→    (points: Record<string, SkeletonPoint>, canvas: HTMLCanvasElement) => {
+   752→      const ctx = canvas.getContext('2d')
+   753→      if (!ctx) return
+   754→
+   755→      const w = canvas.width
+   756→      const h = canvas.height
+   757→
+   758→      ctx.clearRect(0, 0, w, h)
+   759→
+   760→      // Draw connections
+   761→      BASE_SKELETON.connections.forEach(([from, to]) => {
+   762→        const p1 = points[from]
+   763→        const p2 = points[to]
+   764→        if (!p1 || !p2) return
+   765→
+   766→        ctx.beginPath()
+   767→        ctx.moveTo(p1.x * w, p1.y * h)
+   768→        ctx.lineTo(p2.x * w, p2.y * h)
+   769→        ctx.strokeStyle = 'rgba(16, 185, 129, 0.6)'
+   770→        ctx.lineWidth = 2.5
+   771→        ctx.stroke()
+   772→
+   773→        // Glow effect
+   774→        ctx.beginPath()
+   775→        ctx.moveTo(p1.x * w, p1.y * h)
+   776→        ctx.lineTo(p2.x * w, p2.y * h)
+   777→        ctx.strokeStyle = 'rgba(16, 185, 129, 0.2)'
+   778→        ctx.lineWidth = 6
+   779→        ctx.stroke()
+   780→      })
+   781→
+   782→      // Draw joints
+   783→      Object.entries(points).forEach(([key, point]) => {
+   784→        const px = point.x * w
+   785→        const py = point.y * h
+   786→        const isMajor = ['head', 'leftShoulder', 'rightShoulder', 'leftHip', 'rightHip', 'leftKnee', 'rightKnee', 'leftElbow', 'rightElbow'].includes(key)
+   787→
+   788→        // Outer glow
+   789→        ctx.beginPath()
+   790→        ctx.arc(px, py, isMajor ? 8 : 5, 0, Math.PI * 2)
+   791→        ctx.fillStyle = 'rgba(16, 185, 129, 0.15)'
+   792→        ctx.fill()
+   793→
+   794→        // Inner dot
+   795→        ctx.beginPath()
+   796→        ctx.arc(px, py, isMajor ? 5 : 3, 0, Math.PI * 2)
+   797→        ctx.fillStyle = isMajor ? 'rgba(16, 185, 129, 0.9)' : 'rgba(52, 211, 153, 0.7)'
+   798→        ctx.fill()
+   799→
+   800→        // Center bright dot
+   801→        ctx.beginPath()
+   802→        ctx.arc(px, py, isMajor ? 2.5 : 1.5, 0, Math.PI * 2)
+   803→        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)'
+   804→        ctx.fill()
+   805→
+   806→        // Label for major joints
+   807→        if (point.label && isMajor) {
+   808→          ctx.font = '10px Inter, sans-serif'
+   809→          ctx.fillStyle = 'rgba(255, 255, 255, 0.6)'
+   810→          ctx.fillText(point.label, px + 10, py + 3)
+   811→        }
+   812→      })
+   813→    },
+   814→    []
+   815→  )
+   816→
+   817→  // Draw the enhanced placeholder skeleton with grid
+   818→  const drawPlaceholderSkeleton = useCallback(
+   819→    (tick: number, canvas: HTMLCanvasElement) => {
+   820→      const ctx = canvas.getContext('2d')
+   821→      if (!ctx) return
+   822→
+   823→      const w = canvas.width
+   824→      const h = canvas.height
+   825→
+   826→      // Dark background
+   827→      ctx.fillStyle = '#09090b'
+   828→      ctx.fillRect(0, 0, w, h)
+   829→
+   830→      // Draw emerald grid lines
+   831→      ctx.strokeStyle = 'rgba(16, 185, 129, 0.08)'
+   832→      ctx.lineWidth = 1
+   833→      const gridSize = 40
+   834→      for (let x = 0; x < w; x += gridSize) {
+   835→        ctx.beginPath()
+   836→        ctx.moveTo(x, 0)
+   837→        ctx.lineTo(x, h)
+   838→        ctx.stroke()
+   839→      }
+   840→      for (let y = 0; y < h; y += gridSize) {
+   841→        ctx.beginPath()
+   842→        ctx.moveTo(0, y)
+   843→        ctx.lineTo(w, y)
+   844→        ctx.stroke()
+   845→      }
+   846→
+   847→      // Brighter center cross lines
+   848→      ctx.strokeStyle = 'rgba(16, 185, 129, 0.15)'
+   849→      ctx.lineWidth = 1
+   850→      ctx.beginPath()
+   851→      ctx.moveTo(w / 2, 0)
+   852→      ctx.lineTo(w / 2, h)
+   853→      ctx.stroke()
+   854→      ctx.beginPath()
+   855→      ctx.moveTo(0, h / 2)
+   856→      ctx.lineTo(w, h / 2)
+   857→      ctx.stroke()
+   858→
+   859→      // Generate animated skeleton points
+   860→      const points = generateSkeletonPoints(tick)
+   861→
+   862→      // Draw connections with neon glow
+   863→      BASE_SKELETON.connections.forEach(([from, to]) => {
+   864→        const p1 = points[from]
+   865→        const p2 = points[to]
+   866→        if (!p1 || !p2) return
+   867→
+   868→        // Wide glow
+   869→        ctx.beginPath()
+   870→        ctx.moveTo(p1.x * w, p1.y * h)
+   871→        ctx.lineTo(p2.x * w, p2.y * h)
+   872→        ctx.strokeStyle = 'rgba(16, 185, 129, 0.15)'
+   873→        ctx.lineWidth = 10
+   874→        ctx.stroke()
+   875→
+   876→        // Medium glow
+   877→        ctx.beginPath()
+   878→        ctx.moveTo(p1.x * w, p1.y * h)
+   879→        ctx.lineTo(p2.x * w, p2.y * h)
+   880→        ctx.strokeStyle = 'rgba(16, 185, 129, 0.35)'
+   881→        ctx.lineWidth = 4
+   882→        ctx.stroke()
+   883→
+   884→        // Core line
+   885→        ctx.beginPath()
+   886→        ctx.moveTo(p1.x * w, p1.y * h)
+   887→        ctx.lineTo(p2.x * w, p2.y * h)
+   888→        ctx.strokeStyle = 'rgba(16, 185, 129, 0.8)'
+   889→        ctx.lineWidth = 2
+   890→        ctx.stroke()
+   891→      })
+   892→
+   893→      // Draw joints with pulsing effect
+   894→      const pulseScale = 1 + Math.sin(tick * 0.15) * 0.15
+   895→      Object.entries(points).forEach(([key, point]) => {
+   896→        const px = point.x * w
+   897→        const py = point.y * h
+   898→        const isMajor = ['head', 'leftShoulder', 'rightShoulder', 'leftHip', 'rightHip', 'leftKnee', 'rightKnee', 'leftElbow', 'rightElbow'].includes(key)
+   899→
+   900→        // Outer glow pulse
+   901→        const glowRadius = (isMajor ? 14 : 9) * pulseScale
+   902→        const gradient = ctx.createRadialGradient(px, py, 0, px, py, glowRadius)
+   903→        gradient.addColorStop(0, 'rgba(16, 185, 129, 0.3)')
+   904→        gradient.addColorStop(1, 'rgba(16, 185, 129, 0)')
+   905→        ctx.beginPath()
+   906→        ctx.arc(px, py, glowRadius, 0, Math.PI * 2)
+   907→        ctx.fillStyle = gradient
+   908→        ctx.fill()
+   909→
+   910→        // Inner dot
+   911→        ctx.beginPath()
+   912→        ctx.arc(px, py, isMajor ? 6 : 4, 0, Math.PI * 2)
+   913→        ctx.fillStyle = 'rgba(16, 185, 129, 0.9)'
+   914→        ctx.fill()
+   915→
+   916→        // Bright center
+   917→        ctx.beginPath()
+   918→        ctx.arc(px, py, isMajor ? 3 : 2, 0, Math.PI * 2)
+   919→        ctx.fillStyle = 'rgba(255, 255, 255, 0.95)'
+   920→        ctx.fill()
+   921→
+   922→        // Label
+   923→        if (point.label && isMajor) {
+   924→          ctx.font = '11px Inter, sans-serif'
+   925→          ctx.fillStyle = 'rgba(16, 185, 129, 0.6)'
+   926→          ctx.fillText(point.label, px + 12, py + 4)
+   927→        }
+   928→      })
+   929→
+   930→      // Corner decorations
+   931→      const cornerSize = 20
+   932→      ctx.strokeStyle = 'rgba(16, 185, 129, 0.4)'
+   933→      ctx.lineWidth = 2
+   934→      // Top-left
+   935→      ctx.beginPath()
+   936→      ctx.moveTo(8, 8 + cornerSize)
+   937→      ctx.lineTo(8, 8)
+   938→      ctx.lineTo(8 + cornerSize, 8)
+   939→      ctx.stroke()
+   940→      // Top-right
+   941→      ctx.beginPath()
+   942→      ctx.moveTo(w - 8 - cornerSize, 8)
+   943→      ctx.lineTo(w - 8, 8)
+   944→      ctx.lineTo(w - 8, 8 + cornerSize)
+   945→      ctx.stroke()
+   946→      // Bottom-left
+   947→      ctx.beginPath()
+   948→      ctx.moveTo(8, h - 8 - cornerSize)
+   949→      ctx.lineTo(8, h - 8)
+   950→      ctx.lineTo(8 + cornerSize, h - 8)
+   951→      ctx.stroke()
+   952→      // Bottom-right
+   953→      ctx.beginPath()
+   954→      ctx.moveTo(w - 8 - cornerSize, h - 8)
+   955→      ctx.lineTo(w - 8, h - 8)
+   956→      ctx.lineTo(w - 8, h - 8 - cornerSize)
+   957→      ctx.stroke()
+   958→
+   959→      // Scan line effect
+   960→      const scanY = (tick * 3) % h
+   961→      ctx.beginPath()
+   962→      ctx.moveTo(0, scanY)
+   963→      ctx.lineTo(w, scanY)
+   964→      ctx.strokeStyle = 'rgba(16, 185, 129, 0.12)'
+   965→      ctx.lineWidth = 2
+   966→      ctx.stroke()
+   967→    },
+   968→    [generateSkeletonPoints]
+   969→  )
+   970→
+   971→  // Tracking tick counter
+   972→  const tickRef = useRef(0)
+   973→
+   974→  // Start/stop tracking
+   975→  const startTracking = useCallback(() => {
+   976→    setIsTracking(true)
+   977→    tickRef.current = 0
+   978→    setReps(0)
+   979→    setHoldTime(0)
+   980→    setSessionDuration(0)
+   981→    setFeedbackHistory([])
+   982→    setHoldProgress(0)
+   983→
+   984→    // Session timer
+   985→    sessionTimerRef.current = setInterval(() => {
+   986→      setSessionDuration((prev) => prev + 1)
+   987→    }, 1000)
+   988→
+   989→    // Hold time timer (increments when accuracy > 75%)
+   990→    holdTimerRef.current = setInterval(() => {
+   991→      setFormAccuracy((prev) => {
+   992→        if (prev >= 75) {
+   993→          setHoldTime((h) => h + 1)
+   994→          setHoldProgress((p) => {
+   995→            const next = p + (100 / 30) // 30 second hold cycle
+   996→            return next >= 100 ? 0 : next
+   997→          })
+   998→        } else {
+   999→          setHoldProgress(0)
+  1000→        }
+  1001→        return prev
+  1002→      })
+  1003→    }, 1000)
+  1004→
+  1005→    // Reps increment with pulse
+  1006→    const repInterval = setInterval(() => {
+  1007→      setReps((prev) => prev + 1)
+  1008→      setRepPulseKey((k) => k + 1)
+  1009→    }, 4000 + Math.random() * 3000)
+  1010→
+  1011→    // Skeleton animation
+  1012→    skeletonAnimRef.current = setInterval(() => {
+  1013→      tickRef.current += 1
+  1014→      const newPoints = generateSkeletonPoints(tickRef.current)
+  1015→      setSkeletonPoints(newPoints)
+  1016→
+  1017→      // Draw on canvas
+  1018→      if (canvasRef.current) {
+  1019→        drawSkeleton(newPoints, canvasRef.current)
+  1020→      }
+  1021→
+  1022→      // Update angles
+  1023→      const exercise = EXERCISES.find((e) => e.id === selectedExercise) || EXERCISES[0]
+  1024→      const angles = generateSimulatedAngles(exercise, tickRef.current)
+  1025→      setJointAngles(angles)
+  1026→
+  1027→      // Calculate accuracy
+  1028→      const targetJoints = angles.filter((a) => exercise.targetAngles[a.name])
+  1029→      if (targetJoints.length > 0) {
+  1030→        const goodCount = targetJoints.filter((a) => a.status === 'good').length
+  1031→        const cautionCount = targetJoints.filter((a) => a.status === 'caution').length
+  1032→        const accuracy = (goodCount * 100 + cautionCount * 50) / (targetJoints.length * 100) * 100
+  1033→        const smoothAccuracy = Math.round(accuracy + (Math.random() - 0.5) * 5)
+  1034→        setFormAccuracy(Math.max(0, Math.min(100, smoothAccuracy)))
+  1035→      }
+  1036→    }, 100)
+  1037→
+  1038→    // Feedback generation
+  1039→    feedbackTimerRef.current = setInterval(() => {
+  1040→      setFormAccuracy((currentAccuracy) => {
+  1041→        const fb = generateFeedback(currentAccuracy)
+  1042→        setCurrentFeedback(fb.message)
+  1043→        setCurrentFeedbackType(fb.type)
+  1044→        setFeedbackId((prev) => {
+  1045→          const newId = prev + 1
+  1046→          setFeedbackHistory((hist) => [
+  1047→            { id: newId, message: fb.message, type: fb.type, timestamp: new Date() },
+  1048→            ...hist.slice(0, 19),
+  1049→          ])
+  1050→          return newId
+  1051→        })
+  1052→        return currentAccuracy
+  1053→      })
+  1054→    }, 2500)
+  1055→
+  1056→    // Store rep interval for cleanup
+  1057→    return () => clearInterval(repInterval)
+  1058→  }, [selectedExercise, generateSkeletonPoints, generateSimulatedAngles, generateFeedback, drawSkeleton])
+  1059→
+  1060→  const stopTracking = useCallback(() => {
+  1061→    setIsTracking(false)
+  1062→    if (sessionTimerRef.current) clearInterval(sessionTimerRef.current)
+  1063→    if (holdTimerRef.current) clearInterval(holdTimerRef.current)
+  1064→    if (feedbackTimerRef.current) clearInterval(feedbackTimerRef.current)
+  1065→    if (skeletonAnimRef.current) clearInterval(skeletonAnimRef.current)
+  1066→  }, [])
+  1067→
+  1068→  const resetSession = useCallback(() => {
+  1069→    stopTracking()
+  1070→    setReps(0)
+  1071→    setHoldTime(0)
+  1072→    setSessionDuration(0)
+  1073→    setFormAccuracy(0)
+  1074→    setFeedbackHistory([])
+  1075→    setCurrentFeedback('Ready to Start')
+  1076→    setCurrentFeedbackType('info')
+  1077→    setJointAngles([])
+  1078→    setSkeletonPoints(BASE_SKELETON.joints)
+  1079→    setHoldProgress(0)
+  1080→    setRepPulseKey(0)
+  1081→    tickRef.current = 0
+  1082→
+  1083→    // Clear canvas
+  1084→    if (canvasRef.current) {
+  1085→      const ctx = canvasRef.current.getContext('2d')
+  1086→      if (ctx) ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height)
+  1087→    }
+  1088→  }, [stopTracking])
+  1089→
+  1090→  // Cleanup on unmount
+  1091→  useEffect(() => {
+  1092→    return () => {
+  1093→      stopTracking()
+  1094→      stopCamera()
+  1095→    }
+  1096→  }, [stopTracking, stopCamera])
+  1097→
+  1098→  // Resize canvas to match container
+  1099→  useEffect(() => {
+  1100→    const resizeCanvas = () => {
+  1101→      if (canvasRef.current) {
+  1102→        const container = canvasRef.current.parentElement
+  1103→        if (container) {
+  1104→          canvasRef.current.width = container.clientWidth
+  1105→          canvasRef.current.height = container.clientHeight
+  1106→        }
+  1107→      }
+  1108→      if (placeholderCanvasRef.current) {
+  1109→        const container = placeholderCanvasRef.current.parentElement
+  1110→        if (container) {
+  1111→          placeholderCanvasRef.current.width = container.clientWidth
+  1112→          placeholderCanvasRef.current.height = container.clientHeight
+  1113→        }
+  1114→      }
+  1115→    }
+  1116→    resizeCanvas()
+  1117→    window.addEventListener('resize', resizeCanvas)
+  1118→    return () => window.removeEventListener('resize', resizeCanvas)
+  1119→  }, [])
+  1120→
+  1121→  // Draw initial skeleton if not tracking
+  1122→  useEffect(() => {
+  1123→    if (!isTracking && canvasRef.current) {
+  1124→      drawSkeleton(BASE_SKELETON.joints, canvasRef.current)
+  1125→    }
+  1126→  }, [isTracking, drawSkeleton])
+  1127→
+  1128→  // Animate placeholder canvas when camera is off
+  1129→  useEffect(() => {
+  1130→    if (!cameraActive) {
+  1131→      let placeholderTick = 0
+  1132→      placeholderAnimRef.current = setInterval(() => {
+  1133→        placeholderTick += 1
+  1134→        setPlaceholderTick(placeholderTick)
+  1135→        if (placeholderCanvasRef.current) {
+  1136→          drawPlaceholderSkeleton(placeholderTick, placeholderCanvasRef.current)
+  1137→        }
+  1138→      }, 50)
+  1139→      return () => {
+  1140→        if (placeholderAnimRef.current) clearInterval(placeholderAnimRef.current)
+  1141→      }
+  1142→    } else {
+  1143→      if (placeholderAnimRef.current) clearInterval(placeholderAnimRef.current)
+  1144→    }
+  1145→  }, [cameraActive, drawPlaceholderSkeleton])
+  1146→
+  1147→  const currentExercise = EXERCISES.find((e) => e.id === selectedExercise) || EXERCISES[0]
+  1148→
+  1149→  // Get directional feedback info
+  1150→  const directionalInfo = DIRECTIONAL_FEEDBACK[currentFeedback] || {
+  1151→    text: currentFeedback,
+  1152→    arrow: 'none' as const,
+  1153→    color: currentFeedbackType === 'success' ? 'green' as const : currentFeedbackType === 'warning' ? 'yellow' as const : currentFeedbackType === 'error' ? 'red' as const : 'green' as const,
+  1154→  }
+  1155→
+  1156→  return (
+  1157→    <div className="w-full space-y-4">
+  1158→      {/* Header with session timer */}
+  1159→      <div className="relative overflow-hidden rounded-2xl">
+  1160→        <div className="absolute inset-0">
+  1161→          <img
+  1162→            src="/images/body-scan.png"
+  1163→            alt="Body Scan Technology"
+  1164→            className="w-full h-full object-cover opacity-20"
+  1165→          />
+  1166→          <div className="absolute inset-0 bg-gradient-to-r from-background via-background/90 to-background/60" />
+  1167→        </div>
+  1168→        <div className="relative p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+  1169→          <div className="flex items-center gap-3">
+  1170→            <div className="flex items-center justify-center size-10 rounded-xl bg-emerald-500/10">
+  1171→              <Camera className="size-5 text-emerald-500" />
+  1172→            </div>
+  1173→            <div>
+  1174→              <h2 className="text-xl font-bold">Body Scan & Motion Tracking</h2>
+  1175→              <p className="text-sm text-muted-foreground">Real-time pose analysis and form feedback</p>
+  1176→            </div>
+  1177→          </div>
+  1178→          <div className="flex items-center gap-3">
+  1179→            {/* Session Timer - Prominent */}
+  1180→            <motion.div
+  1181→              className={`flex items-center gap-2 px-4 py-2 rounded-xl border ${
+  1182→                isTracking
+  1183→                  ? 'bg-emerald-500/10 border-emerald-500/30'
+  1184→                  : 'bg-muted/50 border-border/50'
+  1185→              }`}
+  1186→              animate={isTracking ? { boxShadow: ['0 0 0px rgba(16,185,129,0)', '0 0 12px rgba(16,185,129,0.3)', '0 0 0px rgba(16,185,129,0)'] } : {}}
+  1187→              transition={{ duration: 2, repeat: Infinity }}
+  1188→            >
+  1189→              <Timer className={`size-4 ${isTracking ? 'text-emerald-500' : 'text-muted-foreground'}`} />
+  1190→              <span className={`text-lg font-mono font-bold tabular-nums ${isTracking ? 'text-emerald-400' : 'text-muted-foreground'}`}>
+  1191→                {formatTime(sessionDuration)}
+  1192→              </span>
+  1193→              {isTracking && (
+  1194→                <motion.span
+  1195→                  className="size-2 rounded-full bg-emerald-500"
+  1196→                  animate={{ opacity: [1, 0.3, 1] }}
+  1197→                  transition={{ duration: 1.5, repeat: Infinity }}
+  1198→                />
+  1199→              )}
+  1200→            </motion.div>
+  1201→
+  1202→            <Select value={selectedExercise} onValueChange={setSelectedExercise}>
+  1203→              <SelectTrigger className="w-[200px]">
+  1204→                <SelectValue placeholder="Select Exercise" />
+  1205→              </SelectTrigger>
+  1206→              <SelectContent>
+  1207→                {EXERCISES.map((ex) => (
+  1208→                  <SelectItem key={ex.id} value={ex.id}>
+  1209→                    {ex.name}
+  1210→                  </SelectItem>
+  1211→                ))}
+  1212→              </SelectContent>
+  1213→            </Select>
+  1214→            <Button
+  1215→              variant="outline"
+  1216→              size="icon"
+  1217→              onClick={resetSession}
+  1218→              title="Reset Session"
+  1219→            >
+  1220→              <RotateCcw className="size-4" />
+  1221→            </Button>
+  1222→          </div>
+  1223→        </div>
+  1224→      </div>
+  1225→
+  1226→      {/* Main Layout: Camera (2/3) + Feedback (1/3) */}
+  1227→      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+  1228→        {/* Camera View - 2/3 */}
+  1229→        <div className="lg:col-span-2 space-y-4">
+  1230→          <Card className="overflow-hidden">
+  1231→            <CardHeader className="pb-3">
+  1232→              <div className="flex items-center justify-between">
+  1233→                <CardTitle className="text-base flex items-center gap-2">
+  1234→                  <Activity className="size-4 text-emerald-500" />
+  1235→                  Camera Feed
+  1236→                  {isTracking && (
+  1237→                    <Badge variant="secondary" className="ml-2 bg-emerald-500/10 text-emerald-600 border-emerald-500/20">
+  1238→                      <motion.span
+  1239→                        className="inline-block size-2 rounded-full bg-emerald-500 mr-1.5"
+  1240→                        animate={{ opacity: [1, 0.3, 1] }}
+  1241→                        transition={{ duration: 1.5, repeat: Infinity }}
+  1242→                      />
+  1243→                      LIVE
+  1244→                    </Badge>
+  1245→                  )}
+  1246→                </CardTitle>
+  1247→                <div className="flex items-center gap-2">
+  1248→                  {!cameraActive ? (
+  1249→                    <Button
+  1250→                      variant="outline"
+  1251→                      size="sm"
+  1252→                      onClick={startCamera}
+  1253→                      className="gap-1.5"
+  1254→                    >
+  1255→                      <Camera className="size-3.5" />
+  1256→                      Enable Camera
+  1257→                    </Button>
+  1258→                  ) : (
+  1259→                    <Button
+  1260→                      variant="outline"
+  1261→                      size="sm"
+  1262→                      onClick={stopCamera}
+  1263→                      className="gap-1.5"
+  1264→                    >
+  1265→                      <Camera className="size-3.5" />
+  1266→                      Disable
+  1267→                    </Button>
+  1268→                  )}
+  1269→                  {!isTracking ? (
+  1270→                    <Button
+  1271→                      size="sm"
+  1272→                      onClick={startTracking}
+  1273→                      className="gap-1.5 bg-emerald-600 hover:bg-emerald-700"
+  1274→                    >
+  1275→                      <Play className="size-3.5" />
+  1276→                      Start Tracking
+  1277→                    </Button>
+  1278→                  ) : (
+  1279→                    <Button
+  1280→                      size="sm"
+  1281→                      variant="destructive"
+  1282→                      onClick={stopTracking}
+  1283→                      className="gap-1.5"
+  1284→                    >
+  1285→                      <Pause className="size-3.5" />
+  1286→                      Stop
+  1287→                    </Button>
+  1288→                  )}
+  1289→                </div>
+  1290→              </div>
+  1291→            </CardHeader>
+  1292→            <CardContent className="pb-4">
+  1293→              {/* Camera container */}
+  1294→              <div
+  1295→                className={`relative w-full aspect-[4/3] bg-black/90 rounded-xl overflow-hidden ${
+  1296→                  isTracking ? 'ring-2 ring-emerald-500/50 shadow-lg shadow-emerald-500/20' : 'ring-1 ring-border'
+  1297→                } transition-all duration-500`}
+  1298→              >
+  1299→                {/* Real-time feedback bar at top */}
+  1300→                {isTracking && (
+  1301→                  <motion.div
+  1302→                    className="absolute top-0 left-0 right-0 z-20"
+  1303→                    initial={{ opacity: 0, y: -20 }}
+  1304→                    animate={{ opacity: 1, y: 0 }}
+  1305→                    transition={{ duration: 0.3 }}
+  1306→                  >
+  1307→                    <div className={`flex items-center justify-center gap-3 px-4 py-2.5 ${
+  1308→                      directionalInfo.color === 'green' ? 'bg-emerald-500/20 border-b border-emerald-500/30' :
+  1309→                      directionalInfo.color === 'yellow' ? 'bg-amber-500/20 border-b border-amber-500/30' :
+  1310→                      'bg-red-500/20 border-b border-red-500/30'
+  1311→                    }`}>
+  1312→                      <DirectionalArrow direction={directionalInfo.arrow} color={directionalInfo.color} />
+  1313→                      <span className={`text-base font-bold ${
+  1314→                        directionalInfo.color === 'green' ? 'text-emerald-400' :
+  1315→                        directionalInfo.color === 'yellow' ? 'text-amber-400' :
+  1316→                        'text-red-400'
+  1317→                      }`}>
+  1318→                        {directionalInfo.text}
+  1319→                      </span>
+  1320→                      {directionalInfo.arrow === 'left' && <ArrowLeft className={`size-5 ${directionalInfo.color === 'yellow' ? 'text-amber-400' : 'text-red-400'} animate-pulse`} />}
+  1321→                      {directionalInfo.arrow === 'right' && <ArrowRight className={`size-5 ${directionalInfo.color === 'yellow' ? 'text-amber-400' : 'text-red-400'} animate-pulse`} />}
+  1322→                    </div>
+  1323→                  </motion.div>
+  1324→                )}
+  1325→
+  1326→                {/* Video feed */}
+  1327→                <video
+  1328→                  ref={videoRef}
+  1329→                  autoPlay
+  1330→                  playsInline
+  1331→                  muted
+  1332→                  className={`absolute inset-0 w-full h-full object-cover ${
+  1333→                    cameraActive ? 'opacity-100' : 'opacity-0'
+  1334→                  } transition-opacity duration-300`}
+  1335→                  style={{ transform: 'scaleX(-1)' }}
+  1336→                />
+  1337→
+  1338→                {/* Enhanced placeholder when no camera - animated skeleton visualization */}
+  1339→                {!cameraActive && (
+  1340→                  <div className="absolute inset-0">
+  1341→                    <canvas
+  1342→                      ref={placeholderCanvasRef}
+  1343→                      className="w-full h-full"
+  1344→                    />
+  1345→                    {/* Activate Camera overlay button with glow */}
+  1346→                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+  1347→                      <motion.button
+  1348→                        onClick={startCamera}
+  1349→                        className="pointer-events-auto flex items-center gap-2 px-6 py-3 rounded-full bg-emerald-500/20 border border-emerald-500/50 text-emerald-400 font-semibold backdrop-blur-sm cursor-pointer"
+  1350→                        animate={{
+  1351→                          boxShadow: [
+  1352→                            '0 0 10px rgba(16,185,129,0.2), 0 0 20px rgba(16,185,129,0.1)',
+  1353→                            '0 0 20px rgba(16,185,129,0.4), 0 0 40px rgba(16,185,129,0.2)',
+  1354→                            '0 0 10px rgba(16,185,129,0.2), 0 0 20px rgba(16,185,129,0.1)',
+  1355→                          ],
+  1356→                        }}
+  1357→                        transition={{ duration: 2, repeat: Infinity }}
+  1358→                        whileHover={{ scale: 1.05, backgroundColor: 'rgba(16,185,129,0.3)' }}
+  1359→                        whileTap={{ scale: 0.95 }}
+  1360→                      >
+  1361→                        <Camera className="size-5" />
+  1362→                        Activate Camera
+  1363→                      </motion.button>
+  1364→                      <p className="text-zinc-500 text-xs mt-3">
+  1365→                        {cameraError || 'Motion tracking overlay will appear here'}
+  1366→                      </p>
+  1367→                    </div>
+  1368→                  </div>
+  1369→                )}
+  1370→
+  1371→                {/* Canvas overlay for skeleton (when camera is on) */}
+  1372→                <canvas
+  1373→                  ref={canvasRef}
+  1374→                  className="absolute inset-0 w-full h-full pointer-events-none"
+  1375→                  style={{ transform: 'scaleX(-1)' }}
+  1376→                />
+  1377→
+  1378→                {/* Pulsing LIVE indicator when tracking is active */}
+  1379→                {isTracking && (
+  1380→                  <motion.div
+  1381→                    className="absolute top-3 right-3 z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-600/80 backdrop-blur-sm"
+  1382→                    animate={{ opacity: [1, 0.6, 1] }}
+  1383→                    transition={{ duration: 1.2, repeat: Infinity }}
+  1384→                  >
+  1385→                    <span className="size-2 rounded-full bg-red-400 animate-ping" />
+  1386→                    <span className="text-white text-xs font-bold tracking-wider">LIVE</span>
+  1387→                  </motion.div>
+  1388→                )}
+  1389→
+  1390→                {/* Exercise info overlay */}
+  1391→                <div className="absolute top-3 left-3 right-3 flex items-start justify-between pointer-events-none z-10">
+  1392→                  <div className="bg-black/60 backdrop-blur-sm rounded-lg px-3 py-1.5">
+  1393→                    <p className="text-white text-xs font-medium">{currentExercise.name}</p>
+  1394→                    <p className="text-white/60 text-[10px]">{currentExercise.description}</p>
+  1395→                  </div>
+  1396→                  {isTracking && !(
+  1397→                    <motion.div
+  1398→                      className="bg-black/60 backdrop-blur-sm rounded-lg px-3 py-1.5"
+  1399→                      animate={{ opacity: [0.7, 1, 0.7] }}
+  1400→                      transition={{ duration: 2, repeat: Infinity }}
+  1401→                    >
+  1402→                      <p className="text-emerald-400 text-xs font-medium flex items-center gap-1">
+  1403→                        <Target className="size-3" />
+  1404→                        Tracking
+  1405→                      </p>
+  1406→                    </motion.div>
+  1407→                  )}
+  1408→                </div>
+  1409→
+  1410→                {/* Hold progress bar at bottom when tracking */}
+  1411→                {isTracking && (
+  1412→                  <div className="absolute bottom-14 left-3 right-3 z-10">
+  1413→                    <div className="flex items-center gap-2">
+  1414→                      <span className="text-[10px] text-white/60 shrink-0">Hold</span>
+  1415→                      <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
+  1416→                        <motion.div
+  1417→                          className="h-full rounded-full bg-emerald-500"
+  1418→                          animate={{ width: `${holdProgress}%` }}
+  1419→                          transition={{ duration: 0.3 }}
+  1420→                        />
+  1421→                      </div>
+  1422→                      <span className="text-[10px] text-emerald-400 shrink-0">{formatTime(holdTime)}</span>
+  1423→                    </div>
+  1424→                  </div>
+  1425→                )}
+  1426→
+  1427→                {/* Bottom feedback overlay */}
+  1428→                {isTracking && (
+  1429→                  <motion.div
+  1430→                    className="absolute bottom-3 left-3 right-3 z-10"
+  1431→                    initial={{ opacity: 0, y: 10 }}
+  1432→                    animate={{ opacity: 1, y: 0 }}
+  1433→                  >
+  1434→                    <div className="bg-black/70 backdrop-blur-sm rounded-lg px-4 py-2.5 text-center">
+  1435→                      <AnimatePresence mode="wait">
+  1436→                        <motion.p
+  1437→                          key={currentFeedback}
+  1438→                          initial={{ opacity: 0, y: 5 }}
+  1439→                          animate={{ opacity: 1, y: 0 }}
+  1440→                          exit={{ opacity: 0, y: -5 }}
+  1441→                          className={`text-sm font-semibold ${
+  1442→                            currentFeedbackType === 'success'
+  1443→                              ? 'text-emerald-400'
+  1444→                              : currentFeedbackType === 'warning'
+  1445→                              ? 'text-amber-400'
+  1446→                              : currentFeedbackType === 'error'
+  1447→                              ? 'text-red-400'
+  1448→                              : 'text-sky-400'
+  1449→                          }`}
+  1450→                        >
+  1451→                          {currentFeedback}
+  1452→                        </motion.p>
+  1453→                      </AnimatePresence>
+  1454→                    </div>
+  1455→                  </motion.div>
+  1456→                )}
+  1457→              </div>
+  1458→            </CardContent>
+  1459→          </Card>
+  1460→
+  1461→          {/* Exercise Quick Select - Circular buttons */}
+  1462→          <Card>
+  1463→            <CardHeader className="pb-3">
+  1464→              <CardTitle className="text-base flex items-center gap-2">
+  1465→                <CircleDot className="size-4 text-emerald-500" />
+  1466→                Quick Select Exercise
+  1467→              </CardTitle>
+  1468→            </CardHeader>
+  1469→            <CardContent>
+  1470→              <div className="flex items-center justify-center gap-3 flex-wrap">
+  1471→                <TooltipProvider>
+  1472→                  {EXERCISES.map((exercise) => {
+  1473→                    const isActive = selectedExercise === exercise.id
+  1474→                    return (
+  1475→                      <Tooltip key={exercise.id}>
+  1476→                        <TooltipTrigger asChild>
+  1477→                          <motion.button
+  1478→                            onClick={() => setSelectedExercise(exercise.id)}
+  1479→                            className={`relative flex flex-col items-center gap-1.5 p-3 rounded-2xl border-2 transition-colors cursor-pointer ${
+  1480→                              isActive
+  1481→                                ? 'border-emerald-500 bg-emerald-500/10'
+  1482→                                : 'border-border/50 bg-muted/30 hover:bg-muted/50 hover:border-emerald-500/30'
+  1483→                            }`}
+  1484→                            whileHover={{ scale: 1.05 }}
+  1485→                            whileTap={{ scale: 0.95 }}
+  1486→                          >
+  1487→                            {/* Glow ring when active */}
+  1488→                            {isActive && (
+  1489→                              <motion.div
+  1490→                                className="absolute inset-0 rounded-2xl border-2 border-emerald-400"
+  1491→                                animate={{
+  1492→                                  boxShadow: [
+  1493→                                    '0 0 5px rgba(16,185,129,0.3)',
+  1494→                                    '0 0 15px rgba(16,185,129,0.5)',
+  1495→                                    '0 0 5px rgba(16,185,129,0.3)',
+  1496→                                  ],
+  1497→                                }}
+  1498→                                transition={{ duration: 2, repeat: Infinity }}
+  1499→                              />
+  1500→                            )}
+  1501→                            <div className={`size-10 rounded-full flex items-center justify-center ${
+  1502→                              isActive
+  1503→                                ? 'bg-emerald-500/20 text-emerald-400'
+  1504→                                : 'bg-muted/50 text-muted-foreground'
+  1505→                            }`}>
+  1506→                              {exercise.icon}
+  1507→                            </div>
+  1508→                            <span className={`text-[10px] font-medium leading-tight text-center max-w-[70px] ${
+  1509→                              isActive ? 'text-emerald-600' : 'text-muted-foreground'
+  1510→                            }`}>
+  1511→                              {exercise.name}
+  1512→                            </span>
+  1513→                          </motion.button>
+  1514→                        </TooltipTrigger>
+  1515→                        <TooltipContent>
+  1516→                          <p className="text-xs">{exercise.description}</p>
+  1517→                        </TooltipContent>
+  1518→                      </Tooltip>
+  1519→                    )
+  1520→                  })}
+  1521→                </TooltipProvider>
+  1522→              </div>
+  1523→            </CardContent>
+  1524→          </Card>
+  1525→
+  1526→          {/* Joint Angles + Joint Health Diagram side by side */}
+  1527→          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+  1528→            {/* Joint Angles Display */}
+  1529→            <Card>
+  1530→              <CardHeader className="pb-3">
+  1531→                <CardTitle className="text-base flex items-center gap-2">
+  1532→                  <Activity className="size-4 text-emerald-500" />
+  1533→                  Joint Angles
+  1534→                </CardTitle>
+  1535→              </CardHeader>
+  1536→              <CardContent>
+  1537→                {jointAngles.length === 0 ? (
+  1538→                  <div className="text-center py-6 text-muted-foreground text-sm">
+  1539→                    Start tracking to view joint angle data
+  1540→                  </div>
+  1541→                ) : (
+  1542→                  <div className="grid grid-cols-2 gap-3">
+  1543→                    {jointAngles.map((joint) => (
+  1544→                      <motion.div
+  1545→                        key={joint.name}
+  1546→                        className="relative flex flex-col items-center gap-1.5 p-3 rounded-lg bg-muted/50 border border-border/50"
+  1547→                        initial={{ opacity: 0, scale: 0.9 }}
+  1548→                        animate={{ opacity: 1, scale: 1 }}
+  1549→                      >
+  1550→                        <div
+  1551→                          className={`size-3 rounded-full ${getAngleDotColor(joint.status)} shadow-md ${getAngleGlow(joint.status)}`}
+  1552→                        />
+  1553→                        <span className="text-[11px] text-muted-foreground text-center leading-tight">
+  1554→                          {joint.name}
+  1555→                        </span>
+  1556→                        <span className={`text-lg font-bold ${getAngleColor(joint.status)}`}>
+  1557→                          {joint.angle}°
+  1558→                        </span>
+  1559→                        <Badge
+  1560→                          variant="outline"
+  1561→                          className={`text-[10px] px-1.5 py-0 ${
+  1562→                            joint.status === 'good'
+  1563→                              ? 'border-emerald-500/30 text-emerald-600'
+  1564→                              : joint.status === 'caution'
+  1565→                              ? 'border-amber-500/30 text-amber-600'
+  1566→                              : 'border-red-500/30 text-red-600'
+  1567→                          }`}
+  1568→                        >
+  1569→                          {joint.status === 'good' ? 'Good' : joint.status === 'caution' ? 'Caution' : 'Danger'}
+  1570→                        </Badge>
+  1571→                      </motion.div>
+  1572→                    ))}
+  1573→                  </div>
+  1574→                )}
+  1575→              </CardContent>
+  1576→            </Card>
+  1577→
+  1578→            {/* Joint Health Diagram */}
+  1579→            <Card>
+  1580→              <CardHeader className="pb-3">
+  1581→                <CardTitle className="text-base flex items-center gap-2">
+  1582→                  <Target className="size-4 text-emerald-500" />
+  1583→                  Joint Health Map
+  1584→                </CardTitle>
+  1585→              </CardHeader>
+  1586→              <CardContent>
+  1587→                {jointAngles.length === 0 ? (
+  1588→                  <div className="text-center py-6 text-muted-foreground text-sm">
+  1589→                    Start tracking to view joint health
+  1590→                  </div>
+  1591→                ) : (
+  1592→                  <div className="flex flex-col items-center gap-4">
+  1593→                    <JointHealthDiagram jointAngles={jointAngles} />
+  1594→                    <div className="w-full space-y-1.5">
+  1595→                      <div className="flex items-center gap-2 text-xs">
+  1596→                        <span className="size-2.5 rounded-full bg-emerald-500" />
+  1597→                        <span className="text-muted-foreground">Good — Within target range</span>
+  1598→                      </div>
+  1599→                      <div className="flex items-center gap-2 text-xs">
+  1600→                        <span className="size-2.5 rounded-full bg-amber-500" />
+  1601→                        <span className="text-muted-foreground">Caution — Slightly off range</span>
+  1602→                      </div>
+  1603→                      <div className="flex items-center gap-2 text-xs">
+  1604→                        <span className="size-2.5 rounded-full bg-red-500" />
+  1605→                        <span className="text-muted-foreground">Danger — Outside safe range</span>
+  1606→                      </div>
+  1607→                    </div>
+  1608→                  </div>
+  1609→                )}
+  1610→              </CardContent>
+  1611→            </Card>
+  1612→          </div>
+  1613→        </div>
+  1614→
+  1615→        {/* Feedback Panel - 1/3 */}
+  1616→        <div className="space-y-4">
+  1617→          {/* Form Accuracy */}
+  1618→          <Card>
+  1619→            <CardHeader className="pb-2">
+  1620→              <CardTitle className="text-base flex items-center gap-2">
+  1621→                <Target className="size-4 text-emerald-500" />
+  1622→                Form Accuracy
+  1623→              </CardTitle>
+  1624→            </CardHeader>
+  1625→            <CardContent className="flex flex-col items-center pb-4">
+  1626→              <CircularProgress value={formAccuracy} size={160} strokeWidth={12} />
+  1627→              <div className="mt-3 w-full space-y-1.5">
+  1628→                <div className="flex items-center gap-2 text-xs">
+  1629→                  <span className="size-2.5 rounded-full bg-emerald-500" />
+  1630→                  <span className="text-muted-foreground">Good (80-100%)</span>
+  1631→                </div>
+  1632→                <div className="flex items-center gap-2 text-xs">
+  1633→                  <span className="size-2.5 rounded-full bg-amber-500" />
+  1634→                  <span className="text-muted-foreground">Caution (50-79%)</span>
+  1635→                </div>
+  1636→                <div className="flex items-center gap-2 text-xs">
+  1637→                  <span className="size-2.5 rounded-full bg-red-500" />
+  1638→                  <span className="text-muted-foreground">Danger (0-49%)</span>
+  1639→                </div>
+  1640→              </div>
+  1641→            </CardContent>
+  1642→          </Card>
+  1643→
+  1644→          {/* Session Stats with enhanced rep counter */}
+  1645→          <Card>
+  1646→            <CardHeader className="pb-3">
+  1647→              <CardTitle className="text-base flex items-center gap-2">
+  1648→                <Timer className="size-4 text-emerald-500" />
+  1649→                Session Stats
+  1650→              </CardTitle>
+  1651→            </CardHeader>
+  1652→            <CardContent>
+  1653→              {/* Large Rep Counter */}
+  1654→              <RepCounter reps={reps} pulseKey={repPulseKey} />
+  1655→
+  1656→              {/* Other stats */}
+  1657→              <div className="grid grid-cols-2 gap-3 mt-3">
+  1658→                <AnimatedCounter value={holdTime} label="Hold Time" format={formatTime} />
+  1659→                <AnimatedCounter value={sessionDuration} label="Duration" format={formatTime} />
+  1660→              </div>
+  1661→
+  1662→              {/* Progress bars */}
+  1663→              <div className="mt-3 space-y-2">
+  1664→                <div>
+  1665→                  <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
+  1666→                    <span>Rep Progress</span>
+  1667→                    <span>{Math.min(reps * 10, 100)}%</span>
+  1668→                  </div>
+  1669→                  <Progress value={Math.min(reps * 10, 100)} className="h-1.5" />
+  1670→                </div>
+  1671→                <div>
+  1672→                  <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
+  1673→                    <span>Hold Time</span>
+  1674→                    <span>{Math.min(holdTime * 2, 100)}%</span>
+  1675→                  </div>
+  1676→                  <Progress value={Math.min(holdTime * 2, 100)} className="h-1.5" />
+  1677→                </div>
+  1678→                <div>
+  1679→                  <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
+  1680→                    <span>Session</span>
+  1681→                    <span>{Math.min((sessionDuration / 300) * 100, 100).toFixed(0)}%</span>
+  1682→                  </div>
+  1683→                  <Progress value={Math.min((sessionDuration / 300) * 100, 100)} className="h-1.5" />
+  1684→                </div>
+  1685→              </div>
+  1686→
+  1687→              {/* Current exercise info */}
+  1688→              <div className="mt-3 p-3 rounded-lg border border-emerald-500/20 bg-emerald-500/5">
+  1689→                <div className="flex items-center gap-2 mb-1">
+  1690→                  <Target className="size-3.5 text-emerald-500" />
+  1691→                  <span className="text-xs font-medium text-emerald-600">{currentExercise.name}</span>
+  1692→                </div>
+  1693→                <p className="text-[11px] text-muted-foreground">{currentExercise.description}</p>
+  1694→                <div className="mt-2 flex flex-wrap gap-1">
+  1695→                  {Object.keys(currentExercise.targetAngles).map((joint) => (
+  1696→                    <Badge
+  1697→                      key={joint}
+  1698→                      variant="outline"
+  1699→                      className="text-[10px] px-1.5 py-0 border-emerald-500/20 text-emerald-600"
+  1700→                    >
+  1701→                      {joint}
+  1702→                    </Badge>
+  1703→                  ))}
+  1704→                </div>
+  1705→              </div>
+  1706→            </CardContent>
+  1707→          </Card>
+  1708→
+  1709→          {/* Feedback History */}
+  1710→          <Card>
+  1711→            <CardHeader className="pb-3">
+  1712→              <CardTitle className="text-base flex items-center gap-2">
+  1713→                <Activity className="size-4 text-emerald-500" />
+  1714→                Feedback History
+  1715→              </CardTitle>
+  1716→            </CardHeader>
+  1717→            <CardContent>
+  1718→              {feedbackHistory.length === 0 ? (
+  1719→                <div className="text-center py-6 text-muted-foreground text-sm">
+  1720→                  Start tracking to see feedback
+  1721→                </div>
+  1722→              ) : (
+  1723→                <ScrollArea className="h-[280px]">
+  1724→                  <div className="space-y-2 pr-2">
+  1725→                    <AnimatePresence initial={false}>
+  1726→                      {feedbackHistory.map((fb) => (
+  1727→                        <motion.div
+  1728→                          key={fb.id}
+  1729→                          initial={{ opacity: 0, x: 20, height: 0 }}
+  1730→                          animate={{ opacity: 1, x: 0, height: 'auto' }}
+  1731→                          exit={{ opacity: 0, x: -20, height: 0 }}
+  1732→                          transition={{ duration: 0.3 }}
+  1733→                          className={`flex items-start gap-2 p-2 rounded-lg border ${
+  1734→                            fb.type === 'success'
+  1735→                              ? 'border-emerald-500/20 bg-emerald-500/5'
+  1736→                              : fb.type === 'warning'
+  1737→                              ? 'border-amber-500/20 bg-amber-500/5'
+  1738→                              : fb.type === 'error'
+  1739→                              ? 'border-red-500/20 bg-red-500/5'
+  1740→                              : 'border-sky-500/20 bg-sky-500/5'
+  1741→                          }`}
+  1742→                        >
+  1743→                          <div className="mt-0.5 shrink-0">{getFeedbackIcon(fb.type)}</div>
+  1744→                          <div className="flex-1 min-w-0">
+  1745→                            <p className="text-xs font-medium leading-tight">{fb.message}</p>
+  1746→                            <p className="text-[10px] text-muted-foreground mt-0.5">
+  1747→                              {fb.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+  1748→                            </p>
+  1749→                          </div>
+  1750→                        </motion.div>
+  1751→                      ))}
+  1752→                    </AnimatePresence>
+  1753→                  </div>
+  1754→                </ScrollArea>
+  1755→              )}
+  1756→            </CardContent>
+  1757→          </Card>
+  1758→        </div>
+  1759→      </div>
+  1760→    </div>
+  1761→  )
+  1762→}
+  1763→

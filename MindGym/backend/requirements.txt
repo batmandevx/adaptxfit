@@ -1,0 +1,4 @@
+fastapi
+uvicorn
+SQLAlchemy>=2.0
+pydantic>=2

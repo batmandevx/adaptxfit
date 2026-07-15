@@ -1,0 +1,538 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e5]:
+        - generic [ref=e6] [cursor=pointer]:
+          - img [ref=e8]
+          - generic [ref=e14]:
+            - heading "AdaptiFit" [level=1] [ref=e803]
+            - paragraph [ref=e16]: AI Adaptive Fitness & Rehab
+        - navigation [ref=e17]:
+          - button "Dashboard" [ref=e804]:
+            - img [ref=e20]
+            - generic [ref=e25]: Dashboard
+          - button "Body Scan" [ref=e805]:
+            - img [ref=e28]
+            - generic [ref=e33]: Body Scan
+          - button "Live Coach" [active] [ref=e806]:
+            - img [ref=e36]
+            - generic [ref=e39]: Live Coach
+          - button "Exercises" [ref=e807]:
+            - img [ref=e42]
+            - generic [ref=e48]: Exercises
+          - button "Mind Gym" [ref=e808]:
+            - img [ref=e51]
+            - generic [ref=e53]: Mind Gym
+          - button "Breathing" [ref=e809]:
+            - img [ref=e56]
+            - generic [ref=e60]: Breathing
+          - button "Mood" [ref=e810]:
+            - img [ref=e63]
+            - generic [ref=e73]: Mood
+          - button "Nutrition" [ref=e811]:
+            - img [ref=e76]
+            - generic [ref=e79]: Nutrition
+          - button "Community" [ref=e812]:
+            - img [ref=e82]
+            - generic [ref=e87]: Community
+          - button "Wearable" [ref=e813]:
+            - img [ref=e90]
+            - generic [ref=e95]: Wearable
+          - button "Crisis" [ref=e814]:
+            - img [ref=e98]
+            - generic [ref=e100]: Crisis
+        - generic [ref=e101]:
+          - button [ref=e102]:
+            - generic [ref=e683]:
+              - img
+          - button "Start voice input" [ref=e815]:
+            - generic [ref=e105]:
+              - img
+          - button [ref=e106]:
+            - img
+          - button "3" [ref=e816]:
+            - img
+            - generic [ref=e109]: "3"
+          - generic [ref=e110]:
+            - img
+            - text: Pro Plan
+          - generic [ref=e112] [cursor=pointer]: A
+          - button "Get Started" [ref=e817]:
+            - img
+            - text: Get Started
+    - main [ref=e114]:
+      - generic [ref=e1468]:
+        - generic [ref=e1469]:
+          - generic [ref=e1470]:
+            - heading "Adaptive Exercise Library" [level=2] [ref=e1471]:
+              - img [ref=e1472]
+              - text: Adaptive Exercise Library
+            - paragraph [ref=e1478]: Personalized exercises designed for every ability level
+          - generic [ref=e1480]:
+            - img
+            - text: 6 Exercises
+        - generic [ref=e1481]:
+          - generic [ref=e1482]:
+            - img [ref=e1483]
+            - textbox "Search exercises by name or muscle group..." [ref=e1486]
+          - button "Start voice input" [ref=e1488]:
+            - generic [ref=e1489]:
+              - img
+        - generic [ref=e1493]:
+          - button "All" [ref=e1494]:
+            - img [ref=e1495]
+            - text: All
+          - button "♿ Adaptive Fitness (24)" [ref=e1497]:
+            - generic [ref=e1498]: ♿
+            - text: Adaptive Fitness
+            - generic [ref=e1499]: (24)
+          - button "🩹 Rehabilitation (18)" [ref=e1500]:
+            - generic [ref=e1501]: 🩹
+            - text: Rehabilitation
+            - generic [ref=e1502]: (18)
+          - button "💪 Strength Training (32)" [ref=e1503]:
+            - generic [ref=e1504]: 💪
+            - text: Strength Training
+            - generic [ref=e1505]: (32)
+          - button "🧘 Flexibility & Yoga (15)" [ref=e1506]:
+            - generic [ref=e1507]: 🧘
+            - text: Flexibility & Yoga
+            - generic [ref=e1508]: (15)
+          - button "❤️ Cardio (20)" [ref=e1509]:
+            - generic [ref=e1510]: ❤️
+            - text: Cardio
+            - generic [ref=e1511]: (20)
+          - button "⚖️ Balance & Stability (12)" [ref=e1512]:
+            - generic [ref=e1513]: ⚖️
+            - text: Balance & Stability
+            - generic [ref=e1514]: (12)
+        - generic [ref=e1515]:
+          - generic [ref=e1516]: "Difficulty:"
+          - button "All Levels" [ref=e1517]
+          - button "Easy" [ref=e1518]: Easy
+          - button "Medium" [ref=e1520]: Medium
+          - button "Hard" [ref=e1522]: Hard
+        - generic [ref=e1524]:
+          - tablist [ref=e1525]:
+            - tab "Exercises" [selected] [ref=e1526]:
+              - img
+              - text: Exercises
+            - tab "Video Library" [ref=e1527]:
+              - img
+              - text: Video Library
+            - tab "Workout Plans" [ref=e1528]:
+              - img
+              - text: Workout Plans
+          - tabpanel "Exercises" [ref=e1529]:
+            - generic [ref=e1530]:
+              - generic [ref=e1532]:
+                - generic [ref=e1533]:
+                  - generic [ref=e1534]:
+                    - generic [ref=e1535]: Seated Shoulder Press
+                    - generic [ref=e1536]: medium
+                  - generic [ref=e1538]: 💪 Strength Training
+                - generic [ref=e1539]:
+                  - generic [ref=e1540]:
+                    - generic [ref=e1541]:
+                      - img
+                      - text: Shoulders
+                    - generic [ref=e1542]:
+                      - img
+                      - text: Triceps
+                    - generic [ref=e1543]:
+                      - img
+                      - text: Core
+                  - generic [ref=e1544]:
+                    - generic [ref=e1545]: Strengthen shoulders while seated. Perfect for wheelchair users or those with lower body limitations.
+                    - button [ref=e1546]:
+                      - generic [ref=e1547]:
+                        - img
+                  - generic [ref=e1548]:
+                    - generic [ref=e1549]:
+                      - img [ref=e1550]
+                      - text: 10 min
+                    - generic [ref=e1553]:
+                      - img [ref=e1554]
+                      - text: 45 cal
+                    - generic [ref=e1556]:
+                      - img [ref=e1557]
+                      - text: "4.6"
+                  - generic [ref=e1559]:
+                    - paragraph [ref=e1560]:
+                      - img [ref=e1561]
+                      - text: Adaptations Available
+                    - list [ref=e1567]:
+                      - listitem [ref=e1568]:
+                        - img [ref=e1569]
+                        - text: Use resistance bands for lighter resistance
+                      - listitem [ref=e1571]:
+                        - img [ref=e1572]
+                        - text: One-arm variation for unilateral weakness
+                  - generic [ref=e1574]:
+                    - button "Start Exercise" [ref=e1575]:
+                      - img
+                      - text: Start Exercise
+                    - button "Watch Video" [ref=e1576]:
+                      - img
+                      - text: Watch Video
+              - generic [ref=e1578]:
+                - generic [ref=e1579]:
+                  - generic [ref=e1580]:
+                    - generic [ref=e1581]: Resisted Leg Extensions
+                    - generic [ref=e1582]: easy
+                  - generic [ref=e1584]: 🩹 Rehabilitation
+                - generic [ref=e1585]:
+                  - generic [ref=e1586]:
+                    - generic [ref=e1587]:
+                      - img
+                      - text: Quadriceps
+                    - generic [ref=e1588]:
+                      - img
+                      - text: Hip Flexors
+                  - generic [ref=e1589]:
+                    - generic [ref=e1590]: Gentle leg extensions with resistance band for knee rehabilitation and quad strengthening.
+                    - button [ref=e1591]:
+                      - generic [ref=e1592]:
+                        - img
+                  - generic [ref=e1593]:
+                    - generic [ref=e1594]:
+                      - img [ref=e1595]
+                      - text: 15 min
+                    - generic [ref=e1598]:
+                      - img [ref=e1599]
+                      - text: 35 cal
+                    - generic [ref=e1601]:
+                      - img [ref=e1602]
+                      - text: "4.8"
+                  - generic [ref=e1604]:
+                    - paragraph [ref=e1605]:
+                      - img [ref=e1606]
+                      - text: Adaptations Available
+                    - list [ref=e1612]:
+                      - listitem [ref=e1613]:
+                        - img [ref=e1614]
+                        - text: Reduce range of motion for acute injuries
+                      - listitem [ref=e1616]:
+                        - img [ref=e1617]
+                        - text: Add ankle weights for progression
+                  - generic [ref=e1619]:
+                    - button "Start Exercise" [ref=e1620]:
+                      - img
+                      - text: Start Exercise
+                    - button "Watch Video" [ref=e1621]:
+                      - img
+                      - text: Watch Video
+              - generic [ref=e1623]:
+                - generic [ref=e1624]:
+                  - generic [ref=e1625]:
+                    - generic [ref=e1626]: Wheelchair Yoga Flow
+                    - generic [ref=e1627]: easy
+                  - generic [ref=e1629]: 🧘 Flexibility & Yoga
+                - generic [ref=e1630]:
+                  - generic [ref=e1631]:
+                    - generic [ref=e1632]:
+                      - img
+                      - text: Spine
+                    - generic [ref=e1633]:
+                      - img
+                      - text: Shoulders
+                    - generic [ref=e1634]:
+                      - img
+                      - text: Hips
+                  - generic [ref=e1635]:
+                    - generic [ref=e1636]: Gentle yoga flow adapted for seated practice. Improves flexibility and reduces stress.
+                    - button [ref=e1637]:
+                      - generic [ref=e1638]:
+                        - img
+                  - generic [ref=e1639]:
+                    - generic [ref=e1640]:
+                      - img [ref=e1641]
+                      - text: 20 min
+                    - generic [ref=e1644]:
+                      - img [ref=e1645]
+                      - text: 30 cal
+                    - generic [ref=e1647]:
+                      - img [ref=e1648]
+                      - text: "4.8"
+                  - generic [ref=e1650]:
+                    - paragraph [ref=e1651]:
+                      - img [ref=e1652]
+                      - text: Adaptations Available
+                    - list [ref=e1658]:
+                      - listitem [ref=e1659]:
+                        - img [ref=e1660]
+                        - text: Reduce hold times for beginners
+                      - listitem [ref=e1662]:
+                        - img [ref=e1663]
+                        - text: Use chair with armrests for support
+                  - generic [ref=e1665]:
+                    - button "Start Exercise" [ref=e1666]:
+                      - img
+                      - text: Start Exercise
+                    - button "Watch Video" [ref=e1667]:
+                      - img
+                      - text: Watch Video
+              - generic [ref=e1669]:
+                - generic [ref=e1670]:
+                  - generic [ref=e1671]:
+                    - generic [ref=e1672]: Para Swimming Dry Land Training
+                    - generic [ref=e1673]: hard
+                  - generic [ref=e1675]: ❤️ Cardio
+                - generic [ref=e1676]:
+                  - generic [ref=e1677]:
+                    - generic [ref=e1678]:
+                      - img
+                      - text: Lats
+                    - generic [ref=e1679]:
+                      - img
+                      - text: Shoulders
+                    - generic [ref=e1680]:
+                      - img
+                      - text: Core
+                    - generic [ref=e1681]:
+                      - img
+                      - text: Arms
+                  - generic [ref=e1682]:
+                    - generic [ref=e1683]: Dry land training for Paralympic swimmers. Simulates swim strokes with resistance bands.
+                    - button [ref=e1684]:
+                      - generic [ref=e1685]:
+                        - img
+                  - generic [ref=e1686]:
+                    - generic [ref=e1687]:
+                      - img [ref=e1688]
+                      - text: 25 min
+                    - generic [ref=e1691]:
+                      - img [ref=e1692]
+                      - text: 120 cal
+                    - generic [ref=e1694]:
+                      - img [ref=e1695]
+                      - text: "4.5"
+                  - generic [ref=e1697]:
+                    - paragraph [ref=e1698]:
+                      - img [ref=e1699]
+                      - text: Adaptations Available
+                    - list [ref=e1705]:
+                      - listitem [ref=e1706]:
+                        - img [ref=e1707]
+                        - text: Seated variation available
+                      - listitem [ref=e1709]:
+                        - img [ref=e1710]
+                        - text: Resistance adjustable
+                  - generic [ref=e1712]:
+                    - button "Start Exercise" [ref=e1713]:
+                      - img
+                      - text: Start Exercise
+                    - button "Watch Video" [ref=e1714]:
+                      - img
+                      - text: Watch Video
+              - generic [ref=e1716]:
+                - generic [ref=e1717]:
+                  - generic [ref=e1718]:
+                    - generic [ref=e1719]: Balance Board Seated
+                    - generic [ref=e1720]: medium
+                  - generic [ref=e1722]: ⚖️ Balance & Stability
+                - generic [ref=e1723]:
+                  - generic [ref=e1724]:
+                    - generic [ref=e1725]:
+                      - img
+                      - text: Core
+                    - generic [ref=e1726]:
+                      - img
+                      - text: Stabilizers
+                  - generic [ref=e1727]:
+                    - generic [ref=e1728]: Seated balance exercises using an inflatable cushion to improve core stability.
+                    - button [ref=e1729]:
+                      - generic [ref=e1730]:
+                        - img
+                  - generic [ref=e1731]:
+                    - generic [ref=e1732]:
+                      - img [ref=e1733]
+                      - text: 12 min
+                    - generic [ref=e1736]:
+                      - img [ref=e1737]
+                      - text: 25 cal
+                    - generic [ref=e1739]:
+                      - img [ref=e1740]
+                      - text: "4.6"
+                  - generic [ref=e1742]:
+                    - paragraph [ref=e1743]:
+                      - img [ref=e1744]
+                      - text: Adaptations Available
+                    - list [ref=e1750]:
+                      - listitem [ref=e1751]:
+                        - img [ref=e1752]
+                        - text: Use chair with back support
+                      - listitem [ref=e1754]:
+                        - img [ref=e1755]
+                        - text: Hand assistance for safety
+                  - generic [ref=e1757]:
+                    - button "Start Exercise" [ref=e1758]:
+                      - img
+                      - text: Start Exercise
+                    - button "Watch Video" [ref=e1759]:
+                      - img
+                      - text: Watch Video
+              - generic [ref=e1761]:
+                - generic [ref=e1762]:
+                  - generic [ref=e1763]:
+                    - generic [ref=e1764]: Upper Body Resistance Circuit
+                    - generic [ref=e1765]: hard
+                  - generic [ref=e1767]: ♿ Adaptive Fitness
+                - generic [ref=e1768]:
+                  - generic [ref=e1769]:
+                    - generic [ref=e1770]:
+                      - img
+                      - text: Chest
+                    - generic [ref=e1771]:
+                      - img
+                      - text: Back
+                    - generic [ref=e1772]:
+                      - img
+                      - text: Shoulders
+                    - generic [ref=e1773]:
+                      - img
+                      - text: Arms
+                  - generic [ref=e1774]:
+                    - generic [ref=e1775]: Complete upper body circuit using resistance bands. Designed for lower limb amputees.
+                    - button [ref=e1776]:
+                      - generic [ref=e1777]:
+                        - img
+                  - generic [ref=e1778]:
+                    - generic [ref=e1779]:
+                      - img [ref=e1780]
+                      - text: 30 min
+                    - generic [ref=e1783]:
+                      - img [ref=e1784]
+                      - text: 150 cal
+                    - generic [ref=e1786]:
+                      - img [ref=e1787]
+                      - text: "4.5"
+                  - generic [ref=e1789]:
+                    - paragraph [ref=e1790]:
+                      - img [ref=e1791]
+                      - text: Adaptations Available
+                    - list [ref=e1797]:
+                      - listitem [ref=e1798]:
+                        - img [ref=e1799]
+                        - text: Adjustable band resistance
+                      - listitem [ref=e1801]:
+                        - img [ref=e1802]
+                        - text: One-sided variations
+                  - generic [ref=e1804]:
+                    - button "Start Exercise" [ref=e1805]:
+                      - img
+                      - text: Start Exercise
+                    - button "Watch Video" [ref=e1806]:
+                      - img
+                      - text: Watch Video
+        - generic [ref=e1807]:
+          - generic [ref=e1809]:
+            - generic [ref=e1810]:
+              - img [ref=e1812]
+              - generic [ref=e1815]:
+                - generic [ref=e1816]: Health Info Lookup
+                - generic [ref=e1817]: Search the web for health & nutrition info
+            - button [ref=e1818]:
+              - img
+          - generic [ref=e1819]:
+            - generic [ref=e1820]:
+              - img [ref=e1821]
+              - textbox "Search health, nutrition, fitness..." [ref=e1824]: adaptive exercises for disabilities
+            - generic [ref=e1825]:
+              - button "Adaptive Exercises" [ref=e1826]:
+                - img [ref=e1827]
+                - text: Adaptive Exercises
+              - button "Mental Health" [ref=e1833]:
+                - img [ref=e1834]
+                - text: Mental Health
+              - button "Nutrition Tips" [ref=e1844]:
+                - img [ref=e1845]
+                - text: Nutrition Tips
+              - button "Heart Health" [ref=e1848]:
+                - img [ref=e1849]
+                - text: Heart Health
+              - button "Injury Prevention" [ref=e1851]:
+                - img [ref=e1852]
+                - text: Injury Prevention
+              - button "Disability Fitness" [ref=e1854]:
+                - img [ref=e1855]
+                - text: Disability Fitness
+            - generic [ref=e1858]:
+              - generic [ref=e1859]:
+                - img [ref=e1860]
+                - text: "Recent:"
+              - button "adaptive exercises for di..." [ref=e1863]:
+                - img [ref=e1864]
+                - text: adaptive exercises for di...
+            - generic [ref=e1867]:
+              - img [ref=e1868]
+              - paragraph [ref=e1871]: No results found
+              - paragraph [ref=e1872]: Try a different search term
+    - contentinfo [ref=e526]:
+      - generic [ref=e530]:
+        - generic [ref=e531]:
+          - generic [ref=e532]:
+            - generic [ref=e533]:
+              - img [ref=e535]
+              - generic [ref=e541]: AdaptiFit
+            - heading "Platform" [level=4] [ref=e1224]
+            - list [ref=e543]:
+              - listitem [ref=e544] [cursor=pointer]: Dashboard
+              - listitem [ref=e545] [cursor=pointer]: Body Scan
+              - listitem [ref=e546] [cursor=pointer]: Exercise Library
+              - listitem [ref=e547] [cursor=pointer]: Mood Monitor
+              - listitem [ref=e548] [cursor=pointer]: Nutrition
+          - generic [ref=e549]:
+            - heading "Resources" [level=4] [ref=e1225]
+            - list [ref=e551]:
+              - listitem [ref=e552] [cursor=pointer]: Documentation
+              - listitem [ref=e553] [cursor=pointer]: API Reference
+              - listitem [ref=e554] [cursor=pointer]: Video Tutorials
+              - listitem [ref=e555] [cursor=pointer]: Blog
+              - listitem [ref=e556] [cursor=pointer]: Help Center
+          - generic [ref=e557]:
+            - heading "Community" [level=4] [ref=e1226]
+            - list [ref=e559]:
+              - listitem [ref=e560] [cursor=pointer]: Peer Support
+              - listitem [ref=e561] [cursor=pointer]: Expert Coaching
+              - listitem [ref=e562] [cursor=pointer]: Success Stories
+              - listitem [ref=e563] [cursor=pointer]: Events
+              - listitem [ref=e564] [cursor=pointer]: Ambassador Program
+          - generic [ref=e565]:
+            - heading "Legal" [level=4] [ref=e1227]
+            - list [ref=e567]:
+              - listitem [ref=e568] [cursor=pointer]: Privacy Policy
+              - listitem [ref=e569] [cursor=pointer]: Terms of Service
+              - listitem [ref=e570] [cursor=pointer]: HIPAA Compliance
+              - listitem [ref=e571] [cursor=pointer]: Cookie Policy
+              - listitem [ref=e572] [cursor=pointer]: Accessibility
+        - generic [ref=e574]:
+          - generic [ref=e575]:
+            - img [ref=e576]
+            - generic [ref=e582]: © 2024 AdaptiFit — Inclusive Fitness for All
+          - generic [ref=e583]:
+            - button [ref=e585]:
+              - img
+            - button [ref=e587]:
+              - img
+            - button [ref=e589]:
+              - img
+            - button [ref=e591]:
+              - img
+          - generic [ref=e592]:
+            - generic [ref=e593]:
+              - img [ref=e594]
+              - text: Built with empathy
+            - generic [ref=e596]: •
+            - link "988 Suicide and Crisis Lifeline - call for help" [ref=e1228] [cursor=pointer]:
+              - /url: tel:988
+              - text: 988 Suicide & Crisis Lifeline
+    - button "Open AdaptiFit AI Chat" [ref=e1229]:
+      - img [ref=e722]
+    - button "Open accessibility settings" [ref=e1230] [cursor=pointer]:
+      - img [ref=e725]
+  - region "Notifications (F8)":
+    - list
+  - button "Open Next.js Dev Tools" [ref=e603] [cursor=pointer]:
+    - img [ref=e604]
+  - alert [ref=e731]

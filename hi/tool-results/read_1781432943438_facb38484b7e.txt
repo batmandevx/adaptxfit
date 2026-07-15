@@ -1,0 +1,1124 @@
+     1→     1→'use client'
+     2→     2→
+     3→     3→import React, { useState, useEffect, useRef, useCallback } from 'react'
+     4→     4→import { motion, AnimatePresence } from 'framer-motion'
+     5→     5→import {
+     6→     6→  Camera,
+     7→     7→  Play,
+     8→     8→  Pause,
+     9→     9→  RotateCcw,
+    10→    10→  Activity,
+    11→    11→  Target,
+    12→    12→  AlertTriangle,
+    13→    13→  CheckCircle,
+    14→    14→  Timer,
+    15→    15→} from 'lucide-react'
+    16→    16→import {
+    17→    17→  Card,
+    18→    18→  CardHeader,
+    19→    19→  CardTitle,
+    20→    20→  CardContent,
+    21→    21→} from '@/components/ui/card'
+    22→    22→import { Button } from '@/components/ui/button'
+    23→    23→import { Badge } from '@/components/ui/badge'
+    24→    24→import {
+    25→    25→  Select,
+    26→    26→  SelectContent,
+    27→    27→  SelectItem,
+    28→    28→  SelectTrigger,
+    29→    29→  SelectValue,
+    30→    30→} from '@/components/ui/select'
+    31→    31→import { Progress } from '@/components/ui/progress'
+    32→    32→import { ScrollArea } from '@/components/ui/scroll-area'
+    33→    33→
+    34→    34→// Types
+    35→    35→interface JointAngle {
+    36→    36→  name: string
+    37→    37→  angle: number
+    38→    38→  status: 'good' | 'caution' | 'danger'
+    39→    39→}
+    40→    40→
+    41→    41→interface FeedbackMessage {
+    42→    42→  id: number
+    43→    43→  message: string
+    44→    44→  type: 'success' | 'warning' | 'info' | 'error'
+    45→    45→  timestamp: Date
+    46→    46→}
+    47→    47→
+    48→    48→interface SkeletonPoint {
+    49→    49→  x: number
+    50→    50→  y: number
+    51→    51→  label?: string
+    52→    52→}
+    53→    53→
+    54→    54→interface Exercise {
+    55→    55→  id: string
+    56→    56→  name: string
+    57→    57→  description: string
+    58→    58→  targetAngles: Record<string, { min: number; max: number }>
+    59→    59→}
+    60→    60→
+    61→    61→// Exercises data
+    62→    62→const EXERCISES: Exercise[] = [
+    63→    63→  {
+    64→    64→    id: 'shoulder-rotation',
+    65→    65→    name: 'Shoulder Rotation',
+    66→    66→    description: 'Circular shoulder mobility exercise',
+    67→    67→    targetAngles: {
+    68→    68→      'Left Shoulder': { min: 140, max: 180 },
+    69→    69→      'Right Shoulder': { min: 140, max: 180 },
+    70→    70→      'Left Elbow': { min: 150, max: 180 },
+    71→    71→      'Right Elbow': { min: 150, max: 180 },
+    72→    72→    },
+    73→    73→  },
+    74→    74→  {
+    75→    75→    id: 'seated-balance',
+    76→    76→    name: 'Seated Balance',
+    77→    77→    description: 'Core stability while seated',
+    78→    78→    targetAngles: {
+    79→    79→      'Left Hip': { min: 85, max: 100 },
+    80→    80→      'Right Hip': { min: 85, max: 100 },
+    81→    81→      'Left Shoulder': { min: 160, max: 180 },
+    82→    82→      'Right Shoulder': { min: 160, max: 180 },
+    83→    83→    },
+    84→    84→  },
+    85→    85→  {
+    86→    86→    id: 'arm-extension',
+    87→    87→    name: 'Arm Extension',
+    88→    88→    description: 'Full arm extension with hold',
+    89→    89→    targetAngles: {
+    90→    90→      'Left Shoulder': { min: 150, max: 180 },
+    91→    91→      'Right Shoulder': { min: 150, max: 180 },
+    92→    92→      'Left Elbow': { min: 160, max: 180 },
+    93→    93→      'Right Elbow': { min: 160, max: 180 },
+    94→    94→    },
+    95→    95→  },
+    96→    96→  {
+    97→    97→    id: 'knee-flexion',
+    98→    98→    name: 'Knee Flexion',
+    99→    99→    description: 'Controlled knee bending exercise',
+   100→   100→    targetAngles: {
+   101→   101→      'Left Knee': { min: 70, max: 120 },
+   102→   102→      'Right Knee': { min: 70, max: 120 },
+   103→   103→      'Left Hip': { min: 80, max: 110 },
+   104→   104→      'Right Hip': { min: 80, max: 110 },
+   105→   105→    },
+   106→   106→  },
+   107→   107→  {
+   108→   108→    id: 'lateral-lean',
+   109→   109→    name: 'Lateral Lean',
+   110→   110→    description: 'Side-leaning flexibility drill',
+   111→   111→    targetAngles: {
+   112→   112→      'Left Shoulder': { min: 120, max: 180 },
+   113→   113→      'Right Shoulder': { min: 120, max: 180 },
+   114→   114→      'Left Hip': { min: 75, max: 105 },
+   115→   115→      'Right Hip': { min: 75, max: 105 },
+   116→   116→    },
+   117→   117→  },
+   118→   118→]
+   119→   119→
+   120→   120→// Feedback messages pool
+   121→   121→const FEEDBACK_POOL = {
+   122→   122→  success: [
+   123→   123→    'Great Form!',
+   124→   124→    'Perfect Hold!',
+   125→   125→    'Excellent Alignment!',
+   126→   126→    'Steady and Strong!',
+   127→   127→    'Looking Great!',
+   128→   128→    'Well Done!',
+   129→   129→    'On Target!',
+   130→   130→  ],
+   131→   131→  warning: [
+   132→   132→    'Adjust Shoulders',
+   133→   133→    'Lean Left Slightly',
+   134→   134→    'Lean Right Slightly',
+   135→   135→    'Hold Position',
+   136→   136→    'Slow Down a Bit',
+   137→   137→    'Straighten Up',
+   138→   138→    'Engage Core More',
+   139→   139→  ],
+   140→   140→  info: [
+   141→   141→    'Tracking Active',
+   142→   142→    'Hold for 3 More Seconds',
+   143→   143→    'Breathe Steadily',
+   144→   144→    'Almost There',
+   145→   145→    'Keep Going',
+   146→   146→    'Maintain Position',
+   147→   147→  ],
+   148→   148→  error: [
+   149→   149→    'Out of Frame',
+   150→   150→    'Adjust Position',
+   151→   151→    'Too Much Strain',
+   152→   152→    'Reset Form',
+   153→   153→  ],
+   154→   154→}
+   155→   155→
+   156→   156→// Base skeleton points (normalized 0-1, centered at 0.5)
+   157→   157→const BASE_SKELETON: { joints: Record<string, SkeletonPoint>; connections: [string, string][] } = {
+   158→   158→  joints: {
+   159→   159→    head: { x: 0.5, y: 0.12, label: 'Head' },
+   160→   160→    neck: { x: 0.5, y: 0.2 },
+   161→   161→    leftShoulder: { x: 0.36, y: 0.28, label: 'L.Shoulder' },
+   162→   162→    rightShoulder: { x: 0.64, y: 0.28, label: 'R.Shoulder' },
+   163→   163→    leftElbow: { x: 0.28, y: 0.42, label: 'L.Elbow' },
+   164→   164→    rightElbow: { x: 0.72, y: 0.42, label: 'R.Elbow' },
+   165→   165→    leftWrist: { x: 0.24, y: 0.55, label: 'L.Wrist' },
+   166→   166→    rightWrist: { x: 0.76, y: 0.55, label: 'R.Wrist' },
+   167→   167→    torso: { x: 0.5, y: 0.45 },
+   168→   168→    leftHip: { x: 0.42, y: 0.58, label: 'L.Hip' },
+   169→   169→    rightHip: { x: 0.58, y: 0.58, label: 'R.Hip' },
+   170→   170→    leftKnee: { x: 0.4, y: 0.73, label: 'L.Knee' },
+   171→   171→    rightKnee: { x: 0.6, y: 0.73, label: 'R.Knee' },
+   172→   172→    leftAnkle: { x: 0.38, y: 0.88, label: 'L.Ankle' },
+   173→   173→    rightAnkle: { x: 0.62, y: 0.88, label: 'R.Ankle' },
+   174→   174→  },
+   175→   175→  connections: [
+   176→   176→    ['head', 'neck'],
+   177→   177→    ['neck', 'leftShoulder'],
+   178→   178→    ['neck', 'rightShoulder'],
+   179→   179→    ['leftShoulder', 'leftElbow'],
+   180→   180→    ['rightShoulder', 'rightElbow'],
+   181→   181→    ['leftElbow', 'leftWrist'],
+   182→   182→    ['rightElbow', 'rightWrist'],
+   183→   183→    ['neck', 'torso'],
+   184→   184→    ['torso', 'leftHip'],
+   185→   185→    ['torso', 'rightHip'],
+   186→   186→    ['leftHip', 'leftKnee'],
+   187→   187→    ['rightHip', 'rightKnee'],
+   188→   188→    ['leftKnee', 'leftAnkle'],
+   189→   189→    ['rightKnee', 'rightAnkle'],
+   190→   190→    ['leftShoulder', 'rightShoulder'],
+   191→   191→    ['leftHip', 'rightHip'],
+   192→   192→  ],
+   193→   193→}
+   194→   194→
+   195→   195→function getAngleColor(status: 'good' | 'caution' | 'danger'): string {
+   196→   196→  switch (status) {
+   197→   197→    case 'good':
+   198→   198→      return 'text-emerald-500'
+   199→   199→    case 'caution':
+   200→   200→      return 'text-amber-500'
+   201→   201→    case 'danger':
+   202→   202→      return 'text-red-500'
+   203→   203→  }
+   204→   204→}
+   205→   205→
+   206→   206→function getAngleDotColor(status: 'good' | 'caution' | 'danger'): string {
+   207→   207→  switch (status) {
+   208→   208→    case 'good':
+   209→   209→      return 'bg-emerald-500'
+   210→   210→    case 'caution':
+   211→   211→      return 'bg-amber-500'
+   212→   212→    case 'danger':
+   213→   213→      return 'bg-red-500'
+   214→   214→  }
+   215→   215→}
+   216→   216→
+   217→   217→function getAngleGlow(status: 'good' | 'caution' | 'danger'): string {
+   218→   218→  switch (status) {
+   219→   219→    case 'good':
+   220→   220→      return 'shadow-emerald-500/50'
+   221→   221→    case 'caution':
+   222→   222→      return 'shadow-amber-500/50'
+   223→   223→    case 'danger':
+   224→   224→      return 'shadow-red-500/50'
+   225→   225→  }
+   226→   226→}
+   227→   227→
+   228→   228→function getFeedbackIcon(type: FeedbackMessage['type']) {
+   229→   229→  switch (type) {
+   230→   230→    case 'success':
+   231→   231→      return <CheckCircle className="size-4 text-emerald-500" />
+   232→   232→    case 'warning':
+   233→   233→      return <AlertTriangle className="size-4 text-amber-500" />
+   234→   234→    case 'info':
+   235→   235→      return <Activity className="size-4 text-sky-500" />
+   236→   236→    case 'error':
+   237→   237→      return <AlertTriangle className="size-4 text-red-500" />
+   238→   238→  }
+   239→   239→}
+   240→   240→
+   241→   241→function formatTime(seconds: number): string {
+   242→   242→  const mins = Math.floor(seconds / 60)
+   243→   243→  const secs = seconds % 60
+   244→   244→  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+   245→   245→}
+   246→   246→
+   247→   247→// Circular Progress Component
+   248→   248→function CircularProgress({
+   249→   249→  value,
+   250→   250→  size = 140,
+   251→   251→  strokeWidth = 10,
+   252→   252→}: {
+   253→   253→  value: number
+   254→   254→  size?: number
+   255→   255→  strokeWidth?: number
+   256→   256→}) {
+   257→   257→  const radius = (size - strokeWidth) / 2
+   258→   258→  const circumference = radius * 2 * Math.PI
+   259→   259→  const offset = circumference - (value / 100) * circumference
+   260→   260→
+   261→   261→  const getColor = () => {
+   262→   262→    if (value >= 80) return { stroke: '#10b981', text: 'text-emerald-500', glow: 'drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]' }
+   263→   263→    if (value >= 60) return { stroke: '#f59e0b', text: 'text-amber-500', glow: 'drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]' }
+   264→   264→    return { stroke: '#ef4444', text: 'text-red-500', glow: 'drop-shadow-[0_0_8px_rgba(239,68,68,0.5)]' }
+   265→   265→  }
+   266→   266→
+   267→   267→  const colorInfo = getColor()
+   268→   268→
+   269→   269→  return (
+   270→   270→    <div className="relative inline-flex items-center justify-center" style={{ width: size, height: size }}>
+   271→   271→      <svg width={size} height={size} className={`-rotate-90 ${colorInfo.glow}`}>
+   272→   272→        <circle
+   273→   273→          cx={size / 2}
+   274→   274→          cy={size / 2}
+   275→   275→          r={radius}
+   276→   276→          stroke="currentColor"
+   277→   277→          strokeWidth={strokeWidth}
+   278→   278→          fill="none"
+   279→   279→          className="text-muted/30"
+   280→   280→        />
+   281→   281→        <motion.circle
+   282→   282→          cx={size / 2}
+   283→   283→          cy={size / 2}
+   284→   284→          r={radius}
+   285→   285→          stroke={colorInfo.stroke}
+   286→   286→          strokeWidth={strokeWidth}
+   287→   287→          fill="none"
+   288→   288→          strokeLinecap="round"
+   289→   289→          strokeDasharray={circumference}
+   290→   290→          initial={false}
+   291→   291→          animate={{ strokeDashoffset: offset }}
+   292→   292→          transition={{ duration: 0.8, ease: 'easeOut' }}
+   293→   293→        />
+   294→   294→      </svg>
+   295→   295→      <div className="absolute flex flex-col items-center justify-center">
+   296→   296→        <motion.span
+   297→   297→          className={`text-3xl font-bold ${colorInfo.text}`}
+   298→   298→          key={Math.round(value)}
+   299→   299→          initial={{ scale: 1.1 }}
+   300→   300→          animate={{ scale: 1 }}
+   301→   301→          transition={{ duration: 0.3 }}
+   302→   302→        >
+   303→   303→          {Math.round(value)}%
+   304→   304→        </motion.span>
+   305→   305→        <span className="text-xs text-muted-foreground mt-0.5">Form Accuracy</span>
+   306→   306→      </div>
+   307→   307→    </div>
+   308→   308→  )
+   309→   309→}
+   310→   310→
+   311→   311→export default function BodyScan() {
+   312→   312→  // State
+   313→   313→  const [isTracking, setIsTracking] = useState(false)
+   314→   314→  const [selectedExercise, setSelectedExercise] = useState<string>('shoulder-rotation')
+   315→   315→  const [cameraActive, setCameraActive] = useState(false)
+   316→   316→  const [cameraError, setCameraError] = useState<string | null>(null)
+   317→   317→  const [formAccuracy, setFormAccuracy] = useState(0)
+   318→   318→  const [jointAngles, setJointAngles] = useState<JointAngle[]>([])
+   319→   319→  const [feedbackHistory, setFeedbackHistory] = useState<FeedbackMessage[]>([])
+   320→   320→  const [reps, setReps] = useState(0)
+   321→   321→  const [holdTime, setHoldTime] = useState(0)
+   322→   322→  const [sessionDuration, setSessionDuration] = useState(0)
+   323→   323→  const [skeletonPoints, setSkeletonPoints] = useState<Record<string, SkeletonPoint>>(BASE_SKELETON.joints)
+   324→   324→  const [feedbackId, setFeedbackId] = useState(0)
+   325→   325→  const [currentFeedback, setCurrentFeedback] = useState<string>('Ready to Start')
+   326→   326→  const [currentFeedbackType, setCurrentFeedbackType] = useState<FeedbackMessage['type']>('info')
+   327→   327→
+   328→   328→  // Refs
+   329→   329→  const videoRef = useRef<HTMLVideoElement>(null)
+   330→   330→  const canvasRef = useRef<HTMLCanvasElement>(null)
+   331→   331→  const animationRef = useRef<number>(0)
+   332→   332→  const sessionTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+   333→   333→  const holdTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+   334→   334→  const feedbackTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+   335→   335→  const skeletonAnimRef = useRef<ReturnType<typeof setInterval> | null>(null)
+   336→   336→  const streamRef = useRef<MediaStream | null>(null)
+   337→   337→
+   338→   338→  // Camera setup
+   339→   339→  const startCamera = useCallback(async () => {
+   340→   340→    try {
+   341→   341→      setCameraError(null)
+   342→   342→      const stream = await navigator.mediaDevices.getUserMedia({
+   343→   343→        video: { width: 640, height: 480, facingMode: 'user' },
+   344→   344→      })
+   345→   345→      streamRef.current = stream
+   346→   346→      if (videoRef.current) {
+   347→   347→        videoRef.current.srcObject = stream
+   348→   348→      }
+   349→   349→      setCameraActive(true)
+   350→   350→    } catch {
+   351→   351→      setCameraError('Camera access denied or unavailable')
+   352→   352→      setCameraActive(false)
+   353→   353→    }
+   354→   354→  }, [])
+   355→   355→
+   356→   356→  const stopCamera = useCallback(() => {
+   357→   357→    if (streamRef.current) {
+   358→   358→      streamRef.current.getTracks().forEach((track) => track.stop())
+   359→   359→      streamRef.current = null
+   360→   360→    }
+   361→   361→    if (videoRef.current) {
+   362→   362→      videoRef.current.srcObject = null
+   363→   363→    }
+   364→   364→    setCameraActive(false)
+   365→   365→  }, [])
+   366→   366→
+   367→   367→  // Simulated joint angles based on exercise
+   368→   368→  const generateSimulatedAngles = useCallback(
+   369→   369→    (exercise: Exercise, tick: number): JointAngle[] => {
+   370→   370→      const allJoints: JointAngle[] = [
+   371→   371→        { name: 'Left Shoulder', angle: 170, status: 'good' },
+   372→   372→        { name: 'Right Shoulder', angle: 168, status: 'good' },
+   373→   373→        { name: 'Left Elbow', angle: 165, status: 'good' },
+   374→   374→        { name: 'Right Elbow', angle: 170, status: 'good' },
+   375→   375→        { name: 'Left Hip', angle: 92, status: 'good' },
+   376→   376→        { name: 'Right Hip', angle: 90, status: 'good' },
+   377→   377→        { name: 'Left Knee', angle: 95, status: 'good' },
+   378→   378→        { name: 'Right Knee', angle: 93, status: 'good' },
+   379→   379→      ]
+   380→   380→
+   381→   381→      return allJoints.map((joint) => {
+   382→   382→        const target = exercise.targetAngles[joint.name]
+   383→   383→        // Create oscillating simulation
+   384→   384→        const oscillation = Math.sin(tick * 0.08 + allJoints.indexOf(joint) * 1.2) * 25
+   385→   385→        const noise = (Math.random() - 0.5) * 6
+   386→   386→        let angle: number
+   387→   387→
+   388→   388→        if (target) {
+   389→   389→          const mid = (target.min + target.max) / 2
+   390→   390→          const range = (target.max - target.min) / 2
+   391→   391→          angle = mid + oscillation * 0.4 + noise
+   392→   392→        } else {
+   393→   393→          angle = joint.angle + oscillation * 0.6 + noise
+   394→   394→        }
+   395→   395→
+   396→   396→        angle = Math.max(0, Math.min(180, angle))
+   397→   397→
+   398→   398→        let status: JointAngle['status'] = 'good'
+   399→   399→        if (target) {
+   400→   400→          if (angle >= target.min && angle <= target.max) {
+   401→   401→            status = 'good'
+   402→   402→          } else if (
+   403→   403→            angle >= target.min - 15 &&
+   404→   404→            angle <= target.max + 15
+   405→   405→          ) {
+   406→   406→            status = 'caution'
+   407→   407→          } else {
+   408→   408→            status = 'danger'
+   409→   409→          }
+   410→   410→        } else {
+   411→   411→          if (angle >= 140) status = 'good'
+   412→   412→          else if (angle >= 100) status = 'caution'
+   413→   413→          else status = 'danger'
+   414→   414→        }
+   415→   415→
+   416→   416→        return { ...joint, angle: Math.round(angle), status }
+   417→   417→      })
+   418→   418→    },
+   419→   419→    []
+   420→   420→  )
+   421→   421→
+   422→   422→  // Simulated skeleton animation
+   423→   423→  const generateSkeletonPoints = useCallback(
+   424→   424→    (tick: number): Record<string, SkeletonPoint> => {
+   425→   425→      const points = { ...BASE_SKELETON.joints }
+   426→   426→      const exerciseId = selectedExercise
+   427→   427→
+   428→   428→      // Different movement patterns per exercise
+   429→   429→      const swayX = Math.sin(tick * 0.06) * 0.02
+   430→   430→      const swayY = Math.cos(tick * 0.04) * 0.01
+   431→   431→
+   432→   432→      // Apply base sway
+   433→   433→      Object.keys(points).forEach((key) => {
+   434→   434→        points[key] = {
+   435→   435→          ...points[key],
+   436→   436→          x: points[key].x + swayX,
+   437→   437→          y: points[key].y + swayY,
+   438→   438→        }
+   439→   439→      })
+   440→   440→
+   441→   441→      // Exercise-specific movements
+   442→   442→      switch (exerciseId) {
+   443→   443→        case 'shoulder-rotation': {
+   444→   444→          const armSwing = Math.sin(tick * 0.1) * 0.08
+   445→   445→          points.leftShoulder = { ...points.leftShoulder, x: points.leftShoulder.x + armSwing }
+   446→   446→          points.rightShoulder = { ...points.rightShoulder, x: points.rightShoulder.x - armSwing }
+   447→   447→          points.leftElbow = { ...points.leftElbow, y: points.leftElbow.y - Math.abs(armSwing) * 0.5 }
+   448→   448→          points.rightElbow = { ...points.rightElbow, y: points.rightElbow.y - Math.abs(armSwing) * 0.5 }
+   449→   449→          break
+   450→   450→        }
+   451→   451→        case 'seated-balance': {
+   452→   452→          const leanX = Math.sin(tick * 0.05) * 0.04
+   453→   453→          const leanY = Math.sin(tick * 0.07) * 0.02
+   454→   454→          points.head = { ...points.head, x: points.head.x + leanX, y: points.head.y + leanY }
+   455→   455→          points.neck = { ...points.neck, x: points.neck.x + leanX * 0.8 }
+   456→   456→          points.torso = { ...points.torso, x: points.torso.x + leanX * 0.5 }
+   457→   457→          break
+   458→   458→        }
+   459→   459→        case 'arm-extension': {
+   460→   460→          const extend = Math.sin(tick * 0.08) * 0.1
+   461→   461→          points.leftElbow = { ...points.leftElbow, x: points.leftElbow.x - extend }
+   462→   462→          points.rightElbow = { ...points.rightElbow, x: points.rightElbow.x + extend }
+   463→   463→          points.leftWrist = { ...points.leftWrist, x: points.leftWrist.x - extend * 1.2, y: points.leftWrist.y + extend * 0.3 }
+   464→   464→          points.rightWrist = { ...points.rightWrist, x: points.rightWrist.x + extend * 1.2, y: points.rightWrist.y + extend * 0.3 }
+   465→   465→          break
+   466→   466→        }
+   467→   467→        case 'knee-flexion': {
+   468→   468→          const kneeBend = Math.sin(tick * 0.06) * 0.06
+   469→   469→          points.leftKnee = { ...points.leftKnee, y: points.leftKnee.y - kneeBend }
+   470→   470→          points.rightKnee = { ...points.rightKnee, y: points.rightKnee.y - kneeBend }
+   471→   471→          points.leftAnkle = { ...points.leftAnkle, y: points.leftAnkle.y + kneeBend * 0.3 }
+   472→   472→          points.rightAnkle = { ...points.rightAnkle, y: points.rightAnkle.y + kneeBend * 0.3 }
+   473→   473→          break
+   474→   474→        }
+   475→   475→        case 'lateral-lean': {
+   476→   476→          const leanSide = Math.sin(tick * 0.05) * 0.06
+   477→   477→          points.head = { ...points.head, x: points.head.x + leanSide }
+   478→   478→          points.neck = { ...points.neck, x: points.neck.x + leanSide * 0.8 }
+   479→   479→          points.torso = { ...points.torso, x: points.torso.x + leanSide * 0.5 }
+   480→   480→          points.leftShoulder = { ...points.leftShoulder, y: points.leftShoulder.y - Math.abs(leanSide) * 0.3 }
+   481→   481→          points.rightShoulder = { ...points.rightShoulder, y: points.rightShoulder.y + Math.abs(leanSide) * 0.3 }
+   482→   482→          break
+   483→   483→        }
+   484→   484→      }
+   485→   485→
+   486→   486→      // Add micro-noise for realism
+   487→   487→      Object.keys(points).forEach((key) => {
+   488→   488→        points[key] = {
+   489→   489→          ...points[key],
+   490→   490→          x: points[key].x + (Math.random() - 0.5) * 0.005,
+   491→   491→          y: points[key].y + (Math.random() - 0.5) * 0.005,
+   492→   492→        }
+   493→   493→      })
+   494→   494→
+   495→   495→      return points
+   496→   496→    },
+   497→   497→    [selectedExercise]
+   498→   498→  )
+   499→   499→
+   500→   500→  // Generate feedback
+   501→   501→  const generateFeedback = useCallback(
+   502→   502→    (accuracy: number): { message: string; type: FeedbackMessage['type'] } => {
+   503→   503→      const rand = Math.random()
+   504→   504→      if (accuracy >= 80) {
+   505→   505→        if (rand < 0.7) return { message: FEEDBACK_POOL.success[Math.floor(Math.random() * FEEDBACK_POOL.success.length)], type: 'success' }
+   506→   506→        return { message: FEEDBACK_POOL.info[Math.floor(Math.random() * FEEDBACK_POOL.info.length)], type: 'info' }
+   507→   507→      } else if (accuracy >= 50) {
+   508→   508→        if (rand < 0.5) return { message: FEEDBACK_POOL.warning[Math.floor(Math.random() * FEEDBACK_POOL.warning.length)], type: 'warning' }
+   509→   509→        if (rand < 0.8) return { message: FEEDBACK_POOL.info[Math.floor(Math.random() * FEEDBACK_POOL.info.length)], type: 'info' }
+   510→   510→        return { message: FEEDBACK_POOL.success[Math.floor(Math.random() * FEEDBACK_POOL.success.length)], type: 'success' }
+   511→   511→      } else {
+   512→   512→        if (rand < 0.6) return { message: FEEDBACK_POOL.warning[Math.floor(Math.random() * FEEDBACK_POOL.warning.length)], type: 'warning' }
+   513→   513→        if (rand < 0.9) return { message: FEEDBACK_POOL.error[Math.floor(Math.random() * FEEDBACK_POOL.error.length)], type: 'error' }
+   514→   514→        return { message: FEEDBACK_POOL.info[Math.floor(Math.random() * FEEDBACK_POOL.info.length)], type: 'info' }
+   515→   515→      }
+   516→   516→    },
+   517→   517→    []
+   518→   518→  )
+   519→   519→
+   520→   520→  // Draw skeleton on canvas
+   521→   521→  const drawSkeleton = useCallback(
+   522→   522→    (points: Record<string, SkeletonPoint>, canvas: HTMLCanvasElement) => {
+   523→   523→      const ctx = canvas.getContext('2d')
+   524→   524→      if (!ctx) return
+   525→   525→
+   526→   526→      const w = canvas.width
+   527→   527→      const h = canvas.height
+   528→   528→
+   529→   529→      ctx.clearRect(0, 0, w, h)
+   530→   530→
+   531→   531→      // Draw connections
+   532→   532→      BASE_SKELETON.connections.forEach(([from, to]) => {
+   533→   533→        const p1 = points[from]
+   534→   534→        const p2 = points[to]
+   535→   535→        if (!p1 || !p2) return
+   536→   536→
+   537→   537→        ctx.beginPath()
+   538→   538→        ctx.moveTo(p1.x * w, p1.y * h)
+   539→   539→        ctx.lineTo(p2.x * w, p2.y * h)
+   540→   540→        ctx.strokeStyle = 'rgba(16, 185, 129, 0.6)'
+   541→   541→        ctx.lineWidth = 2.5
+   542→   542→        ctx.stroke()
+   543→   543→
+   544→   544→        // Glow effect
+   545→   545→        ctx.beginPath()
+   546→   546→        ctx.moveTo(p1.x * w, p1.y * h)
+   547→   547→        ctx.lineTo(p2.x * w, p2.y * h)
+   548→   548→        ctx.strokeStyle = 'rgba(16, 185, 129, 0.2)'
+   549→   549→        ctx.lineWidth = 6
+   550→   550→        ctx.stroke()
+   551→   551→      })
+   552→   552→
+   553→   553→      // Draw joints
+   554→   554→      Object.entries(points).forEach(([key, point]) => {
+   555→   555→        const px = point.x * w
+   556→   556→        const py = point.y * h
+   557→   557→        const isMajor = ['head', 'leftShoulder', 'rightShoulder', 'leftHip', 'rightHip', 'leftKnee', 'rightKnee', 'leftElbow', 'rightElbow'].includes(key)
+   558→   558→
+   559→   559→        // Outer glow
+   560→   560→        ctx.beginPath()
+   561→   561→        ctx.arc(px, py, isMajor ? 8 : 5, 0, Math.PI * 2)
+   562→   562→        ctx.fillStyle = 'rgba(16, 185, 129, 0.15)'
+   563→   563→        ctx.fill()
+   564→   564→
+   565→   565→        // Inner dot
+   566→   566→        ctx.beginPath()
+   567→   567→        ctx.arc(px, py, isMajor ? 5 : 3, 0, Math.PI * 2)
+   568→   568→        ctx.fillStyle = isMajor ? 'rgba(16, 185, 129, 0.9)' : 'rgba(52, 211, 153, 0.7)'
+   569→   569→        ctx.fill()
+   570→   570→
+   571→   571→        // Center bright dot
+   572→   572→        ctx.beginPath()
+   573→   573→        ctx.arc(px, py, isMajor ? 2.5 : 1.5, 0, Math.PI * 2)
+   574→   574→        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)'
+   575→   575→        ctx.fill()
+   576→   576→
+   577→   577→        // Label for major joints
+   578→   578→        if (point.label && isMajor) {
+   579→   579→          ctx.font = '10px Inter, sans-serif'
+   580→   580→          ctx.fillStyle = 'rgba(255, 255, 255, 0.6)'
+   581→   581→          ctx.fillText(point.label, px + 10, py + 3)
+   582→   582→        }
+   583→   583→      })
+   584→   584→    },
+   585→   585→    []
+   586→   586→  )
+   587→   587→
+   588→   588→  // Tracking tick counter
+   589→   589→  const tickRef = useRef(0)
+   590→   590→
+   591→   591→  // Start/stop tracking
+   592→   592→  const startTracking = useCallback(() => {
+   593→   593→    setIsTracking(true)
+   594→   594→    tickRef.current = 0
+   595→   595→    setReps(0)
+   596→   596→    setHoldTime(0)
+   597→   597→    setSessionDuration(0)
+   598→   598→    setFeedbackHistory([])
+   599→   599→
+   600→   600→    // Session timer
+   601→   601→    sessionTimerRef.current = setInterval(() => {
+   602→   602→      setSessionDuration((prev) => prev + 1)
+   603→   603→    }, 1000)
+   604→   604→
+   605→   605→    // Hold time timer (increments when accuracy > 75%)
+   606→   606→    holdTimerRef.current = setInterval(() => {
+   607→   607→      setFormAccuracy((prev) => {
+   608→   608→        if (prev >= 75) {
+   609→   609→          setHoldTime((h) => h + 1)
+   610→   610→        }
+   611→   611→        return prev
+   612→   612→      })
+   613→   613→    }, 1000)
+   614→   614→
+   615→   615→    // Reps increment
+   616→   616→    const repInterval = setInterval(() => {
+   617→   617→      setReps((prev) => prev + 1)
+   618→   618→    }, 4000 + Math.random() * 3000)
+   619→   619→
+   620→   620→    // Skeleton animation
+   621→   621→    skeletonAnimRef.current = setInterval(() => {
+   622→   622→      tickRef.current += 1
+   623→   623→      const newPoints = generateSkeletonPoints(tickRef.current)
+   624→   624→      setSkeletonPoints(newPoints)
+   625→   625→
+   626→   626→      // Draw on canvas
+   627→   627→      if (canvasRef.current) {
+   628→   628→        drawSkeleton(newPoints, canvasRef.current)
+   629→   629→      }
+   630→   630→
+   631→   631→      // Update angles
+   632→   632→      const exercise = EXERCISES.find((e) => e.id === selectedExercise) || EXERCISES[0]
+   633→   633→      const angles = generateSimulatedAngles(exercise, tickRef.current)
+   634→   634→      setJointAngles(angles)
+   635→   635→
+   636→   636→      // Calculate accuracy
+   637→   637→      const targetJoints = angles.filter((a) => exercise.targetAngles[a.name])
+   638→   638→      if (targetJoints.length > 0) {
+   639→   639→        const goodCount = targetJoints.filter((a) => a.status === 'good').length
+   640→   640→        const cautionCount = targetJoints.filter((a) => a.status === 'caution').length
+   641→   641→        const accuracy = (goodCount * 100 + cautionCount * 50) / (targetJoints.length * 100) * 100
+   642→   642→        const smoothAccuracy = Math.round(accuracy + (Math.random() - 0.5) * 5)
+   643→   643→        setFormAccuracy(Math.max(0, Math.min(100, smoothAccuracy)))
+   644→   644→      }
+   645→   645→    }, 100)
+   646→   646→
+   647→   647→    // Feedback generation
+   648→   648→    feedbackTimerRef.current = setInterval(() => {
+   649→   649→      setFormAccuracy((currentAccuracy) => {
+   650→   650→        const fb = generateFeedback(currentAccuracy)
+   651→   651→        setCurrentFeedback(fb.message)
+   652→   652→        setCurrentFeedbackType(fb.type)
+   653→   653→        setFeedbackId((prev) => {
+   654→   654→          const newId = prev + 1
+   655→   655→          setFeedbackHistory((hist) => [
+   656→   656→            { id: newId, message: fb.message, type: fb.type, timestamp: new Date() },
+   657→   657→            ...hist.slice(0, 19),
+   658→   658→          ])
+   659→   659→          return newId
+   660→   660→        })
+   661→   661→        return currentAccuracy
+   662→   662→      })
+   663→   663→    }, 2500)
+   664→   664→
+   665→   665→    // Store rep interval for cleanup
+   666→   666→    return () => clearInterval(repInterval)
+   667→   667→  }, [selectedExercise, generateSkeletonPoints, generateSimulatedAngles, generateFeedback, drawSkeleton])
+   668→   668→
+   669→   669→  const stopTracking = useCallback(() => {
+   670→   670→    setIsTracking(false)
+   671→   671→    if (sessionTimerRef.current) clearInterval(sessionTimerRef.current)
+   672→   672→    if (holdTimerRef.current) clearInterval(holdTimerRef.current)
+   673→   673→    if (feedbackTimerRef.current) clearInterval(feedbackTimerRef.current)
+   674→   674→    if (skeletonAnimRef.current) clearInterval(skeletonAnimRef.current)
+   675→   675→  }, [])
+   676→   676→
+   677→   677→  const resetSession = useCallback(() => {
+   678→   678→    stopTracking()
+   679→   679→    setReps(0)
+   680→   680→    setHoldTime(0)
+   681→   681→    setSessionDuration(0)
+   682→   682→    setFormAccuracy(0)
+   683→   683→    setFeedbackHistory([])
+   684→   684→    setCurrentFeedback('Ready to Start')
+   685→   685→    setCurrentFeedbackType('info')
+   686→   686→    setJointAngles([])
+   687→   687→    setSkeletonPoints(BASE_SKELETON.joints)
+   688→   688→    tickRef.current = 0
+   689→   689→
+   690→   690→    // Clear canvas
+   691→   691→    if (canvasRef.current) {
+   692→   692→      const ctx = canvasRef.current.getContext('2d')
+   693→   693→      if (ctx) ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height)
+   694→   694→    }
+   695→   695→  }, [stopTracking])
+   696→   696→
+   697→   697→  // Cleanup on unmount
+   698→   698→  useEffect(() => {
+   699→   699→    return () => {
+   700→   700→      stopTracking()
+   701→   701→      stopCamera()
+   702→   702→    }
+   703→   703→  }, [stopTracking, stopCamera])
+   704→   704→
+   705→   705→  // Resize canvas to match container
+   706→   706→  useEffect(() => {
+   707→   707→    const resizeCanvas = () => {
+   708→   708→      if (canvasRef.current) {
+   709→   709→        const container = canvasRef.current.parentElement
+   710→   710→        if (container) {
+   711→   711→          canvasRef.current.width = container.clientWidth
+   712→   712→          canvasRef.current.height = container.clientHeight
+   713→   713→        }
+   714→   714→      }
+   715→   715→    }
+   716→   716→    resizeCanvas()
+   717→   717→    window.addEventListener('resize', resizeCanvas)
+   718→   718→    return () => window.removeEventListener('resize', resizeCanvas)
+   719→   719→  }, [])
+   720→   720→
+   721→   721→  // Draw initial skeleton if not tracking
+   722→   722→  useEffect(() => {
+   723→   723→    if (!isTracking && canvasRef.current) {
+   724→   724→      drawSkeleton(BASE_SKELETON.joints, canvasRef.current)
+   725→   725→    }
+   726→   726→  }, [isTracking, drawSkeleton])
+   727→   727→
+   728→   728→  const currentExercise = EXERCISES.find((e) => e.id === selectedExercise) || EXERCISES[0]
+   729→   729→
+   730→   730→  return (
+   731→   731→    <div className="w-full space-y-4">
+   732→   732→      {/* Header with hero image */}
+   733→   733→      <div className="relative overflow-hidden rounded-2xl">
+   734→   734→        <div className="absolute inset-0">
+   735→   735→          <img
+   736→   736→            src="/images/body-scan.png"
+   737→   737→            alt="Body Scan Technology"
+   738→   738→            className="w-full h-full object-cover opacity-20"
+   739→   739→          />
+   740→   740→          <div className="absolute inset-0 bg-gradient-to-r from-background via-background/90 to-background/60" />
+   741→   741→        </div>
+   742→   742→        <div className="relative p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+   743→   743→          <div className="flex items-center gap-3">
+   744→   744→            <div className="flex items-center justify-center size-10 rounded-xl bg-emerald-500/10">
+   745→   745→              <Camera className="size-5 text-emerald-500" />
+   746→   746→            </div>
+   747→   747→            <div>
+   748→   748→              <h2 className="text-xl font-bold">Body Scan & Motion Tracking</h2>
+   749→   749→              <p className="text-sm text-muted-foreground">Real-time pose analysis and form feedback</p>
+   750→   750→            </div>
+   751→   751→          </div>
+   752→   752→          <div className="flex items-center gap-2">
+   753→   753→            <Select value={selectedExercise} onValueChange={setSelectedExercise}>
+   754→   754→              <SelectTrigger className="w-[200px]">
+   755→   755→                <SelectValue placeholder="Select Exercise" />
+   756→   756→              </SelectTrigger>
+   757→   757→              <SelectContent>
+   758→   758→                {EXERCISES.map((ex) => (
+   759→   759→                  <SelectItem key={ex.id} value={ex.id}>
+   760→   760→                    {ex.name}
+   761→   761→                  </SelectItem>
+   762→   762→                ))}
+   763→   763→              </SelectContent>
+   764→   764→            </Select>
+   765→   765→            <Button
+   766→   766→              variant="outline"
+   767→   767→              size="icon"
+   768→   768→              onClick={resetSession}
+   769→   769→              title="Reset Session"
+   770→   770→            >
+   771→   771→              <RotateCcw className="size-4" />
+   772→   772→            </Button>
+   773→   773→          </div>
+   774→   774→        </div>
+   775→   775→      </div>
+   776→   776→
+   777→   777→      {/* Main Layout: Camera (2/3) + Feedback (1/3) */}
+   778→   778→      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+   779→   779→        {/* Camera View - 2/3 */}
+   780→   780→        <div className="lg:col-span-2 space-y-4">
+   781→   781→          <Card className="overflow-hidden">
+   782→   782→            <CardHeader className="pb-3">
+   783→   783→              <div className="flex items-center justify-between">
+   784→   784→                <CardTitle className="text-base flex items-center gap-2">
+   785→   785→                  <Activity className="size-4 text-emerald-500" />
+   786→   786→                  Camera Feed
+   787→   787→                  {isTracking && (
+   788→   788→                    <Badge variant="secondary" className="ml-2 bg-emerald-500/10 text-emerald-600 border-emerald-500/20">
+   789→   789→                      <motion.span
+   790→   790→                        className="inline-block size-2 rounded-full bg-emerald-500 mr-1.5"
+   791→   791→                        animate={{ opacity: [1, 0.3, 1] }}
+   792→   792→                        transition={{ duration: 1.5, repeat: Infinity }}
+   793→   793→                      />
+   794→   794→                      LIVE
+   795→   795→                    </Badge>
+   796→   796→                  )}
+   797→   797→                </CardTitle>
+   798→   798→                <div className="flex items-center gap-2">
+   799→   799→                  {!cameraActive ? (
+   800→   800→                    <Button
+   801→   801→                      variant="outline"
+   802→   802→                      size="sm"
+   803→   803→                      onClick={startCamera}
+   804→   804→                      className="gap-1.5"
+   805→   805→                    >
+   806→   806→                      <Camera className="size-3.5" />
+   807→   807→                      Enable Camera
+   808→   808→                    </Button>
+   809→   809→                  ) : (
+   810→   810→                    <Button
+   811→   811→                      variant="outline"
+   812→   812→                      size="sm"
+   813→   813→                      onClick={stopCamera}
+   814→   814→                      className="gap-1.5"
+   815→   815→                    >
+   816→   816→                      <Camera className="size-3.5" />
+   817→   817→                      Disable
+   818→   818→                    </Button>
+   819→   819→                  )}
+   820→   820→                  {!isTracking ? (
+   821→   821→                    <Button
+   822→   822→                      size="sm"
+   823→   823→                      onClick={startTracking}
+   824→   824→                      className="gap-1.5 bg-emerald-600 hover:bg-emerald-700"
+   825→   825→                    >
+   826→   826→                      <Play className="size-3.5" />
+   827→   827→                      Start Tracking
+   828→   828→                    </Button>
+   829→   829→                  ) : (
+   830→   830→                    <Button
+   831→   831→                      size="sm"
+   832→   832→                      variant="destructive"
+   833→   833→                      onClick={stopTracking}
+   834→   834→                      className="gap-1.5"
+   835→   835→                    >
+   836→   836→                      <Pause className="size-3.5" />
+   837→   837→                      Stop
+   838→   838→                    </Button>
+   839→   839→                  )}
+   840→   840→                </div>
+   841→   841→              </div>
+   842→   842→            </CardHeader>
+   843→   843→            <CardContent className="pb-4">
+   844→   844→              {/* Camera container */}
+   845→   845→              <div
+   846→   846→                className={`relative w-full aspect-[4/3] bg-black/90 rounded-xl overflow-hidden ${
+   847→   847→                  isTracking ? 'ring-2 ring-emerald-500/50 shadow-lg shadow-emerald-500/20' : 'ring-1 ring-border'
+   848→   848→                } transition-all duration-500`}
+   849→   849→              >
+   850→   850→                {/* Video feed */}
+   851→   851→                <video
+   852→   852→                  ref={videoRef}
+   853→   853→                  autoPlay
+   854→   854→                  playsInline
+   855→   855→                  muted
+   856→   856→                  className={`absolute inset-0 w-full h-full object-cover ${
+   857→   857→                    cameraActive ? 'opacity-100' : 'opacity-0'
+   858→   858→                  } transition-opacity duration-300`}
+   859→   859→                  style={{ transform: 'scaleX(-1)' }}
+   860→   860→                />
+   861→   861→
+   862→   862→                {/* Placeholder when no camera */}
+   863→   863→                {!cameraActive && (
+   864→   864→                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-zinc-900 to-zinc-950">
+   865→   865→                    <motion.div
+   866→   866→                      animate={{ scale: [1, 1.05, 1] }}
+   867→   867→                      transition={{ duration: 2, repeat: Infinity }}
+   868→   868→                    >
+   869→   869→                      <Camera className="size-16 text-zinc-600 mb-3" />
+   870→   870→                    </motion.div>
+   871→   871→                    <p className="text-zinc-500 text-sm">
+   872→   872→                      {cameraError || 'Click "Enable Camera" to start video feed'}
+   873→   873→                    </p>
+   874→   874→                    <p className="text-zinc-600 text-xs mt-1">
+   875→   875→                      Motion tracking overlay will appear here
+   876→   876→                    </p>
+   877→   877→                  </div>
+   878→   878→                )}
+   879→   879→
+   880→   880→                {/* Canvas overlay for skeleton */}
+   881→   881→                <canvas
+   882→   882→                  ref={canvasRef}
+   883→   883→                  className="absolute inset-0 w-full h-full pointer-events-none"
+   884→   884→                  style={{ transform: 'scaleX(-1)' }}
+   885→   885→                />
+   886→   886→
+   887→   887→                {/* Exercise info overlay */}
+   888→   888→                <div className="absolute top-3 left-3 right-3 flex items-start justify-between pointer-events-none">
+   889→   889→                  <div className="bg-black/60 backdrop-blur-sm rounded-lg px-3 py-1.5">
+   890→   890→                    <p className="text-white text-xs font-medium">{currentExercise.name}</p>
+   891→   891→                    <p className="text-white/60 text-[10px]">{currentExercise.description}</p>
+   892→   892→                  </div>
+   893→   893→                  {isTracking && (
+   894→   894→                    <motion.div
+   895→   895→                      className="bg-black/60 backdrop-blur-sm rounded-lg px-3 py-1.5"
+   896→   896→                      animate={{ opacity: [0.7, 1, 0.7] }}
+   897→   897→                      transition={{ duration: 2, repeat: Infinity }}
+   898→   898→                    >
+   899→   899→                      <p className="text-emerald-400 text-xs font-medium flex items-center gap-1">
+   900→   900→                        <Target className="size-3" />
+   901→   901→                        Tracking
+   902→   902→                      </p>
+   903→   903→                    </motion.div>
+   904→   904→                  )}
+   905→   905→                </div>
+   906→   906→
+   907→   907→                {/* Bottom feedback overlay */}
+   908→   908→                {isTracking && (
+   909→   909→                  <motion.div
+   910→   910→                    className="absolute bottom-3 left-3 right-3"
+   911→   911→                    initial={{ opacity: 0, y: 10 }}
+   912→   912→                    animate={{ opacity: 1, y: 0 }}
+   913→   913→                  >
+   914→   914→                    <div className="bg-black/70 backdrop-blur-sm rounded-lg px-4 py-2.5 text-center">
+   915→   915→                      <AnimatePresence mode="wait">
+   916→   916→                        <motion.p
+   917→   917→                          key={currentFeedback}
+   918→   918→                          initial={{ opacity: 0, y: 5 }}
+   919→   919→                          animate={{ opacity: 1, y: 0 }}
+   920→   920→                          exit={{ opacity: 0, y: -5 }}
+   921→   921→                          className={`text-sm font-semibold ${
+   922→   922→                            currentFeedbackType === 'success'
+   923→   923→                              ? 'text-emerald-400'
+   924→   924→                              : currentFeedbackType === 'warning'
+   925→   925→                              ? 'text-amber-400'
+   926→   926→                              : currentFeedbackType === 'error'
+   927→   927→                              ? 'text-red-400'
+   928→   928→                              : 'text-sky-400'
+   929→   929→                          }`}
+   930→   930→                        >
+   931→   931→                          {currentFeedback}
+   932→   932→                        </motion.p>
+   933→   933→                      </AnimatePresence>
+   934→   934→                    </div>
+   935→   935→                  </motion.div>
+   936→   936→                )}
+   937→   937→              </div>
+   938→   938→            </CardContent>
+   939→   939→          </Card>
+   940→   940→
+   941→   941→          {/* Joint Angles Display */}
+   942→   942→          <Card>
+   943→   943→            <CardHeader className="pb-3">
+   944→   944→              <CardTitle className="text-base flex items-center gap-2">
+   945→   945→                <Activity className="size-4 text-emerald-500" />
+   946→   946→                Joint Angles
+   947→   947→              </CardTitle>
+   948→   948→            </CardHeader>
+   949→   949→            <CardContent>
+   950→   950→              {jointAngles.length === 0 ? (
+   951→   951→                <div className="text-center py-6 text-muted-foreground text-sm">
+   952→   952→                  Start tracking to view joint angle data
+   953→   953→                </div>
+   954→   954→              ) : (
+   955→   955→                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+   956→   956→                  {jointAngles.map((joint) => (
+   957→   957→                    <motion.div
+   958→   958→                      key={joint.name}
+   959→   959→                      className="relative flex flex-col items-center gap-1.5 p-3 rounded-lg bg-muted/50 border border-border/50"
+   960→   960→                      initial={{ opacity: 0, scale: 0.9 }}
+   961→   961→                      animate={{ opacity: 1, scale: 1 }}
+   962→   962→                    >
+   963→   963→                      <div
+   964→   964→                        className={`size-3 rounded-full ${getAngleDotColor(joint.status)} shadow-md ${getAngleGlow(joint.status)}`}
+   965→   965→                      />
+   966→   966→                      <span className="text-[11px] text-muted-foreground text-center leading-tight">
+   967→   967→                        {joint.name}
+   968→   968→                      </span>
+   969→   969→                      <span className={`text-lg font-bold ${getAngleColor(joint.status)}`}>
+   970→   970→                        {joint.angle}°
+   971→   971→                      </span>
+   972→   972→                      <Badge
+   973→   973→                        variant="outline"
+   974→   974→                        className={`text-[10px] px-1.5 py-0 ${
+   975→   975→                          joint.status === 'good'
+   976→   976→                            ? 'border-emerald-500/30 text-emerald-600'
+   977→   977→                            : joint.status === 'caution'
+   978→   978→                            ? 'border-amber-500/30 text-amber-600'
+   979→   979→                            : 'border-red-500/30 text-red-600'
+   980→   980→                        }`}
+   981→   981→                      >
+   982→   982→                        {joint.status === 'good' ? 'Good' : joint.status === 'caution' ? 'Caution' : 'Danger'}
+   983→   983→                      </Badge>
+   984→   984→                    </motion.div>
+   985→   985→                  ))}
+   986→   986→                </div>
+   987→   987→              )}
+   988→   988→            </CardContent>
+   989→   989→          </Card>
+   990→   990→        </div>
+   991→   991→
+   992→   992→        {/* Feedback Panel - 1/3 */}
+   993→   993→        <div className="space-y-4">
+   994→   994→          {/* Form Accuracy */}
+   995→   995→          <Card>
+   996→   996→            <CardHeader className="pb-2">
+   997→   997→              <CardTitle className="text-base flex items-center gap-2">
+   998→   998→                <Target className="size-4 text-emerald-500" />
+   999→   999→                Form Accuracy
+  1000→  1000→              </CardTitle>
+  1001→  1001→            </CardHeader>
+  1002→  1002→            <CardContent className="flex flex-col items-center pb-4">
+  1003→  1003→              <CircularProgress value={formAccuracy} size={160} strokeWidth={12} />
+  1004→  1004→              <div className="mt-3 w-full space-y-1.5">
+  1005→  1005→                <div className="flex items-center gap-2 text-xs">
+  1006→  1006→                  <span className="size-2.5 rounded-full bg-emerald-500" />
+  1007→  1007→                  <span className="text-muted-foreground">Good (80-100%)</span>
+  1008→  1008→                </div>
+  1009→  1009→                <div className="flex items-center gap-2 text-xs">
+  1010→  1010→                  <span className="size-2.5 rounded-full bg-amber-500" />
+  1011→  1011→                  <span className="text-muted-foreground">Caution (50-79%)</span>
+  1012→  1012→                </div>
+  1013→  1013→                <div className="flex items-center gap-2 text-xs">
+  1014→  1014→                  <span className="size-2.5 rounded-full bg-red-500" />
+  1015→  1015→                  <span className="text-muted-foreground">Danger (0-49%)</span>
+  1016→  1016→                </div>
+  1017→  1017→              </div>
+  1018→  1018→            </CardContent>
+  1019→  1019→          </Card>
+  1020→  1020→
+  1021→  1021→          {/* Session Stats */}
+  1022→  1022→          <Card>
+  1023→  1023→            <CardHeader className="pb-3">
+  1024→  1024→              <CardTitle className="text-base flex items-center gap-2">
+  1025→  1025→                <Timer className="size-4 text-emerald-500" />
+  1026→  1026→                Session Stats
+  1027→  1027→              </CardTitle>
+  1028→  1028→            </CardHeader>
+  1029→  1029→            <CardContent>
+  1030→  1030→              <div className="grid grid-cols-3 gap-3">
+  1031→  1031→                <div className="text-center p-3 rounded-lg bg-muted/50">
+  1032→  1032→                  <p className="text-2xl font-bold text-foreground">{reps}</p>
+  1033→  1033→                  <p className="text-[10px] text-muted-foreground mt-0.5">Reps</p>
+  1034→  1034→                  <Progress value={Math.min(reps * 10, 100)} className="h-1 mt-2" />
+  1035→  1035→                </div>
+  1036→  1036→                <div className="text-center p-3 rounded-lg bg-muted/50">
+  1037→  1037→                  <p className="text-2xl font-bold text-foreground">{formatTime(holdTime)}</p>
+  1038→  1038→                  <p className="text-[10px] text-muted-foreground mt-0.5">Hold Time</p>
+  1039→  1039→                  <Progress value={Math.min(holdTime * 2, 100)} className="h-1 mt-2" />
+  1040→  1040→                </div>
+  1041→  1041→                <div className="text-center p-3 rounded-lg bg-muted/50">
+  1042→  1042→                  <p className="text-2xl font-bold text-foreground">{formatTime(sessionDuration)}</p>
+  1043→  1043→                  <p className="text-[10px] text-muted-foreground mt-0.5">Duration</p>
+  1044→  1044→                  <Progress value={Math.min((sessionDuration / 300) * 100, 100)} className="h-1 mt-2" />
+  1045→  1045→                </div>
+  1046→  1046→              </div>
+  1047→  1047→
+  1048→  1048→              {/* Current exercise info */}
+  1049→  1049→              <div className="mt-3 p-3 rounded-lg border border-emerald-500/20 bg-emerald-500/5">
+  1050→  1050→                <div className="flex items-center gap-2 mb-1">
+  1051→  1051→                  <Target className="size-3.5 text-emerald-500" />
+  1052→  1052→                  <span className="text-xs font-medium text-emerald-600">{currentExercise.name}</span>
+  1053→  1053→                </div>
+  1054→  1054→                <p className="text-[11px] text-muted-foreground">{currentExercise.description}</p>
+  1055→  1055→                <div className="mt-2 flex flex-wrap gap-1">
+  1056→  1056→                  {Object.keys(currentExercise.targetAngles).map((joint) => (
+  1057→  1057→                    <Badge
+  1058→  1058→                      key={joint}
+  1059→  1059→                      variant="outline"
+  1060→  1060→                      className="text-[10px] px-1.5 py-0 border-emerald-500/20 text-emerald-600"
+  1061→  1061→                    >
+  1062→  1062→                      {joint}
+  1063→  1063→                    </Badge>
+  1064→  1064→                  ))}
+  1065→  1065→                </div>
+  1066→  1066→              </div>
+  1067→  1067→            </CardContent>
+  1068→  1068→          </Card>
+  1069→  1069→
+  1070→  1070→          {/* Feedback History */}
+  1071→  1071→          <Card>
+  1072→  1072→            <CardHeader className="pb-3">
+  1073→  1073→              <CardTitle className="text-base flex items-center gap-2">
+  1074→  1074→                <Activity className="size-4 text-emerald-500" />
+  1075→  1075→                Feedback History
+  1076→  1076→              </CardTitle>
+  1077→  1077→            </CardHeader>
+  1078→  1078→            <CardContent>
+  1079→  1079→              {feedbackHistory.length === 0 ? (
+  1080→  1080→                <div className="text-center py-6 text-muted-foreground text-sm">
+  1081→  1081→                  Start tracking to see feedback
+  1082→  1082→                </div>
+  1083→  1083→              ) : (
+  1084→  1084→                <ScrollArea className="h-[280px]">
+  1085→  1085→                  <div className="space-y-2 pr-2">
+  1086→  1086→                    <AnimatePresence initial={false}>
+  1087→  1087→                      {feedbackHistory.map((fb) => (
+  1088→  1088→                        <motion.div
+  1089→  1089→                          key={fb.id}
+  1090→  1090→                          initial={{ opacity: 0, x: 20, height: 0 }}
+  1091→  1091→                          animate={{ opacity: 1, x: 0, height: 'auto' }}
+  1092→  1092→                          exit={{ opacity: 0, x: -20, height: 0 }}
+  1093→  1093→                          transition={{ duration: 0.3 }}
+  1094→  1094→                          className={`flex items-start gap-2 p-2 rounded-lg border ${
+  1095→  1095→                            fb.type === 'success'
+  1096→  1096→                              ? 'border-emerald-500/20 bg-emerald-500/5'
+  1097→  1097→                              : fb.type === 'warning'
+  1098→  1098→                              ? 'border-amber-500/20 bg-amber-500/5'
+  1099→  1099→                              : fb.type === 'error'
+  1100→  1100→                              ? 'border-red-500/20 bg-red-500/5'
+  1101→  1101→                              : 'border-sky-500/20 bg-sky-500/5'
+  1102→  1102→                          }`}
+  1103→  1103→                        >
+  1104→  1104→                          <div className="mt-0.5 shrink-0">{getFeedbackIcon(fb.type)}</div>
+  1105→  1105→                          <div className="flex-1 min-w-0">
+  1106→  1106→                            <p className="text-xs font-medium leading-tight">{fb.message}</p>
+  1107→  1107→                            <p className="text-[10px] text-muted-foreground mt-0.5">
+  1108→  1108→                              {fb.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+  1109→  1109→                            </p>
+  1110→  1110→                          </div>
+  1111→  1111→                        </motion.div>
+  1112→  1112→                      ))}
+  1113→  1113→                    </AnimatePresence>
+  1114→  1114→                  </div>
+  1115→  1115→                </ScrollArea>
+  1116→  1116→              )}
+  1117→  1117→            </CardContent>
+  1118→  1118→          </Card>
+  1119→  1119→        </div>
+  1120→  1120→      </div>
+  1121→  1121→    </div>
+  1122→  1122→  )
+  1123→  1123→}
+  1124→  1124→

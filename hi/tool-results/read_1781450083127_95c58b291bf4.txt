@@ -1,0 +1,714 @@
+     1→     1→'use client';
+     2→     2→
+     3→     3→import { useState, useCallback, useMemo } from 'react';
+     4→     4→import { motion, AnimatePresence } from 'framer-motion';
+     5→     5→import {
+     6→     6→  Flame,
+     7→     7→  Target,
+     8→     8→  Plus,
+     9→     9→  RotateCcw,
+    10→    10→  Dumbbell,
+    11→    11→  Brain,
+    12→    12→  Utensils,
+    13→    13→  Wind,
+    14→    14→  Footprints,
+    15→    15→  Trash2,
+    16→    16→  Sparkles,
+    17→    17→  CheckCircle2,
+    18→    18→} from 'lucide-react';
+    19→    19→import {
+    20→    20→  Card,
+    21→    21→  CardHeader,
+    22→    22→  CardTitle,
+    23→    23→  CardContent,
+    24→    24→  CardDescription,
+    25→    25→} from '@/components/ui/card';
+    26→    26→import { Button } from '@/components/ui/button';
+    27→    27→import { Badge } from '@/components/ui/badge';
+    28→    28→import { Input } from '@/components/ui/input';
+    29→    29→import {
+    30→    30→  Dialog,
+    31→    31→  DialogContent,
+    32→    32→  DialogHeader,
+    33→    33→  DialogTitle,
+    34→    34→  DialogDescription,
+    35→    35→  DialogFooter,
+    36→    36→  DialogTrigger,
+    37→    37→  DialogClose,
+    38→    38→} from '@/components/ui/dialog';
+    39→    39→import {
+    40→    40→  Select,
+    41→    41→  SelectContent,
+    42→    42→  SelectItem,
+    43→    43→  SelectTrigger,
+    44→    44→  SelectValue,
+    45→    45→} from '@/components/ui/select';
+    46→    46→
+    47→    47→// ── Types ────────────────────────────────────────────────────────────────────
+    48→    48→
+    49→    49→interface Goal {
+    50→    50→  id: string;
+    51→    51→  category: 'exercise' | 'mood' | 'nutrition' | 'breathing' | 'activity';
+    52→    52→  title: string;
+    53→    53→  targetValue: number;
+    54→    54→  currentValue: number;
+    55→    55→  completed: boolean;
+    56→    56→  activeDays: number[]; // 0=Mon ... 6=Sun, indices where activity logged
+    57→    57→}
+    58→    58→
+    59→    59→// ── Category config ──────────────────────────────────────────────────────────
+    60→    60→
+    61→    61→const categoryConfig = {
+    62→    62→  exercise: {
+    63→    63→    icon: Dumbbell,
+    64→    64→    label: 'Exercise',
+    65→    65→    color: 'text-emerald-600',
+    66→    66→    stroke: '#10b981',
+    67→    67→    bgColor: 'bg-emerald-100 dark:bg-emerald-900/30',
+    68→    68→    borderColor: 'border-emerald-500/20',
+    69→    69→  },
+    70→    70→  mood: {
+    71→    71→    icon: Brain,
+    72→    72→    label: 'Mood',
+    73→    73→    color: 'text-rose-600',
+    74→    74→    stroke: '#f43f5e',
+    75→    75→    bgColor: 'bg-rose-100 dark:bg-rose-900/30',
+    76→    76→    borderColor: 'border-rose-500/20',
+    77→    77→  },
+    78→    78→  nutrition: {
+    79→    79→    icon: Utensils,
+    80→    80→    label: 'Nutrition',
+    81→    81→    color: 'text-amber-600',
+    82→    82→    stroke: '#f59e0b',
+    83→    83→    bgColor: 'bg-amber-100 dark:bg-amber-900/30',
+    84→    84→    borderColor: 'border-amber-500/20',
+    85→    85→  },
+    86→    86→  breathing: {
+    87→    87→    icon: Wind,
+    88→    88→    label: 'Breathing',
+    89→    89→    color: 'text-teal-600',
+    90→    90→    stroke: '#14b8a6',
+    91→    91→    bgColor: 'bg-teal-100 dark:bg-teal-900/30',
+    92→    92→    borderColor: 'border-teal-500/20',
+    93→    93→  },
+    94→    94→  activity: {
+    95→    95→    icon: Footprints,
+    96→    96→    label: 'Activity',
+    97→    97→    color: 'text-cyan-600',
+    98→    98→    stroke: '#06b6d4',
+    99→    99→    bgColor: 'bg-cyan-100 dark:bg-cyan-900/30',
+   100→   100→    borderColor: 'border-cyan-500/20',
+   101→   101→  },
+   102→   102→} as const;
+   103→   103→
+   104→   104→type CategoryKey = keyof typeof categoryConfig;
+   105→   105→
+   106→   106→// ── Helpers ──────────────────────────────────────────────────────────────────
+   107→   107→
+   108→   108→function getWeekInfo(): { weekNumber: number; startDate: Date; endDate: Date; startStr: string; endStr: string } {
+   109→   109→  const now = new Date();
+   110→   110→  const startOfYear = new Date(now.getFullYear(), 0, 1);
+   111→   111→  const dayOfYear = Math.floor((now.getTime() - startOfYear.getTime()) / 86400000) + 1;
+   112→   112→  const weekNumber = Math.ceil(dayOfYear / 7);
+   113→   113→
+   114→   114→  const day = now.getDay();
+   115→   115→  const mondayOffset = day === 0 ? -6 : 1 - day;
+   116→   116→  const startDate = new Date(now);
+   117→   117→  startDate.setDate(now.getDate() + mondayOffset);
+   118→   118→  startDate.setHours(0, 0, 0, 0);
+   119→   119→
+   120→   120→  const endDate = new Date(startDate);
+   121→   121→  endDate.setDate(startDate.getDate() + 6);
+   122→   122→  endDate.setHours(23, 59, 59, 999);
+   123→   123→
+   124→   124→  const fmt = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+   125→   125→
+   126→   126→  return {
+   127→   127→    weekNumber,
+   128→   128→    startDate,
+   129→   129→    endDate,
+   130→   130→    startStr: fmt(startDate),
+   131→   131→    endStr: fmt(endDate),
+   132→   132→  };
+   133→   133→}
+   134→   134→
+   135→   135→function getProgressColor(percent: number): string {
+   136→   136→  if (percent > 66) return '#10b981'; // emerald
+   137→   137→  if (percent > 33) return '#f59e0b'; // amber
+   138→   138→  return '#f43f5e'; // rose
+   139→   139→}
+   140→   140→
+   141→   141→function getProgressColorClass(percent: number): { text: string; bg: string } {
+   142→   142→  if (percent > 66) return { text: 'text-emerald-600', bg: 'bg-emerald-500' };
+   143→   143→  if (percent > 33) return { text: 'text-amber-600', bg: 'bg-amber-500' };
+   144→   144→  return { text: 'text-rose-600', bg: 'bg-rose-500' };
+   145→   145→}
+   146→   146→
+   147→   147→const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+   148→   148→
+   149→   149→// ── Circular progress ring ───────────────────────────────────────────────────
+   150→   150→
+   151→   151→function CircularProgress({
+   152→   152→  percent,
+   153→   153→  size = 56,
+   154→   154→  strokeWidth = 5,
+   155→   155→  strokeColor,
+   156→   156→}: {
+   157→   157→  percent: number;
+   158→   158→  size?: number;
+   159→   159→  strokeWidth?: number;
+   160→   160→  strokeColor?: string;
+   161→   161→}) {
+   162→   162→  const radius = (size - strokeWidth) / 2;
+   163→   163→  const circumference = 2 * Math.PI * radius;
+   164→   164→  const offset = circumference - (Math.min(percent, 100) / 100) * circumference;
+   165→   165→  const color = strokeColor || getProgressColor(percent);
+   166→   166→
+   167→   167→  const gradientId = `grad-${percent}-${size}`;
+   168→   168→
+   169→   169→  return (
+   170→   170→    <svg width={size} height={size} className="transform -rotate-90">
+   171→   171→      <defs>
+   172→   172→        <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
+   173→   173→          <stop offset="0%" stopColor={color} />
+   174→   174→          <stop offset="100%" stopColor={color === '#10b981' ? '#14b8a6' : color === '#f59e0b' ? '#fbbf24' : '#fb7185'} />
+   175→   175→        </linearGradient>
+   176→   176→      </defs>
+   177→   177→      {/* Background circle */}
+   178→   178→      <circle
+   179→   179→        cx={size / 2}
+   180→   180→        cy={size / 2}
+   181→   181→        r={radius}
+   182→   182→        fill="none"
+   183→   183→        stroke="currentColor"
+   184→   184→        strokeWidth={strokeWidth}
+   185→   185→        className="text-muted-foreground/15"
+   186→   186→      />
+   187→   187→      {/* Progress circle */}
+   188→   188→      <circle
+   189→   189→        cx={size / 2}
+   190→   190→        cy={size / 2}
+   191→   191→        r={radius}
+   192→   192→        fill="none"
+   193→   193→        stroke={`url(#${gradientId})`}
+   194→   194→        strokeWidth={strokeWidth}
+   195→   195→        strokeDasharray={circumference}
+   196→   196→        strokeDashoffset={offset}
+   197→   197→        strokeLinecap="round"
+   198→   198→        className="transition-all duration-700 ease-out"
+   199→   199→      />
+   200→   200→    </svg>
+   201→   201→  );
+   202→   202→}
+   203→   203→
+   204→   204→// ── Confetti burst ───────────────────────────────────────────────────────────
+   205→   205→
+   206→   206→function ConfettiParticle({ index }: { index: number }) {
+   207→   207→  const colors = ['#10b981', '#f59e0b', '#06b6d4', '#f43f5e', '#14b8a6', '#fbbf24'];
+   208→   208→  const color = colors[index % colors.length];
+   209→   209→  const startX = 30 + Math.random() * 40;
+   210→   210→  const rotation = Math.random() * 720;
+   211→   211→
+   212→   212→  return (
+   213→   213→    <motion.div
+   214→   214→      className="absolute w-2.5 h-2.5 rounded-sm pointer-events-none"
+   215→   215→      style={{ backgroundColor: color, left: `${startX}%`, top: '50%' }}
+   216→   216→      initial={{ scale: 0, opacity: 0.95, y: 0, rotate: 0 }}
+   217→   217→      animate={{
+   218→   218→        scale: [0, 1.8, 0],
+   219→   219→        opacity: [0.95, 0.9, 0],
+   220→   220→        y: [0, -90 - Math.random() * 60],
+   221→   221→        x: [(Math.random() - 0.5) * 50, (Math.random() - 0.5) * 90],
+   222→   222→        rotate: [0, rotation],
+   223→   223→      }}
+   224→   224→      transition={{ duration: 1.3 + Math.random() * 0.5, ease: 'easeOut' }}
+   225→   225→    />
+   226→   226→  );
+   227→   227→}
+   228→   228→
+   229→   229→function ConfettiBurst({ show }: { show: boolean }) {
+   230→   230→  return (
+   231→   231→    <AnimatePresence>
+   232→   232→      {show && (
+   233→   233→        <motion.div className="absolute inset-0 pointer-events-none overflow-hidden z-20">
+   234→   234→          {Array.from({ length: 20 }).map((_, i) => (
+   235→   235→            <ConfettiParticle key={i} index={i} />
+   236→   236→          ))}
+   237→   237→        </motion.div>
+   238→   238→      )}
+   239→   239→    </AnimatePresence>
+   240→   240→  );
+   241→   241→}
+   242→   242→
+   243→   243→// ── Animation variants ───────────────────────────────────────────────────────
+   244→   244→
+   245→   245→const containerVariants = {
+   246→   246→  hidden: { opacity: 0 },
+   247→   247→  visible: {
+   248→   248→    opacity: 1,
+   249→   249→    transition: { staggerChildren: 0.1 },
+   250→   250→  },
+   251→   251→};
+   252→   252→
+   253→   253→const itemVariants = {
+   254→   254→  hidden: { opacity: 0, y: 20 },
+   255→   255→  visible: {
+   256→   256→    opacity: 1,
+   257→   257→    y: 0,
+   258→   258→    transition: { duration: 0.5, ease: 'easeOut' },
+   259→   259→  },
+   260→   260→};
+   261→   261→
+   262→   262→// ── Sample data ──────────────────────────────────────────────────────────────
+   263→   263→
+   264→   264→function createSampleGoals(): Goal[] {
+   265→   265→  return [
+   266→   266→    {
+   267→   267→      id: 'goal-1',
+   268→   268→      category: 'exercise',
+   269→   269→      title: 'Exercise 150 min this week',
+   270→   270→      targetValue: 150,
+   271→   271→      currentValue: 95,
+   272→   272→      completed: false,
+   273→   273→      activeDays: [0, 2, 4], // Mon, Wed, Fri
+   274→   274→    },
+   275→   275→    {
+   276→   276→      id: 'goal-2',
+   277→   277→      category: 'mood',
+   278→   278→      title: 'Log mood 5 times this week',
+   279→   279→      targetValue: 5,
+   280→   280→      currentValue: 2,
+   281→   281→      completed: false,
+   282→   282→      activeDays: [0, 1], // Mon, Tue
+   283→   283→    },
+   284→   284→    {
+   285→   285→      id: 'goal-3',
+   286→   286→      category: 'nutrition',
+   287→   287→      title: 'Log 14 meals this week',
+   288→   288→      targetValue: 14,
+   289→   289→      currentValue: 11,
+   290→   290→      completed: false,
+   291→   291→      activeDays: [0, 1, 2, 3, 4, 5], // Mon-Sat
+   292→   292→    },
+   293→   293→    {
+   294→   294→      id: 'goal-4',
+   295→   295→      category: 'breathing',
+   296→   296→      title: 'Complete 3 breathing sessions',
+   297→   297→      targetValue: 3,
+   298→   298→      currentValue: 3,
+   299→   299→      completed: true,
+   300→   300→      activeDays: [0, 2, 5], // Mon, Wed, Sat
+   301→   301→    },
+   302→   302→  ];
+   303→   303→}
+   304→   304→
+   305→   305→// ── Main component ───────────────────────────────────────────────────────────
+   306→   306→
+   307→   307→export default function WeeklyGoals() {
+   308→   308→  const [goals, setGoals] = useState<Goal[]>(createSampleGoals);
+   309→   309→  const [confettiGoalId, setConfettiGoalId] = useState<string | null>(null);
+   310→   310→  const [bumpGoalId, setBumpGoalId] = useState<string | null>(null);
+   311→   311→  const [dialogOpen, setDialogOpen] = useState(false);
+   312→   312→  const [newGoalCategory, setNewGoalCategory] = useState<CategoryKey>('exercise');
+   313→   313→  const [newGoalTitle, setNewGoalTitle] = useState('');
+   314→   314→  const [newGoalTarget, setNewGoalTarget] = useState('');
+   315→   315→
+   316→   316→  const weekInfo = useMemo(() => getWeekInfo(), []);
+   317→   317→
+   318→   318→  // Compute streak: count consecutive weeks with at least one completed goal
+   319→   319→  // (simplified: just count current completed goals as "streak points")
+   320→   320→  const streak = useMemo(() => {
+   321→   321→    const completedThisWeek = goals.filter(g => g.completed).length;
+   322→   322→    return completedThisWeek > 0 ? completedThisWeek + 2 : 0; // +2 for mock previous weeks
+   323→   323→  }, [goals]);
+   324→   324→
+   325→   325→  const overallProgress = useMemo(() => {
+   326→   326→    if (goals.length === 0) return 0;
+   327→   327→    const totalPercent = goals.reduce((sum, g) => sum + Math.min((g.currentValue / g.targetValue) * 100, 100), 0);
+   328→   328→    return Math.round(totalPercent / goals.length);
+   329→   329→  }, [goals]);
+   330→   330→
+   331→   331→  // Get all active days across goals
+   332→   332→  const allActiveDays = useMemo(() => {
+   333→   333→    const daySet = new Set<number>();
+   334→   334→    goals.forEach(g => g.activeDays.forEach(d => daySet.add(d)));
+   335→   335→    return daySet;
+   336→   336→  }, [goals]);
+   337→   337→
+   338→   338→  // Current day of week (0=Mon ... 6=Sun)
+   339→   339→  const todayDayIndex = useMemo(() => {
+   340→   340→    const day = new Date().getDay();
+   341→   341→    return day === 0 ? 6 : day - 1; // Convert Sunday=0 to index 6
+   342→   342→  }, []);
+   343→   343→
+   344→   344→  const handleIncrement = useCallback((goalId: string) => {
+   345→   345→    setGoals(prev =>
+   346→   346→      prev.map(goal => {
+   347→   347→        if (goal.id !== goalId || goal.completed) return goal;
+   348→   348→
+   349→   349→        const newValue = goal.currentValue + 1;
+   350→   350→        const isCompleted = newValue >= goal.targetValue;
+   351→   351→
+   352→   352→        if (isCompleted) {
+   353→   353→          setConfettiGoalId(goalId);
+   354→   354→          setTimeout(() => setConfettiGoalId(null), 1500);
+   355→   355→        }
+   356→   356→
+   357→   357→        // Haptic-like bump animation
+   358→   358→        setBumpGoalId(goalId);
+   359→   359→        setTimeout(() => setBumpGoalId(null), 300);
+   360→   360→
+   361→   361→        // Add today to active days if not already there
+   362→   362→        const activeDays = goal.activeDays.includes(todayDayIndex)
+   363→   363→          ? goal.activeDays
+   364→   364→          : [...goal.activeDays, todayDayIndex];
+   365→   365→
+   366→   366→        return {
+   367→   367→          ...goal,
+   368→   368→          currentValue: newValue,
+   369→   369→          completed: isCompleted,
+   370→   370→          activeDays,
+   371→   371→        };
+   372→   372→      })
+   373→   373→    );
+   374→   374→  }, [todayDayIndex]);
+   375→   375→
+   376→   376→  const handleAddGoal = useCallback(() => {
+   377→   377→    if (!newGoalTitle.trim() || !newGoalTarget) return;
+   378→   378→
+   379→   379→    const target = parseInt(newGoalTarget, 10);
+   380→   380→    if (isNaN(target) || target <= 0) return;
+   381→   381→
+   382→   382→    const newGoal: Goal = {
+   383→   383→      id: `goal-${Date.now()}`,
+   384→   384→      category: newGoalCategory,
+   385→   385→      title: newGoalTitle.trim(),
+   386→   386→      targetValue: target,
+   387→   387→      currentValue: 0,
+   388→   388→      completed: false,
+   389→   389→      activeDays: [],
+   390→   390→    };
+   391→   391→
+   392→   392→    setGoals(prev => [...prev, newGoal]);
+   393→   393→    setNewGoalTitle('');
+   394→   394→    setNewGoalTarget('');
+   395→   395→    setDialogOpen(false);
+   396→   396→  }, [newGoalTitle, newGoalTarget, newGoalCategory]);
+   397→   397→
+   398→   398→  const handleDeleteGoal = useCallback((goalId: string) => {
+   399→   399→    setGoals(prev => prev.filter(g => g.id !== goalId));
+   400→   400→  }, []);
+   401→   401→
+   402→   402→  const handleResetWeek = useCallback(() => {
+   403→   403→    setGoals(prev =>
+   404→   404→      prev.map(g => ({
+   405→   405→        ...g,
+   406→   406→        currentValue: 0,
+   407→   407→        completed: false,
+   408→   408→        activeDays: [],
+   409→   409→      }))
+   410→   410→    );
+   411→   411→  }, []);
+   412→   412→
+   413→   413→  const completedCount = goals.filter(g => g.completed).length;
+   414→   414→
+   415→   415→  return (
+   416→   416→    <Card className="rounded-xl bg-white/80 dark:bg-gray-900/80 backdrop-blur border-0 shadow-lg">
+   417→   417→      <CardHeader className="pb-3">
+   418→   418→        <div className="flex items-center justify-between">
+   419→   419→          <CardTitle className="flex items-center gap-2 text-base">
+   420→   420→            <Flame className="h-5 w-5 text-amber-500" />
+   421→   421→            Weekly Progress
+   422→   422→            {streak > 0 && (
+   423→   423→              <Badge
+   424→   424→                variant="secondary"
+   425→   425→                className="gap-1 bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-400 ml-1"
+   426→   426→              >
+   427→   427→                <Flame className="h-3 w-3" />
+   428→   428→                {streak} streak
+   429→   429→              </Badge>
+   430→   430→            )}
+   431→   431→          </CardTitle>
+   432→   432→          <div className="flex items-center gap-1.5">
+   433→   433→            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+   434→   434→              <DialogTrigger asChild>
+   435→   435→                <Button
+   436→   436→                  variant="outline"
+   437→   437→                  size="sm"
+   438→   438→                  className="h-7 gap-1 border-emerald-500/20 text-emerald-600 hover:bg-emerald-500/10 hover:text-emerald-700"
+   439→   439→                >
+   440→   440→                  <Plus className="h-3.5 w-3.5" />
+   441→   441→                  Add
+   442→   442→                </Button>
+   443→   443→              </DialogTrigger>
+   444→   444→              <DialogContent className="sm:max-w-md">
+   445→   445→                <DialogHeader className="pb-1">
+   446→   446→                  <DialogTitle className="text-lg font-bold flex items-center gap-2">
+   447→   447→                    <Target className="h-5 w-5 text-emerald-500" />
+   448→   448→                    Add Weekly Goal
+   449→   449→                  </DialogTitle>
+   450→   450→                  <DialogDescription className="text-sm">
+   451→   451→                    Set a new goal to track this week
+   452→   452→                  </DialogDescription>
+   453→   453→                </DialogHeader>
+   454→   454→                <div className="space-y-5 py-3">
+   455→   455→                  <div className="space-y-2.5">
+   456→   456→                    <label className="text-sm font-semibold text-foreground">Category</label>
+   457→   457→                    <Select value={newGoalCategory} onValueChange={(v) => setNewGoalCategory(v as CategoryKey)}>
+   458→   458→                      <SelectTrigger className="w-full">
+   459→   459→                        <SelectValue />
+   460→   460→                      </SelectTrigger>
+   461→   461→                      <SelectContent>
+   462→   462→                        {(Object.keys(categoryConfig) as CategoryKey[]).map(key => {
+   463→   463→                          const cfg = categoryConfig[key];
+   464→   464→                          return (
+   465→   465→                            <SelectItem key={key} value={key}>
+   466→   466→                              <span className="flex items-center gap-2">
+   467→   467→                                <cfg.icon className={`h-4 w-4 ${cfg.color}`} />
+   468→   468→                                {cfg.label}
+   469→   469→                              </span>
+   470→   470→                            </SelectItem>
+   471→   471→                          );
+   472→   472→                        })}
+   473→   473→                      </SelectContent>
+   474→   474→                    </Select>
+   475→   475→                  </div>
+   476→   476→                  <div className="space-y-2.5">
+   477→   477→                    <label className="text-sm font-semibold text-foreground">Goal Title</label>
+   478→   478→                    <Input
+   479→   479→                      placeholder="e.g., Exercise 150 min this week"
+   480→   480→                      value={newGoalTitle}
+   481→   481→                      onChange={(e) => setNewGoalTitle(e.target.value)}
+   482→   482→                      className="h-10"
+   483→   483→                    />
+   484→   484→                  </div>
+   485→   485→                  <div className="space-y-2.5">
+   486→   486→                    <label className="text-sm font-semibold text-foreground">Target Value</label>
+   487→   487→                    <Input
+   488→   488→                      type="number"
+   489→   489→                      placeholder="e.g., 150"
+   490→   490→                      value={newGoalTarget}
+   491→   491→                      onChange={(e) => setNewGoalTarget(e.target.value)}
+   492→   492→                      min={1}
+   493→   493→                      className="h-10"
+   494→   494→                    />
+   495→   495→                  </div>
+   496→   496→                </div>
+   497→   497→                <DialogFooter className="gap-2 sm:gap-0">
+   498→   498→                  <DialogClose asChild>
+   499→   499→                    <Button variant="outline" className="mr-2">Cancel</Button>
+   500→   500→                  </DialogClose>
+   501→   501→                  <Button
+   502→   502→                    onClick={handleAddGoal}
+   503→   503→                    disabled={!newGoalTitle.trim() || !newGoalTarget}
+   504→   504→                    className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-500/20"
+   505→   505→                  >
+   506→   506→                    <Plus className="h-4 w-4 mr-1" />
+   507→   507→                    Add Goal
+   508→   508→                  </Button>
+   509→   509→                </DialogFooter>
+   510→   510→              </DialogContent>
+   511→   511→            </Dialog>
+   512→   512→            <Button
+   513→   513→              variant="ghost"
+   514→   514→              size="sm"
+   515→   515→              className="h-7 w-7 p-0 text-muted-foreground"
+   516→   516→              onClick={handleResetWeek}
+   517→   517→              aria-label="Reset weekly goals"
+   518→   518→            >
+   519→   519→              <RotateCcw className="h-3.5 w-3.5" />
+   520→   520→            </Button>
+   521→   521→          </div>
+   522→   522→        </div>
+   523→   523→        <CardDescription className="flex items-center gap-2">
+   524→   524→          <span>Week {weekInfo.weekNumber}</span>
+   525→   525→          <span className="text-muted-foreground/50">·</span>
+   526→   526→          <span>{weekInfo.startStr} – {weekInfo.endStr}</span>
+   527→   527→          <span className="text-muted-foreground/50">·</span>
+   528→   528→          <span>{completedCount}/{goals.length} completed</span>
+   529→   529→        </CardDescription>
+   530→   530→
+   531→   531→        {/* Day indicators */}
+   532→   532→        <div className="flex items-center justify-between mt-3 px-1">
+   533→   533→          {DAY_LABELS.map((label, idx) => {
+   534→   534→            const isActive = allActiveDays.has(idx);
+   535→   535→            const isToday = idx === todayDayIndex;
+   536→   536→            return (
+   537→   537→              <div key={label} className="flex flex-col items-center gap-1">
+   538→   538→                <span className={`text-[10px] font-medium ${isToday ? 'text-emerald-600' : 'text-muted-foreground'}`}>
+   539→   539→                  {label}
+   540→   540→                </span>
+   541→   541→                <motion.div
+   542→   542→                  className={`w-3 h-3 rounded-full transition-colors duration-300 cursor-pointer ${
+   543→   543→                    isActive
+   544→   544→                      ? 'bg-emerald-500 shadow-sm shadow-emerald-500/30'
+   545→   545→                      : 'bg-muted-foreground/15'
+   546→   546→                  } ${isToday ? 'ring-2 ring-emerald-500/40 ring-offset-1 ring-offset-background' : ''}`}
+   547→   547→                  animate={isActive ? { scale: [1, 1.2, 1] } : {}}
+   548→   548→                  transition={{ duration: 0.3 }}
+   549→   549→                  whileHover={{ scale: 1.35 }}
+   550→   550→                />
+   551→   551→              </div>
+   552→   552→            );
+   553→   553→          })}
+   554→   554→        </div>
+   555→   555→
+   556→   556→        {/* Overall progress bar */}
+   557→   557→        <div className="mt-3 flex items-center gap-2">
+   558→   558→          <div className="flex-1 h-2.5 rounded-full bg-muted-foreground/10 overflow-hidden">
+   559→   559→            <motion.div
+   560→   560→              className="h-full rounded-full progress-bar-animated"
+   561→   561→              style={{
+   562→   562→                background: `linear-gradient(90deg, ${getProgressColor(overallProgress)}, ${overallProgress > 66 ? '#14b8a6' : overallProgress > 33 ? '#fbbf24' : '#fb7185'}, ${getProgressColor(overallProgress)})`,
+   563→   563→                backgroundSize: '200% 100%',
+   564→   564→              }}
+   565→   565→              initial={{ width: 0 }}
+   566→   566→              animate={{ width: `${overallProgress}%` }}
+   567→   567→              transition={{ duration: 0.8, ease: 'easeOut' }}
+   568→   568→            />
+   569→   569→          </div>
+   570→   570→          <span className={`text-xs font-semibold ${getProgressColorClass(overallProgress).text}`}>
+   571→   571→            {overallProgress}%
+   572→   572→          </span>
+   573→   573→        </div>
+   574→   574→      </CardHeader>
+   575→   575→
+   576→   576→      <CardContent className="p-4 pt-0">
+   577→   577→        <motion.div
+   578→   578→          className="space-y-3"
+   579→   579→          variants={containerVariants}
+   580→   580→          initial="hidden"
+   581→   581→          animate="visible"
+   582→   582→        >
+   583→   583→          {goals.length === 0 && (
+   584→   584→            <div className="flex flex-col items-center justify-center py-8 text-center">
+   585→   585→              <Target className="h-10 w-10 text-muted-foreground/30 mb-2" />
+   586→   586→              <p className="text-sm text-muted-foreground">No goals yet this week</p>
+   587→   587→              <p className="text-xs text-muted-foreground/60 mt-1">Click &quot;Add&quot; to set your first weekly goal</p>
+   588→   588→            </div>
+   589→   589→          )}
+   590→   590→
+   591→   591→          {goals.map((goal) => {
+   592→   592→            const config = categoryConfig[goal.category];
+   593→   593→            const percent = Math.round((goal.currentValue / goal.targetValue) * 100);
+   594→   594→            const colorClass = getProgressColorClass(percent);
+   595→   595→
+   596→   596→            return (
+   597→   597→              <motion.div
+   598→   598→                key={goal.id}
+   599→   599→                variants={itemVariants}
+   600→   600→                className="relative"
+   601→   601→              >
+   602→   602→                <ConfettiBurst show={confettiGoalId === goal.id} />
+   603→   603→
+   604→   604→                <motion.div
+   605→   605→                  className={`flex items-center gap-3 rounded-xl border-2 p-3 transition-all ${
+   606→   606→                    goal.completed
+   607→   607→                      ? 'border-emerald-500/30 bg-gradient-to-r from-emerald-500/5 via-teal-500/5 to-emerald-500/5'
+   608→   608→                      : `border-muted-foreground/10 hover:${config.borderColor}`
+   609→   609→                  }`}
+   610→   610→                  whileHover={!goal.completed ? { scale: 1.01 } : {}}
+   611→   611→                  animate={bumpGoalId === goal.id ? { scale: [1, 1.03, 1] } : {}}
+   612→   612→                  transition={{ duration: 0.3 }}
+   613→   613→                >
+   614→   614→                  {/* Circular progress */}
+   615→   615→                  <div className={`relative shrink-0 flex items-center justify-center ${goal.completed ? 'goal-ring-glow' : ''}`}>
+   616→   616→                    <div className="w-14 h-14 sm:w-[72px] sm:h-[72px] flex items-center justify-center">
+   617→   617→                      <CircularProgress percent={percent} size={60} strokeWidth={5} />
+   618→   618→                      <div className="absolute inset-0 flex items-center justify-center">
+   619→   619→                        <span className={`text-[11px] sm:text-xs font-bold ${colorClass.text}`}>
+   620→   620→                          {percent}%
+   621→   621→                        </span>
+   622→   622→                      </div>
+   623→   623→                    </div>
+   624→   624→                  </div>
+   625→   625→
+   626→   626→                  {/* Content */}
+   627→   627→                  <div className="min-w-0 flex-1">
+   628→   628→                    <div className="flex items-center gap-2">
+   629→   629→                      <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md ${config.bgColor}`}>
+   630→   630→                        {goal.completed ? (
+   631→   631→                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+   632→   632→                        ) : (
+   633→   633→                          <config.icon className={`h-3.5 w-3.5 ${config.color}`} />
+   634→   634→                        )}
+   635→   635→                      </div>
+   636→   636→                      <p className={`text-sm font-semibold leading-tight truncate ${
+   637→   637→                        goal.completed ? 'text-emerald-700 dark:text-emerald-400 line-through' : ''
+   638→   638→                      }`}>
+   639→   639→                        {goal.title}
+   640→   640→                      </p>
+   641→   641→                    </div>
+   642→   642→                    <div className="flex items-center gap-2 mt-1">
+   643→   643→                      <span className={`text-xs font-medium ${colorClass.text}`}>
+   644→   644→                        {goal.currentValue}/{goal.targetValue}
+   645→   645→                      </span>
+   646→   646→                      <span className="text-muted-foreground/40 text-xs">·</span>
+   647→   647→                      <Badge
+   648→   648→                        variant="secondary"
+   649→   649→                        className={`text-[10px] px-1.5 py-0 h-4 ${
+   650→   650→                          goal.category === 'exercise' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400' :
+   651→   651→                          goal.category === 'mood' ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-400' :
+   652→   652→                          goal.category === 'nutrition' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400' :
+   653→   653→                          goal.category === 'breathing' ? 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-400' :
+   654→   654→                          'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-400'
+   655→   655→                        }`}
+   656→   656→                      >
+   657→   657→                        {config.label}
+   658→   658→                      </Badge>
+   659→   659→                    </div>
+   660→   660→                  </div>
+   661→   661→
+   662→   662→                  {/* Actions */}
+   663→   663→                  <div className="flex items-center gap-1 shrink-0">
+   664→   664→                    {!goal.completed && (
+   665→   665→                      <Button
+   666→   666→                        variant="outline"
+   667→   667→                        size="sm"
+   668→   668→                        className="h-8 w-8 p-0 border-emerald-500/20 text-emerald-600 hover:bg-emerald-500/10 hover:text-emerald-700"
+   669→   669→                        onClick={() => handleIncrement(goal.id)}
+   670→   670→                        aria-label={`Increment ${goal.title}`}
+   671→   671→                      >
+   672→   672→                        <Plus className="h-4 w-4" />
+   673→   673→                      </Button>
+   674→   674→                    )}
+   675→   675→                    <Button
+   676→   676→                      variant="ghost"
+   677→   677→                      size="sm"
+   678→   678→                      className="h-8 w-8 p-0 text-muted-foreground/40 hover:text-rose-500"
+   679→   679→                      onClick={() => handleDeleteGoal(goal.id)}
+   680→   680→                      aria-label={`Delete ${goal.title}`}
+   681→   681→                    >
+   682→   682→                      <Trash2 className="h-3.5 w-3.5" />
+   683→   683→                    </Button>
+   684→   684→                  </div>
+   685→   685→                </motion.div>
+   686→   686→              </motion.div>
+   687→   687→            );
+   688→   688→          })}
+   689→   689→
+   690→   690→          {/* All completed celebration */}
+   691→   691→          <AnimatePresence>
+   692→   692→            {goals.length > 0 && goals.every(g => g.completed) && (
+   693→   693→              <motion.div
+   694→   694→                initial={{ opacity: 0, height: 0 }}
+   695→   695→                animate={{ opacity: 1, height: 'auto' }}
+   696→   696→                exit={{ opacity: 0, height: 0 }}
+   697→   697→                className="overflow-hidden"
+   698→   698→              >
+   699→   699→                <div className="flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-emerald-500/10 border border-emerald-500/20 p-3">
+   700→   700→                  <Sparkles className="h-4 w-4 text-amber-500" />
+   701→   701→                  <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+   702→   702→                    All weekly goals complete! Amazing work!
+   703→   703→                  </p>
+   704→   704→                  <Sparkles className="h-4 w-4 text-amber-500" />
+   705→   705→                </div>
+   706→   706→              </motion.div>
+   707→   707→            )}
+   708→   708→          </AnimatePresence>
+   709→   709→        </motion.div>
+   710→   710→      </CardContent>
+   711→   711→    </Card>
+   712→   712→  );
+   713→   713→}
+   714→   714→

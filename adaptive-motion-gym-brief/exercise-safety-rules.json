@@ -1,0 +1,59 @@
+{
+  "rules": [
+    {
+      "id": "no-floor",
+      "condition": "floorExercisesAllowed is false",
+      "avoidTags": ["floor", "plank", "pushup-floor", "crunch-floor", "burpee", "mountain-climber"],
+      "avoidNames": ["plank", "push-up", "floor crunch", "burpee", "mountain climber"],
+      "preferTags": ["seated", "standing-supported", "chair-supported", "wall-supported"]
+    },
+    {
+      "id": "seated-only",
+      "condition": "seatedOnly is true or usesWheelchair is true",
+      "avoidTags": ["standing", "jumping", "running", "lunge", "unsupported-balance"],
+      "avoidNames": ["squat", "lunge", "running", "jumping jack", "burpee"],
+      "preferTags": ["seated", "wheelchair-friendly", "chair-supported"]
+    },
+    {
+      "id": "low-balance",
+      "condition": "balanceConfidence is low",
+      "avoidTags": ["single-leg", "unsupported-balance", "jumping", "fast-direction-change"],
+      "avoidNames": ["single-leg deadlift", "jump squat", "skater jump"],
+      "preferTags": ["seated", "chair-supported", "wall-supported"]
+    },
+    {
+      "id": "one-arm-limited",
+      "condition": "leftArmAbility is none or rightArmAbility is none",
+      "avoidTags": ["two-arm-required", "pullup", "standard-pushup", "two-arm-plank"],
+      "avoidNames": ["pull-up", "standard push-up", "plank", "two-hand dumbbell press"],
+      "preferTags": ["single-arm-friendly", "seated", "supported"]
+    },
+    {
+      "id": "knee-pain",
+      "condition": "painAreas includes knee or injuryAreas includes knee",
+      "avoidTags": ["deep-knee-bend", "jumping", "lunge", "high-impact"],
+      "avoidNames": ["deep squat", "lunge", "jump squat", "running", "burpee"],
+      "preferTags": ["low-impact", "seated", "hip-focused", "chair-supported"]
+    },
+    {
+      "id": "shoulder-pain",
+      "condition": "painAreas includes shoulder or injuryAreas includes shoulder",
+      "avoidTags": ["overhead", "heavy-push", "fast-arm-swing"],
+      "avoidNames": ["overhead press", "shoulder press", "fast arm circles"],
+      "preferTags": ["gentle-mobility", "low-resistance", "pain-free-range"]
+    },
+    {
+      "id": "no-equipment",
+      "condition": "required equipment is not available",
+      "avoidTags": ["equipment-required"],
+      "preferTags": ["no-equipment", "bodyweight", "mobility"]
+    }
+  ],
+  "globalSafetyNotes": [
+    "This is general movement guidance, not medical advice.",
+    "Stop if you feel pain, dizziness, numbness, or discomfort.",
+    "Choose a smaller range of motion when unsure.",
+    "Use support when balance feels uncertain.",
+    "Consult a qualified professional for medical conditions, injuries, or rehabilitation needs."
+  ]
+}

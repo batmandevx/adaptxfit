@@ -1,0 +1,442 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e5]:
+        - generic [ref=e6] [cursor=pointer]:
+          - img [ref=e8]
+          - generic [ref=e14]:
+            - heading "AdaptiFit" [level=1] [ref=e757]
+            - paragraph [ref=e16]: AI Adaptive Fitness & Rehab
+        - navigation [ref=e17]:
+          - button "Dashboard" [ref=e758]:
+            - img [ref=e20]
+            - generic [ref=e25]: Dashboard
+          - button "Body Scan" [ref=e759]:
+            - img [ref=e28]
+            - generic [ref=e33]: Body Scan
+          - button "Live Coach" [ref=e760]:
+            - img [ref=e36]
+            - generic [ref=e39]: Live Coach
+          - button "Exercises" [ref=e761]:
+            - img [ref=e42]
+            - generic [ref=e48]: Exercises
+          - button "Adaptive Workout" [ref=e762]:
+            - img [ref=e51]
+            - generic [ref=e57]: Adaptive Workout
+          - button "Mind Gym" [ref=e763]:
+            - img [ref=e60]
+            - generic [ref=e62]: Mind Gym
+          - button "Breathing" [ref=e764]:
+            - img [ref=e65]
+            - generic [ref=e69]: Breathing
+          - button "Mood" [ref=e765]:
+            - img [ref=e72]
+            - generic [ref=e82]: Mood
+          - button "Nutrition" [ref=e766]:
+            - img [ref=e85]
+            - generic [ref=e88]: Nutrition
+          - button "Community" [ref=e767]:
+            - img [ref=e91]
+            - generic [ref=e96]: Community
+          - button "Wearable" [ref=e768]:
+            - img [ref=e99]
+            - generic [ref=e104]: Wearable
+          - button "Crisis" [ref=e769]:
+            - img [ref=e107]
+            - generic [ref=e109]: Crisis
+        - generic [ref=e110]:
+          - button [ref=e111]:
+            - generic [ref=e644]:
+              - img
+          - button "Start voice input" [ref=e770]:
+            - generic [ref=e114]:
+              - img
+          - button [ref=e115]:
+            - img
+          - button "3" [ref=e771]:
+            - img
+            - generic [ref=e118]: "3"
+          - generic [ref=e119]:
+            - img
+            - text: Pro Plan
+          - generic [ref=e121] [cursor=pointer]: A
+          - button "Get Started" [ref=e772]:
+            - img
+            - text: Get Started
+    - main [ref=e123]:
+      - generic [ref=e774]:
+        - generic [ref=e775]:
+          - generic [ref=e776]:
+            - img
+            - text: Deterministic safety engine · no LLM
+          - heading "Adaptive Workout" [level=1] [ref=e777]
+          - paragraph [ref=e778]:
+            - text: Fitness that adapts to
+            - emphasis [ref=e779]: you
+            - text: . Every exercise is filtered through a Smart Exclusion Engine and a Safety Validation Loop — nothing unsafe for your body ever reaches the screen.
+        - generic [ref=e845]:
+          - generic [ref=e847]:
+            - generic [ref=e848]:
+              - generic [ref=e849]:
+                - heading "Seated adaptive routine" [level=2] [ref=e850]
+                - paragraph [ref=e851]:
+                  - generic [ref=e852]:
+                    - img [ref=e853]
+                    - text: ~11 min
+                  - generic [ref=e856]:
+                    - img [ref=e857]
+                    - text: 8 exercises
+                  - generic [ref=e863]: gentle
+              - generic [ref=e864]:
+                - button "Personas" [ref=e865]:
+                  - img
+                  - text: Personas
+                - button "Fresh routine" [ref=e866]:
+                  - img
+                  - text: Fresh routine
+            - generic [ref=e867]:
+              - generic [ref=e868]:
+                - img
+                - text: Seated only
+              - generic [ref=e869]:
+                - img
+                - text: No floor needed
+              - generic [ref=e870]:
+                - img
+                - text: Balance-supported
+              - generic [ref=e871]:
+                - img
+                - text: Low impact
+            - generic [ref=e872]:
+              - generic [ref=e873]: "Reshape the whole routine:"
+              - button "Easier" [ref=e874]
+              - button "Harder" [ref=e875]
+              - button "Shorter" [ref=e876]
+              - button "Seated only" [ref=e877]
+              - button "Low impact" [ref=e878]
+              - button "More core" [ref=e879]
+              - button "More upper body" [ref=e880]
+              - button "No equipment" [ref=e881]
+              - button "Calmer" [ref=e882]
+              - button "Strength" [ref=e883]
+          - generic [ref=e884]:
+            - generic [ref=e887]:
+              - generic [ref=e888]:
+                - generic [ref=e889]:
+                  - generic [ref=e890]:
+                    - generic [ref=e891]: "1"
+                    - heading "Seated Arm Reach" [level=3] [ref=e892]
+                    - generic [ref=e893]:
+                      - img
+                      - text: seated
+                    - generic [ref=e894]: beginner
+                  - paragraph [ref=e895]: 6–10 slow reaches · rest 30 seconds
+                - button "This doesn't work" [ref=e896]:
+                  - text: This doesn't work
+                  - img
+              - generic [ref=e897]:
+                - generic [ref=e898]: shoulders
+                - generic [ref=e899]: back
+              - generic [ref=e900]:
+                - img [ref=e901]
+                - generic [ref=e903]: "Why this is safe for you: Seated Arm Reach was chosen to support shoulders and back while you stay seated. Gentle reaching helps your shoulders feel mobile and ready."
+              - generic [ref=e904]:
+                - paragraph [ref=e905]:
+                  - img [ref=e906]
+                  - text: Stay within a comfortable, pain-free range.
+                - paragraph [ref=e909]:
+                  - img [ref=e910]
+                  - text: "Seated option: Already seated."
+              - paragraph [ref=e913]:
+                - img [ref=e914]
+                - text: Gentle reaching helps your shoulders feel mobile and ready.
+            - generic [ref=e921]:
+              - generic [ref=e922]:
+                - generic [ref=e923]:
+                  - generic [ref=e924]:
+                    - generic [ref=e925]: "2"
+                    - heading "Seated Resistance Band Row" [level=3] [ref=e926]
+                    - generic [ref=e927]:
+                      - img
+                      - text: seated
+                    - generic [ref=e928]: easy
+                  - paragraph [ref=e929]: 8–12 reps · rest 45 seconds
+                - button "This doesn't work" [ref=e930]:
+                  - text: This doesn't work
+                  - img
+              - generic [ref=e931]:
+                - generic [ref=e932]: back
+                - generic [ref=e933]: arms
+                - generic [ref=e934]: shoulders
+              - generic [ref=e935]:
+                - img [ref=e936]
+                - generic [ref=e938]: "Why this is safe for you: Seated Resistance Band Row was chosen to support back and arms while you stay seated. Controlled pulling builds back strength while you stay fully supported."
+              - generic [ref=e939]:
+                - paragraph [ref=e940]:
+                  - img [ref=e941]
+                  - text: Avoid jerking the band.
+                - paragraph [ref=e944]:
+                  - img [ref=e945]
+                  - text: "Seated option: Already seated."
+              - paragraph [ref=e948]:
+                - img [ref=e949]
+                - text: Controlled pulling builds back strength while you stay fully supported.
+            - generic [ref=e956]:
+              - generic [ref=e957]:
+                - generic [ref=e958]:
+                  - generic [ref=e959]:
+                    - generic [ref=e960]: "3"
+                    - heading "Seated Forward Punches" [level=3] [ref=e961]
+                    - generic [ref=e962]:
+                      - img
+                      - text: seated
+                    - generic [ref=e963]: easy
+                  - paragraph [ref=e964]: 30–45 seconds · rest 30 seconds
+                - button "This doesn't work" [ref=e965]:
+                  - text: This doesn't work
+                  - img
+              - generic [ref=e966]:
+                - generic [ref=e967]: shoulders
+                - generic [ref=e968]: arms
+                - generic [ref=e969]: core
+              - generic [ref=e970]:
+                - img [ref=e971]
+                - generic [ref=e973]: "Why this is safe for you: Seated Forward Punches was chosen to support shoulders and arms while you stay seated. A gentle way to warm up the upper body and lift your energy."
+              - generic [ref=e974]:
+                - paragraph [ref=e975]:
+                  - img [ref=e976]
+                  - text: Move at a controlled pace — this is not about speed.
+                - paragraph [ref=e979]:
+                  - img [ref=e980]
+                  - text: "Seated option: Already seated."
+              - paragraph [ref=e983]:
+                - img [ref=e984]
+                - text: A gentle way to warm up the upper body and lift your energy.
+            - generic [ref=e991]:
+              - generic [ref=e992]:
+                - generic [ref=e993]:
+                  - generic [ref=e994]:
+                    - generic [ref=e995]: "4"
+                    - heading "Seated Core Rotation" [level=3] [ref=e996]
+                    - generic [ref=e997]:
+                      - img
+                      - text: seated
+                    - generic [ref=e998]: easy
+                  - paragraph [ref=e999]: 6–10 slow rotations · rest 30 seconds
+                - button "This doesn't work" [ref=e1000]:
+                  - text: This doesn't work
+                  - img
+              - generic [ref=e1001]:
+                - generic [ref=e1002]: core
+                - generic [ref=e1003]: back
+              - generic [ref=e1004]:
+                - img [ref=e1005]
+                - generic [ref=e1007]: "Why this is safe for you: Seated Core Rotation was chosen to support core and back while you stay seated. Gentle rotation supports core awareness and control."
+              - generic [ref=e1008]:
+                - paragraph [ref=e1009]:
+                  - img [ref=e1010]
+                  - text: Keep the range small.
+                - paragraph [ref=e1013]:
+                  - img [ref=e1014]
+                  - text: "Seated option: Already seated."
+              - paragraph [ref=e1017]:
+                - img [ref=e1018]
+                - text: Gentle rotation supports core awareness and control.
+            - generic [ref=e1025]:
+              - generic [ref=e1026]:
+                - generic [ref=e1027]:
+                  - generic [ref=e1028]:
+                    - generic [ref=e1029]: "5"
+                    - heading "Seated Side Reach" [level=3] [ref=e1030]
+                    - generic [ref=e1031]:
+                      - img
+                      - text: seated
+                    - generic [ref=e1032]: easy
+                  - paragraph [ref=e1033]: 6–8 reaches per side · rest 30 seconds
+                - button "This doesn't work" [ref=e1034]:
+                  - text: This doesn't work
+                  - img
+              - generic [ref=e1035]:
+                - generic [ref=e1036]: core
+                - generic [ref=e1037]: obliques
+              - generic [ref=e1038]:
+                - img [ref=e1039]
+                - generic [ref=e1041]: "Why this is safe for you: Seated Side Reach was chosen to support core while you stay seated. Side reaches help your core and waistline feel mobile."
+              - generic [ref=e1042]:
+                - paragraph [ref=e1043]:
+                  - img [ref=e1044]
+                  - text: Keep the bend small and comfortable.
+                - paragraph [ref=e1047]:
+                  - img [ref=e1048]
+                  - text: "Seated option: Already seated."
+              - paragraph [ref=e1051]:
+                - img [ref=e1052]
+                - text: Side reaches help your core and waistline feel mobile.
+            - generic [ref=e1059]:
+              - generic [ref=e1060]:
+                - generic [ref=e1061]:
+                  - generic [ref=e1062]:
+                    - generic [ref=e1063]: "6"
+                    - heading "Seated March" [level=3] [ref=e1064]
+                    - generic [ref=e1065]:
+                      - img
+                      - text: seated
+                    - generic [ref=e1066]: easy
+                  - paragraph [ref=e1067]: 30–45 seconds · rest 30 seconds
+                - button "This doesn't work" [ref=e1068]:
+                  - text: This doesn't work
+                  - img
+              - generic [ref=e1069]:
+                - generic [ref=e1070]: hips
+                - generic [ref=e1071]: core
+                - generic [ref=e1072]: thighs
+              - generic [ref=e1073]:
+                - img [ref=e1074]
+                - generic [ref=e1076]: "Why this is safe for you: Seated March was chosen to support core while you stay seated. Small, controlled marching builds rhythm and circulation."
+              - generic [ref=e1077]:
+                - paragraph [ref=e1078]:
+                  - img [ref=e1079]
+                  - text: Keep the movement small if hips or knees feel sensitive.
+                - paragraph [ref=e1082]:
+                  - img [ref=e1083]
+                  - text: "Seated option: Already seated."
+              - paragraph [ref=e1086]:
+                - img [ref=e1087]
+                - text: Small, controlled marching builds rhythm and circulation.
+            - generic [ref=e1094]:
+              - generic [ref=e1095]:
+                - generic [ref=e1096]:
+                  - generic [ref=e1097]:
+                    - generic [ref=e1098]: "7"
+                    - heading "Seated Boxing Combo" [level=3] [ref=e1099]
+                    - generic [ref=e1100]:
+                      - img
+                      - text: seated
+                    - generic [ref=e1101]: moderate
+                  - paragraph [ref=e1102]: 40–60 seconds · rest 40 seconds
+                - button "This doesn't work" [ref=e1103]:
+                  - text: This doesn't work
+                  - img
+              - generic [ref=e1104]:
+                - generic [ref=e1105]: arms
+                - generic [ref=e1106]: shoulders
+                - generic [ref=e1107]: core
+              - generic [ref=e1108]:
+                - img [ref=e1109]
+                - generic [ref=e1111]: "Why this is safe for you: Seated Boxing Combo was chosen to support arms and shoulders while you stay seated. A lively, seated way to build stamina and upper-body strength."
+              - generic [ref=e1112]:
+                - paragraph [ref=e1113]:
+                  - img [ref=e1114]
+                  - text: Keep movements controlled rather than fast.
+                - paragraph [ref=e1117]:
+                  - img [ref=e1118]
+                  - text: "Seated option: Already seated."
+              - paragraph [ref=e1121]:
+                - img [ref=e1122]
+                - text: A lively, seated way to build stamina and upper-body strength.
+            - generic [ref=e1129]:
+              - generic [ref=e1130]:
+                - generic [ref=e1131]:
+                  - generic [ref=e1132]:
+                    - generic [ref=e1133]: "8"
+                    - heading "Seated Shoulder Circles" [level=3] [ref=e1134]
+                    - generic [ref=e1135]:
+                      - img
+                      - text: seated
+                    - generic [ref=e1136]: beginner
+                  - paragraph [ref=e1137]: 20–30 seconds each direction · rest 30 seconds
+                - button "This doesn't work" [ref=e1138]:
+                  - text: This doesn't work
+                  - img
+              - generic [ref=e1139]:
+                - generic [ref=e1140]: shoulders
+                - generic [ref=e1141]: back
+              - generic [ref=e1142]:
+                - img [ref=e1143]
+                - generic [ref=e1145]: "Why this is safe for you: Seated Shoulder Circles was chosen to support shoulders and back while you stay seated. A calming way to start moving with ease."
+              - generic [ref=e1146]:
+                - paragraph [ref=e1147]:
+                  - img [ref=e1148]
+                  - text: Use smaller circles if any discomfort appears.
+                - paragraph [ref=e1151]:
+                  - img [ref=e1152]
+                  - text: "Seated option: Already seated."
+              - paragraph [ref=e1155]:
+                - img [ref=e1156]
+                - text: A calming way to start moving with ease.
+          - paragraph [ref=e1161]: General inclusive movement guidance only — not medical advice. Stop if you feel pain, dizziness, numbness or discomfort. Strength looks different for everyone.
+    - contentinfo [ref=e550]:
+      - generic [ref=e554]:
+        - generic [ref=e555]:
+          - generic [ref=e556]:
+            - generic [ref=e557]:
+              - img [ref=e559]
+              - generic [ref=e565]: AdaptiFit
+            - heading "Platform" [level=4] [ref=e838]
+            - list [ref=e567]:
+              - listitem [ref=e568] [cursor=pointer]: Dashboard
+              - listitem [ref=e569] [cursor=pointer]: Body Scan
+              - listitem [ref=e570] [cursor=pointer]: Exercise Library
+              - listitem [ref=e571] [cursor=pointer]: Mood Monitor
+              - listitem [ref=e572] [cursor=pointer]: Nutrition
+          - generic [ref=e573]:
+            - heading "Resources" [level=4] [ref=e839]
+            - list [ref=e575]:
+              - listitem [ref=e576] [cursor=pointer]: Documentation
+              - listitem [ref=e577] [cursor=pointer]: API Reference
+              - listitem [ref=e578] [cursor=pointer]: Video Tutorials
+              - listitem [ref=e579] [cursor=pointer]: Blog
+              - listitem [ref=e580] [cursor=pointer]: Help Center
+          - generic [ref=e581]:
+            - heading "Community" [level=4] [ref=e840]
+            - list [ref=e583]:
+              - listitem [ref=e584] [cursor=pointer]: Peer Support
+              - listitem [ref=e585] [cursor=pointer]: Expert Coaching
+              - listitem [ref=e586] [cursor=pointer]: Success Stories
+              - listitem [ref=e587] [cursor=pointer]: Events
+              - listitem [ref=e588] [cursor=pointer]: Ambassador Program
+          - generic [ref=e589]:
+            - heading "Legal" [level=4] [ref=e841]
+            - list [ref=e591]:
+              - listitem [ref=e592] [cursor=pointer]: Privacy Policy
+              - listitem [ref=e593] [cursor=pointer]: Terms of Service
+              - listitem [ref=e594] [cursor=pointer]: HIPAA Compliance
+              - listitem [ref=e595] [cursor=pointer]: Cookie Policy
+              - listitem [ref=e596] [cursor=pointer]: Accessibility
+        - generic [ref=e598]:
+          - generic [ref=e599]:
+            - img [ref=e600]
+            - generic [ref=e606]: © 2024 AdaptiFit — Inclusive Fitness for All
+          - generic [ref=e607]:
+            - button [ref=e609]:
+              - img
+            - button [ref=e611]:
+              - img
+            - button [ref=e613]:
+              - img
+            - button [ref=e615]:
+              - img
+          - generic [ref=e616]:
+            - generic [ref=e617]:
+              - img [ref=e618]
+              - text: Built with empathy
+            - generic [ref=e620]: •
+            - link "988 Suicide and Crisis Lifeline - call for help" [ref=e842] [cursor=pointer]:
+              - /url: tel:988
+              - text: 988 Suicide & Crisis Lifeline
+    - button "Open AdaptiFit AI Chat" [ref=e843]:
+      - img [ref=e684]
+    - button "Open accessibility settings" [ref=e844] [cursor=pointer]:
+      - img [ref=e687]
+    - generic [ref=e1163]:
+      - img [ref=e1164]
+      - generic [ref=e1167]:
+        - paragraph [ref=e1168]: Routine ready
+        - paragraph [ref=e1169]: "Wheelchair Upper-Body Strength: every move is safety-validated for you."
+      - button [ref=e1170]:
+        - img [ref=e1171]
+  - region "Notifications (F8)":
+    - list
+  - button "Open Next.js Dev Tools" [ref=e627] [cursor=pointer]:
+    - img [ref=e628]
+  - alert [ref=e693]

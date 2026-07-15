@@ -1,0 +1,280 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String?
+  avatar       String?
+  disability   String?   // Type of disability/condition
+  injuryType   String?   // Type of injury for soldiers
+  athleteCategory String? // Paralympic category
+  age          Int?
+  weight       Float?
+  height       Float?
+  allergies    String?   // Comma-separated allergies
+  dietPreference String? // vegan, vegetarian, keto, etc.
+  emergencyContact String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  moodLogs     MoodLog[]
+  foodLogs     FoodLog[]
+  heartRates   HeartRateLog[]
+  forumPosts   ForumPost[]
+  forumReplies ForumReply[]
+
+}
+
+model ExerciseLog {
+  id           String   @id @default(cuid())
+  userId       String   @default("default-user")
+  exerciseId   String
+  exerciseName String
+  category     String
+  duration     Int      // minutes
+  completedAt  DateTime @default(now())
+  notes        String?
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+}
+
+model MoodLog {
+  id            String   @id @default(cuid())
+  userId        String
+  mood          String   // happy, sad, anxious, calm, angry, neutral
+  moodScore     Int      // 1-10
+  productivity  Int?     // 1-10
+  energyLevel   Int?     // 1-10
+  stressLevel   Int?     // 1-10
+  faceExpression String? // detected expression
+  riskLevel     String?  // low, medium, high, critical
+  alertSent     Boolean  @default(false)
+  notes         String?
+  date          DateTime @default(now())
+  createdAt     DateTime @default(now())
+  user          User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+model FoodLog {
+  id            String   @id @default(cuid())
+  userId        String
+  foodName      String
+  calories      Int
+  protein       Float?
+  carbs         Float?
+  fat           Float?
+  fiber         Float?
+  vitamins      String?  // JSON string of vitamins
+  imageUrl      String?  // Image of food
+  mealType      String?  // breakfast, lunch, dinner, snack
+  date          DateTime @default(now())
+  createdAt     DateTime @default(now())
+  user          User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+model HeartRateLog {
+  id          String   @id @default(cuid())
+  userId      String
+  heartRate   Int
+  bpSystolic  Int?
+  bpDiastolic Int?
+  spO2        Int?     // Blood oxygen
+  deviceType  String?  // apple-watch, fitbit, garmin, manual
+  activity    String?  // resting, walking, exercise
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+model ForumPost {
+  id          String   @id @default(cuid())
+  userId      String
+  title       String
+  content     String
+  category    String   // support, tips, motivation, coaching
+  likes       Int      @default(0)
+  isPinned    Boolean  @default(false)
+  isExpert    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id])
+  replies     ForumReply[]
+
+  @@index([category])
+}
+
+model ForumReply {
+  id          String   @id @default(cuid())
+  postId      String
+  userId      String
+  content     String
+  isExpert    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  post        ForumPost @relation(fields: [postId], references: [id])
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@index([postId])
+}
+
+model Achievement {
+  id          String   @id @default(cuid())
+  userId      String   @default("default-user")
+  title       String
+  description String?
+  icon        String?  // emoji or icon name
+  category    String?  // exercise, mood, nutrition, streak
+  earnedAt    DateTime @default(now())
+
+  @@index([userId])
+}
+
+model MoodEntry {
+  id        String   @id @default(cuid())
+  userId    String   @default("default-user")
+  mood      Int      // 1-5 scale
+  emotion   String
+  note      String?
+  riskLevel String   @default("low") // low, moderate, high, crisis
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model NutritionLog {
+  id        String   @id @default(cuid())
+  userId    String   @default("default-user")
+  foodName  String
+  calories  Int
+  protein   Float    @default(0)
+  carbs     Float    @default(0)
+  fat       Float    @default(0)
+  mealType  String   // breakfast, lunch, dinner, snack
+  loggedAt  DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model BreathingSession {
+  id           String   @id @default(cuid())
+  userId       String   @default("default-user")
+  pattern      String   // 4-7-8, box, coherent, energizing
+  durationSec  Int      // seconds
+  cyclesDone   Int
+  completedAt  DateTime @default(now())
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+}
+
+model WeeklyGoal {
+  id           String   @id @default(cuid())
+  userId       String   @default("default-user")
+  category     String   // exercise, mood, nutrition, breathing, activity
+  title        String
+  targetValue  Int
+  currentValue Int      @default(0)
+  weekStart    DateTime
+  weekEnd      DateTime
+  completed    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model SleepLog {
+  id            String   @id @default(cuid())
+  userId        String   @default("default-user")
+  bedTime       DateTime
+  wakeTime      DateTime
+  durationHrs   Float
+  quality       Int      // 1-10
+  wakeFeeling   String   // tired, okay, refreshed, energized
+  interruptions Int      @default(0)
+  notes         String?
+  loggedAt      DateTime @default(now())
+  createdAt     DateTime @default(now())
+
+  @@index([userId])
+}
+
+model HydrationLog {
+  id        String   @id @default(cuid())
+  userId    String   @default("default-user")
+  amountMl  Int
+  loggedAt  DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model RehabMilestone {
+  id          String    @id @default(cuid())
+  userId      String    @default("default-user")
+  title       String
+  description String?
+  category    String    // assessment, strength, mobility, pain, endurance, milestone
+  status      String    @default("upcoming") // completed, in-progress, upcoming
+  dayNumber   Int
+  targetDate  DateTime?
+  completedAt DateTime?
+  notes       String?
+  createdAt   DateTime  @default(now())
+
+  @@index([userId])
+}
+
+model PainLog {
+  id             String   @id @default(cuid())
+  userId         String   @default("default-user")
+  painLevel      Int      // 1-10 scale
+  painType       String   // sharp, dull, burning, aching, throbbing, stabbing
+  bodyRegion     String   // head, neck, shoulder, back, hip, knee, ankle, arm, hand, foot, chest, abdomen
+  symptoms       String   // Comma-separated symptoms
+  trigger        String?  // What triggered the pain
+  reliefMeasures String?  // What helped relieve it
+  mood           String?  // How the pain affected mood
+  activityLevel  String?  // resting, light, moderate, intense
+  notes          String?
+  loggedAt       DateTime @default(now())
+  createdAt      DateTime @default(now())
+
+  @@index([userId])
+}
+
+model WorkoutPlan {
+  id          String   @id @default(cuid())
+  userId      String   @default("default-user")
+  name        String
+  description String?
+  difficulty  String   @default("beginner") // beginner, intermediate, advanced
+  category    String   // strength, flexibility, cardio, rehabilitation, balance
+  duration    Int      // total duration in minutes
+  exercises   String   // JSON string of exercise objects [{id, name, sets, reps, duration, rest}]
+  scheduledAt DateTime?
+  completedAt DateTime?
+  status      String   @default("draft") // draft, scheduled, active, completed
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+}

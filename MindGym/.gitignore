@@ -1,0 +1,21 @@
+# Python
+backend/.venv/
+__pycache__/
+*.pyc
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# Local data (private to each user)
+data/*.db
+data/logs/
+data/mindgym.pids.json
+
+# Editor / OS
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Playwright verification artifacts
+.playwright-mcp/

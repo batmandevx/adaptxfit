@@ -1,0 +1,925 @@
+     1→     1→'use client';
+     2→     2→
+     3→     3→import { useState, useEffect } from 'react';
+     4→     4→import { motion, AnimatePresence } from 'framer-motion';
+     5→     5→import {
+     6→     6→  Camera,
+     7→     7→  Utensils,
+     8→     8→  Apple,
+     9→     9→  Droplets,
+    10→    10→  ShoppingCart,
+    11→    11→  AlertCircle,
+    12→    12→  Plus,
+    13→    13→  Minus,
+    14→    14→  Flame,
+    15→    15→  Check,
+    16→    16→  Leaf,
+    17→    17→  Truck,
+    18→    18→} from 'lucide-react';
+    19→    19→import TTSSpeaker from '@/components/features/tts-speaker';
+    20→    20→import {
+    21→    21→  Card,
+    22→    22→  CardHeader,
+    23→    23→  CardTitle,
+    24→    24→  CardContent,
+    25→    25→  CardDescription,
+    26→    26→} from '@/components/ui/card';
+    27→    27→import { Button } from '@/components/ui/button';
+    28→    28→import { Badge } from '@/components/ui/badge';
+    29→    29→import { Progress } from '@/components/ui/progress';
+    30→    30→import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+    31→    31→import { Input } from '@/components/ui/input';
+    32→    32→import { Separator } from '@/components/ui/separator';
+    33→    33→import {
+    34→    34→  Dialog,
+    35→    35→  DialogContent,
+    36→    36→  DialogHeader,
+    37→    37→  DialogTitle,
+    38→    38→  DialogTrigger,
+    39→    39→} from '@/components/ui/dialog';
+    40→    40→import {
+    41→    41→  PieChart,
+    42→    42→  Pie,
+    43→    43→  Cell,
+    44→    44→  BarChart,
+    45→    45→  Bar,
+    46→    46→  ResponsiveContainer,
+    47→    47→  Tooltip,
+    48→    48→  Legend,
+    49→    49→} from 'recharts';
+    50→    50→import { nutritionData, calorieTrackingData } from '@/lib/mock-data';
+    51→    51→
+    52→    52→// ── Types ──────────────────────────────────────────────────────────────
+    53→    53→interface FoodItem {
+    54→    54→  id: string;
+    55→    55→  name: string;
+    56→    56→  calories: number;
+    57→    57→  protein: number;
+    58→    58→  carbs: number;
+    59→    59→  fat: number;
+    60→    60→  fiber: number;
+    61→    61→  vitamins: string[];
+    62→    62→  mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+    63→    63→  time: string;
+    64→    64→}
+    65→    65→
+    66→    66→interface MealPlanItem {
+    67→    67→  id: string;
+    68→    68→  name: string;
+    69→    69→  mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+    70→    70→  calories: number;
+    71→    71→  ingredients: string[];
+    72→    72→  allergens: string[];
+    73→    73→  nutritionBalance: number; // 0-100
+    74→    74→  description: string;
+    75→    75→}
+    76→    76→
+    77→    77→// ── Mock data ──────────────────────────────────────────────────────────
+    78→    78→const initialMealLog: FoodItem[] = [
+    79→    79→  {
+    80→    80→    id: '1',
+    81→    81→    name: 'Oatmeal with Berries',
+    82→    82→    calories: 310,
+    83→    83→    protein: 12,
+    84→    84→    carbs: 54,
+    85→    85→    fat: 6,
+    86→    86→    fiber: 8,
+    87→    87→    vitamins: ['Vitamin C', 'Iron', 'B6'],
+    88→    88→    mealType: 'breakfast',
+    89→    89→    time: '8:00 AM',
+    90→    90→  },
+    91→    91→  {
+    92→    92→    id: '2',
+    93→    93→    name: 'Greek Yogurt Parfait',
+    94→    94→    calories: 180,
+    95→    95→    protein: 15,
+    96→    96→    carbs: 22,
+    97→    97→    fat: 4,
+    98→    98→    fiber: 2,
+    99→    99→    vitamins: ['Calcium', 'B12'],
+   100→   100→    mealType: 'breakfast',
+   101→   101→    time: '8:30 AM',
+   102→   102→  },
+   103→   103→  {
+   104→   104→    id: '3',
+   105→   105→    name: 'Grilled Chicken Salad',
+   106→   106→    calories: 420,
+   107→   107→    protein: 38,
+   108→   108→    carbs: 18,
+   109→   109→    fat: 22,
+   110→   110→    fiber: 6,
+   111→   111→    vitamins: ['Vitamin A', 'Vitamin K'],
+   112→   112→    mealType: 'lunch',
+   113→   113→    time: '12:30 PM',
+   114→   114→  },
+   115→   115→  {
+   116→   116→    id: '4',
+   117→   117→    name: 'Quinoa Power Bowl',
+   118→   118→    calories: 380,
+   119→   119→    protein: 24,
+   120→   120→    carbs: 52,
+   121→   121→    fat: 10,
+   122→   122→    fiber: 8,
+   123→   123→    vitamins: ['Magnesium', 'Folate'],
+   124→   124→    mealType: 'lunch',
+   125→   125→    time: '1:00 PM',
+   126→   126→  },
+   127→   127→  {
+   128→   128→    id: '5',
+   129→   129→    name: 'Salmon & Sweet Potato',
+   130→   130→    calories: 520,
+   131→   131→    protein: 42,
+   132→   132→    carbs: 38,
+   133→   133→    fat: 18,
+   134→   134→    fiber: 6,
+   135→   135→    vitamins: ['Omega-3', 'Vitamin D'],
+   136→   136→    mealType: 'dinner',
+   137→   137→    time: '7:00 PM',
+   138→   138→  },
+   139→   139→  {
+   140→   140→    id: '6',
+   141→   141→    name: 'Protein Smoothie',
+   142→   142→    calories: 160,
+   143→   143→    protein: 20,
+   144→   144→    carbs: 18,
+   145→   145→    fat: 3,
+   146→   146→    fiber: 3,
+   147→   147→    vitamins: ['Vitamin C', 'Potassium'],
+   148→   148→    mealType: 'snack',
+   149→   149→    time: '4:00 PM',
+   150→   150→  },
+   151→   151→];
+   152→   152→
+   153→   153→const mealPlanData: MealPlanItem[] = [
+   154→   154→  {
+   155→   155→    id: 'mp1',
+   156→   156→    name: 'Protein-Packed Pancakes',
+   157→   157→    mealType: 'breakfast',
+   158→   158→    calories: 350,
+   159→   159→    ingredients: ['Oat flour', 'Egg whites', 'Banana', 'Whey protein', 'Almond milk'],
+   160→   160→    allergens: ['Eggs', 'Milk'],
+   161→   161→    nutritionBalance: 85,
+   162→   162→    description: 'Fluffy pancakes with complete amino acid profile',
+   163→   163→  },
+   164→   164→  {
+   165→   165→    id: 'mp2',
+   166→   166→    name: 'Mediterranean Quinoa Bowl',
+   167→   167→    mealType: 'lunch',
+   168→   168→    calories: 480,
+   169→   169→    ingredients: ['Quinoa', 'Chickpeas', 'Cucumber', 'Tomato', 'Feta cheese', 'Olive oil'],
+   170→   170→    allergens: ['Dairy'],
+   171→   171→    nutritionBalance: 92,
+   172→   172→    description: 'Anti-inflammatory meal rich in plant protein',
+   173→   173→  },
+   174→   174→  {
+   175→   175→    id: 'mp3',
+   176→   176→    name: 'Adaptive Recovery Stew',
+   177→   177→    mealType: 'dinner',
+   178→   178→    calories: 520,
+   179→   179→    ingredients: ['Lean beef', 'Sweet potato', 'Carrots', 'Spinach', 'Bone broth'],
+   180→   180→    allergens: [],
+   181→   181→    nutritionBalance: 95,
+   182→   182→    description: 'Collagen-rich stew for joint recovery and muscle repair',
+   183→   183→  },
+   184→   184→  {
+   185→   185→    id: 'mp4',
+   186→   186→    name: 'Energy Bites',
+   187→   187→    mealType: 'snack',
+   188→   188→    calories: 180,
+   189→   189→    ingredients: ['Dates', 'Almonds', 'Cocoa powder', 'Chia seeds', 'Coconut flakes'],
+   190→   190→    allergens: ['Tree Nuts', 'Coconut'],
+   191→   191→    nutritionBalance: 78,
+   192→   192→    description: 'No-bake energy bites for sustained fuel',
+   193→   193→  },
+   194→   194→];
+   195→   195→
+   196→   196→const detectedFoodData = {
+   197→   197→  name: 'Grilled Chicken Breast',
+   198→   198→  calories: 284,
+   199→   199→  protein: 42,
+   200→   200→  carbs: 0,
+   201→   201→  fat: 12,
+   202→   202→  fiber: 0,
+   203→   203→  vitamins: ['B6', 'Niacin', 'Phosphorus', 'Selenium'],
+   204→   204→};
+   205→   205→
+   206→   206→// ── Meal type config ──────────────────────────────────────────────────
+   207→   207→const mealTypeConfig = {
+   208→   208→  breakfast: { label: 'Breakfast', color: 'bg-amber-100 text-amber-800 border-amber-200' },
+   209→   209→  lunch: { label: 'Lunch', color: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
+   210→   210→  dinner: { label: 'Dinner', color: 'bg-violet-100 text-violet-800 border-violet-200' },
+   211→   211→  snack: { label: 'Snack', color: 'bg-rose-100 text-rose-800 border-rose-200' },
+   212→   212→};
+   213→   213→
+   214→   214→// ── Sub-components ─────────────────────────────────────────────────────
+   215→   215→
+   216→   216→function CircularCalorieTracker({ consumed, target }: { consumed: number; target: number }) {
+   217→   217→  const percentage = Math.min((consumed / target) * 100, 100);
+   218→   218→  const radius = 80;
+   219→   219→  const strokeWidth = 12;
+   220→   220→  const circumference = 2 * Math.PI * radius;
+   221→   221→  const offset = circumference - (percentage / 100) * circumference;
+   222→   222→
+   223→   223→  return (
+   224→   224→    <div className="flex flex-col items-center gap-2">
+   225→   225→      <div className="relative">
+   226→   226→        <svg width={radius * 2 + strokeWidth} height={radius * 2 + strokeWidth}>
+   227→   227→          <defs>
+   228→   228→            <linearGradient id="calorieGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+   229→   229→              <stop offset="0%" stopColor="#f59e0b" />
+   230→   230→              <stop offset="50%" stopColor="#ef4444" />
+   231→   231→              <stop offset="100%" stopColor="#10b981" />
+   232→   232→            </linearGradient>
+   233→   233→          </defs>
+   234→   234→          <circle
+   235→   235→            cx={radius + strokeWidth / 2}
+   236→   236→            cy={radius + strokeWidth / 2}
+   237→   237→            r={radius}
+   238→   238→            fill="none"
+   239→   239→            stroke="currentColor"
+   240→   240→            strokeWidth={strokeWidth}
+   241→   241→            className="text-muted/30"
+   242→   242→          />
+   243→   243→          <motion.circle
+   244→   244→            cx={radius + strokeWidth / 2}
+   245→   245→            cy={radius + strokeWidth / 2}
+   246→   246→            r={radius}
+   247→   247→            fill="none"
+   248→   248→            stroke="url(#calorieGrad)"
+   249→   249→            strokeWidth={strokeWidth}
+   250→   250→            strokeLinecap="round"
+   251→   251→            strokeDasharray={circumference}
+   252→   252→            initial={{ strokeDashoffset: circumference }}
+   253→   253→            animate={{ strokeDashoffset: offset }}
+   254→   254→            transition={{ duration: 1.5, ease: 'easeOut' }}
+   255→   255→            transform={`rotate(-90 ${radius + strokeWidth / 2} ${radius + strokeWidth / 2})`}
+   256→   256→          />
+   257→   257→        </svg>
+   258→   258→        <div className="absolute inset-0 flex flex-col items-center justify-center">
+   259→   259→          <motion.span
+   260→   260→            className="text-3xl font-bold"
+   261→   261→            initial={{ opacity: 0, scale: 0.5 }}
+   262→   262→            animate={{ opacity: 1, scale: 1 }}
+   263→   263→            transition={{ delay: 0.5 }}
+   264→   264→          >
+   265→   265→            {consumed}
+   266→   266→          </motion.span>
+   267→   267→          <span className="text-xs text-muted-foreground">of {target} kcal</span>
+   268→   268→        </div>
+   269→   269→      </div>
+   270→   270→      <div className="flex items-center gap-1 text-sm">
+   271→   271→        <Flame className="h-4 w-4 text-orange-500" />
+   272→   272→        <span className="font-medium text-orange-600">
+   273→   273→          {target - consumed > 0 ? target - consumed : 0} kcal remaining
+   274→   274→        </span>
+   275→   275→      </div>
+   276→   276→    </div>
+   277→   277→  );
+   278→   278→}
+   279→   279→
+   280→   280→function WaterTracker() {
+   281→   281→  const [glasses, setGlasses] = useState(5);
+   282→   282→
+   283→   283→  return (
+   284→   284→    <div className="space-y-3">
+   285→   285→      <div className="flex items-center justify-between">
+   286→   286→        <div className="flex items-center gap-2">
+   287→   287→          <Droplets className="h-5 w-5 text-sky-500" />
+   288→   288→          <span className="font-medium text-sm">Water Intake</span>
+   289→   289→        </div>
+   290→   290→        <span className="text-sm text-muted-foreground">
+   291→   291→          {glasses}/8 glasses
+   292→   292→        </span>
+   293→   293→      </div>
+   294→   294→      <div className="flex items-center justify-center gap-2">
+   295→   295→        {Array.from({ length: 8 }).map((_, i) => (
+   296→   296→          <motion.button
+   297→   297→            key={i}
+   298→   298→            onClick={() => setGlasses(i < glasses ? i : i + 1)}
+   299→   299→            className="relative flex flex-col items-center"
+   300→   300→            whileTap={{ scale: 0.9 }}
+   301→   301→          >
+   302→   302→            <div
+   303→   303→              className={`relative h-10 w-7 rounded-b-full rounded-t-lg border-2 transition-colors duration-300 overflow-hidden ${
+   304→   304→                i < glasses
+   305→   305→                  ? 'border-sky-400'
+   306→   306→                  : 'border-muted-foreground/30'
+   307→   307→              }`}
+   308→   308→            >
+   309→   309→              <AnimatePresence>
+   310→   310→                {i < glasses && (
+   311→   311→                  <motion.div
+   312→   312→                    className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-sky-500 to-sky-300"
+   313→   313→                    initial={{ height: 0 }}
+   314→   314→                    animate={{ height: '100%' }}
+   315→   315→                    exit={{ height: 0 }}
+   316→   316→                    transition={{ duration: 0.4, delay: i * 0.05 }}
+   317→   317→                  />
+   318→   318→                )}
+   319→   319→              </AnimatePresence>
+   320→   320→            </div>
+   321→   321→          </motion.button>
+   322→   322→        ))}
+   323→   323→      </div>
+   324→   324→      <div className="flex items-center justify-center gap-3">
+   325→   325→        <Button
+   326→   326→          variant="outline"
+   327→   327→          size="icon"
+   328→   328→          className="h-8 w-8"
+   329→   329→          onClick={() => setGlasses((g) => Math.max(0, g - 1))}
+   330→   330→        >
+   331→   331→          <Minus className="h-3 w-3" />
+   332→   332→        </Button>
+   333→   333→        <span className="text-sm font-medium">
+   334→   334→          {(glasses * 250).toLocaleString()} ml
+   335→   335→        </span>
+   336→   336→        <Button
+   337→   337→          variant="outline"
+   338→   338→          size="icon"
+   339→   339→          className="h-8 w-8"
+   340→   340→          onClick={() => setGlasses((g) => Math.min(8, g + 1))}
+   341→   341→        >
+   342→   342→          <Plus className="h-3 w-3" />
+   343→   343→        </Button>
+   344→   344→      </div>
+   345→   345→    </div>
+   346→   346→  );
+   347→   347→}
+   348→   348→
+   349→   349→function AIFoodScanner() {
+   350→   350→  const [scanning, setScanning] = useState(false);
+   351→   351→  const [scanned, setScanned] = useState(false);
+   352→   352→
+   353→   353→  const handleScan = () => {
+   354→   354→    setScanning(true);
+   355→   355→    setScanned(false);
+   356→   356→    setTimeout(() => {
+   357→   357→      setScanning(false);
+   358→   358→      setScanned(true);
+   359→   359→    }, 2000);
+   360→   360→  };
+   361→   361→
+   362→   362→  return (
+   363→   363→    <Card className="overflow-hidden">
+   364→   364→      <CardHeader className="pb-3">
+   365→   365→        <div className="flex items-center gap-2">
+   366→   366→          <Camera className="h-5 w-5 text-orange-500" />
+   367→   367→          <CardTitle className="text-base">AI Food Scanner</CardTitle>
+   368→   368→        </div>
+   369→   369→        <CardDescription className="text-xs">
+   370→   370→          Scan or upload food to get instant nutritional analysis
+   371→   371→        </CardDescription>
+   372→   372→      </CardHeader>
+   373→   373→      <CardContent className="space-y-4">
+   374→   374→        <div className="flex gap-2">
+   375→   375→          <Button
+   376→   376→            onClick={handleScan}
+   377→   377→            disabled={scanning}
+   378→   378→            className="flex-1 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white"
+   379→   379→          >
+   380→   380→            {scanning ? (
+   381→   381→              <motion.div
+   382→   382→                animate={{ rotate: 360 }}
+   383→   383→                transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+   384→   384→              >
+   385→   385→                <Camera className="h-4 w-4 mr-2" />
+   386→   386→              </motion.div>
+   387→   387→            ) : (
+   388→   388→              <Camera className="h-4 w-4 mr-2" />
+   389→   389→            )}
+   390→   390→            {scanning ? 'Analyzing...' : 'Scan Food'}
+   391→   391→          </Button>
+   392→   392→          <Button variant="outline" className="flex-1">
+   393→   393→            <Plus className="h-4 w-4 mr-2" />
+   394→   394→            Upload
+   395→   395→          </Button>
+   396→   396→        </div>
+   397→   397→
+   398→   398→        <AnimatePresence>
+   399→   399→          {scanned && (
+   400→   400→            <motion.div
+   401→   401→              initial={{ opacity: 0, y: 20, height: 0 }}
+   402→   402→              animate={{ opacity: 1, y: 0, height: 'auto' }}
+   403→   403→              exit={{ opacity: 0, y: -10, height: 0 }}
+   404→   404→              transition={{ duration: 0.4 }}
+   405→   405→            >
+   406→   406→              <div className="rounded-lg border bg-gradient-to-br from-orange-50 to-amber-50 p-4 space-y-3 dark:from-orange-950/30 dark:to-amber-950/30">
+   407→   407→                <div className="flex items-center gap-3">
+   408→   408→                  <div className="h-12 w-12 rounded-lg bg-orange-200 dark:bg-orange-800 flex items-center justify-center">
+   409→   409→                    <Apple className="h-6 w-6 text-orange-700 dark:text-orange-300" />
+   410→   410→                  </div>
+   411→   411→                  <div className="flex-1 min-w-0">
+   412→   412→                    <div className="flex items-center gap-2">
+   413→   413→                      <p className="font-semibold text-sm">{detectedFoodData.name}</p>
+   414→   414→                      <TTSSpeaker
+   415→   415→                        text={`Detected food: ${detectedFoodData.name}. ${detectedFoodData.calories} calories. Protein: ${detectedFoodData.protein} grams. Carbs: ${detectedFoodData.carbs} grams. Fat: ${detectedFoodData.fat} grams. Fiber: ${detectedFoodData.fiber} grams.`}
+   416→   416→                        size="sm"
+   417→   417→                        voice="tongtong"
+   418→   418→                      />
+   419→   419→                    </div>
+   420→   420→                    <p className="text-xs text-muted-foreground">
+   421→   421→                      <Flame className="inline h-3 w-3 text-orange-500 mr-1" />
+   422→   422→                      {detectedFoodData.calories} kcal
+   423→   423→                    </p>
+   424→   424→                  </div>
+   425→   425→                  <Badge className="ml-auto bg-emerald-100 text-emerald-700 border-emerald-200 text-xs">
+   426→   426→                    <Check className="h-3 w-3 mr-1" /> Detected
+   427→   427→                  </Badge>
+   428→   428→                </div>
+   429→   429→
+   430→   430→                <Separator />
+   431→   431→
+   432→   432→                <div className="grid grid-cols-4 gap-2 text-center">
+   433→   433→                  {[
+   434→   434→                    { label: 'Protein', value: detectedFoodData.protein, unit: 'g', color: 'text-emerald-600' },
+   435→   435→                    { label: 'Carbs', value: detectedFoodData.carbs, unit: 'g', color: 'text-amber-600' },
+   436→   436→                    { label: 'Fat', value: detectedFoodData.fat, unit: 'g', color: 'text-rose-600' },
+   437→   437→                    { label: 'Fiber', value: detectedFoodData.fiber, unit: 'g', color: 'text-violet-600' },
+   438→   438→                  ].map((macro) => (
+   439→   439→                    <div key={macro.label}>
+   440→   440→                      <p className={`text-lg font-bold ${macro.color}`}>
+   441→   441→                        {macro.value}{macro.unit}
+   442→   442→                      </p>
+   443→   443→                      <p className="text-[10px] text-muted-foreground">{macro.label}</p>
+   444→   444→                    </div>
+   445→   445→                  ))}
+   446→   446→                </div>
+   447→   447→
+   448→   448→                <div>
+   449→   449→                  <p className="text-xs font-medium mb-1">Vitamins & Minerals</p>
+   450→   450→                  <div className="flex flex-wrap gap-1">
+   451→   451→                    {detectedFoodData.vitamins.map((v) => (
+   452→   452→                      <Badge key={v} variant="outline" className="text-[10px] px-1.5 py-0">
+   453→   453→                        {v}
+   454→   454→                      </Badge>
+   455→   455→                    ))}
+   456→   456→                  </div>
+   457→   457→                </div>
+   458→   458→
+   459→   459→                <Button size="sm" className="w-full text-xs">
+   460→   460→                  <Plus className="h-3 w-3 mr-1" /> Add to Meal Log
+   461→   461→                </Button>
+   462→   462→              </div>
+   463→   463→            </motion.div>
+   464→   464→          )}
+   465→   465→        </AnimatePresence>
+   466→   466→      </CardContent>
+   467→   467→    </Card>
+   468→   468→  );
+   469→   469→}
+   470→   470→
+   471→   471→function MealLog({ meals }: { meals: FoodItem[] }) {
+   472→   472→  const groupedMeals = meals.reduce<Record<string, FoodItem[]>>((acc, meal) => {
+   473→   473→    if (!acc[meal.mealType]) acc[meal.mealType] = [];
+   474→   474→    acc[meal.mealType].push(meal);
+   475→   475→    return acc;
+   476→   476→  }, {});
+   477→   477→
+   478→   478→  return (
+   479→   479→    <Card>
+   480→   480→      <CardHeader className="pb-3">
+   481→   481→        <div className="flex items-center gap-2">
+   482→   482→          <Utensils className="h-5 w-5 text-amber-600" />
+   483→   483→          <CardTitle className="text-base">Today's Meal Log</CardTitle>
+   484→   484→        </div>
+   485→   485→        <CardDescription className="text-xs">
+   486→   486→          Track everything you eat throughout the day
+   487→   487→        </CardDescription>
+   488→   488→      </CardHeader>
+   489→   489→      <CardContent>
+   490→   490→        <div className="space-y-4 max-h-96 overflow-y-auto pr-1 custom-scrollbar">
+   491→   491→          {(['breakfast', 'lunch', 'dinner', 'snack'] as const).map((type) => {
+   492→   492→            const items = groupedMeals[type] || [];
+   493→   493→            if (items.length === 0) return null;
+   494→   494→            const config = mealTypeConfig[type];
+   495→   495→            return (
+   496→   496→              <div key={type} className="space-y-2">
+   497→   497→                <Badge className={`${config.color} text-xs font-medium`}>
+   498→   498→                  {config.label}
+   499→   499→                </Badge>
+   500→   500→                {items.map((item) => (
+   501→   501→                  <motion.div
+   502→   502→                    key={item.id}
+   503→   503→                    initial={{ opacity: 0, x: -20 }}
+   504→   504→                    animate={{ opacity: 1, x: 0 }}
+   505→   505→                    className="flex items-center gap-3 rounded-lg border p-3 hover:bg-muted/50 transition-colors"
+   506→   506→                  >
+   507→   507→                    <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-orange-100 to-amber-100 dark:from-orange-900/30 dark:to-amber-900/30 flex items-center justify-center shrink-0">
+   508→   508→                      <Apple className="h-5 w-5 text-orange-600" />
+   509→   509→                    </div>
+   510→   510→                    <div className="flex-1 min-w-0">
+   511→   511→                      <p className="text-sm font-medium truncate">{item.name}</p>
+   512→   512→                      <p className="text-xs text-muted-foreground">{item.time}</p>
+   513→   513→                    </div>
+   514→   514→                    <div className="text-right shrink-0">
+   515→   515→                      <p className="text-sm font-semibold">{item.calories}</p>
+   516→   516→                      <p className="text-[10px] text-muted-foreground">kcal</p>
+   517→   517→                    </div>
+   518→   518→                  </motion.div>
+   519→   519→                ))}
+   520→   520→              </div>
+   521→   521→            );
+   522→   522→          })}
+   523→   523→        </div>
+   524→   524→      </CardContent>
+   525→   525→    </Card>
+   526→   526→  );
+   527→   527→}
+   528→   528→
+   529→   529→function DietPlan() {
+   530→   530→  return (
+   531→   531→    <Card>
+   532→   532→      <CardHeader className="pb-3">
+   533→   533→        <div className="flex items-center gap-2">
+   534→   534→          <Leaf className="h-5 w-5 text-emerald-600" />
+   535→   535→          <CardTitle className="text-base">Personalized Diet Plan</CardTitle>
+   536→   536→        </div>
+   537→   537→        <CardDescription className="text-xs">
+   538→   538→          AI-curated meals based on your preferences &amp; allergies
+   539→   539→        </CardDescription>
+   540→   540→      </CardHeader>
+   541→   541→      <CardContent>
+   542→   542→        <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1 custom-scrollbar">
+   543→   543→          {mealPlanData.map((meal, idx) => {
+   544→   544→            const config = mealTypeConfig[meal.mealType];
+   545→   545→            return (
+   546→   546→              <motion.div
+   547→   547→                key={meal.id}
+   548→   548→                initial={{ opacity: 0, y: 15 }}
+   549→   549→                animate={{ opacity: 1, y: 0 }}
+   550→   550→                transition={{ delay: idx * 0.1 }}
+   551→   551→                className="rounded-lg border p-4 space-y-3 hover:shadow-sm transition-shadow"
+   552→   552→              >
+   553→   553→                <div className="flex items-start justify-between gap-2">
+   554→   554→                  <div className="space-y-1">
+   555→   555→                    <Badge className={`${config.color} text-[10px] mb-1`}>
+   556→   556→                      {config.label}
+   557→   557→                    </Badge>
+   558→   558→                    <p className="font-semibold text-sm">{meal.name}</p>
+   559→   559→                    <p className="text-xs text-muted-foreground">{meal.description}</p>
+   560→   560→                  </div>
+   561→   561→                  <div className="text-right shrink-0">
+   562→   562→                    <p className="text-lg font-bold text-orange-600">{meal.calories}</p>
+   563→   563→                    <p className="text-[10px] text-muted-foreground">kcal</p>
+   564→   564→                  </div>
+   565→   565→                </div>
+   566→   566→
+   567→   567→                {/* Ingredients */}
+   568→   568→                <div className="flex flex-wrap gap-1">
+   569→   569→                  {meal.ingredients.map((ing) => (
+   570→   570→                    <Badge key={ing} variant="outline" className="text-[10px] px-1.5 py-0">
+   571→   571→                      {ing}
+   572→   572→                    </Badge>
+   573→   573→                  ))}
+   574→   574→                </div>
+   575→   575→
+   576→   576→                {/* Allergen warnings */}
+   577→   577→                {meal.allergens.length > 0 && (
+   578→   578→                  <div className="flex items-center gap-1 flex-wrap">
+   579→   579→                    <AlertCircle className="h-3 w-3 text-red-500 shrink-0" />
+   580→   580→                    {meal.allergens.map((allergen) => (
+   581→   581→                      <Badge
+   582→   582→                        key={allergen}
+   583→   583→                        className="bg-red-100 text-red-700 border-red-200 text-[10px] px-1.5 py-0"
+   584→   584→                      >
+   585→   585→                        {allergen}
+   586→   586→                      </Badge>
+   587→   587→                    ))}
+   588→   588→                  </div>
+   589→   589→                )}
+   590→   590→
+   591→   591→                {/* Nutrition balance */}
+   592→   592→                <div className="space-y-1">
+   593→   593→                  <div className="flex items-center justify-between text-[10px]">
+   594→   594→                    <span className="text-muted-foreground">Nutritional Balance</span>
+   595→   595→                    <span className="font-medium">{meal.nutritionBalance}%</span>
+   596→   596→                  </div>
+   597→   597→                  <Progress value={meal.nutritionBalance} className="h-1.5" />
+   598→   598→                </div>
+   599→   599→
+   600→   600→                {/* Order integration */}
+   601→   601→                <div className="flex gap-2">
+   602→   602→                  <Button
+   603→   603→                    size="sm"
+   604→   604→                    className="flex-1 text-[11px] h-8 bg-orange-500 hover:bg-orange-600 text-white"
+   605→   605→                  >
+   606→   606→                    <Truck className="h-3 w-3 mr-1" />
+   607→   607→                    Order on Swiggy
+   608→   608→                  </Button>
+   609→   609→                  <Button
+   610→   610→                    size="sm"
+   611→   611→                    variant="outline"
+   612→   612→                    className="flex-1 text-[11px] h-8 border-yellow-400 text-yellow-700 hover:bg-yellow-50"
+   613→   613→                  >
+   614→   614→                    <ShoppingCart className="h-3 w-3 mr-1" />
+   615→   615→                    Order on Blinkit
+   616→   616→                  </Button>
+   617→   617→                </div>
+   618→   618→              </motion.div>
+   619→   619→            );
+   620→   620→          })}
+   621→   621→        </div>
+   622→   622→      </CardContent>
+   623→   623→    </Card>
+   624→   624→  );
+   625→   625→}
+   626→   626→
+   627→   627→function AllergyDietSettings() {
+   628→   628→  const [allergies, setAllergies] = useState(['Peanuts', 'Shellfish', 'Gluten']);
+   629→   629→  const [dietPref, setDietPref] = useState('High Protein Recovery');
+   630→   630→  const [newAllergy, setNewAllergy] = useState('');
+   631→   631→
+   632→   632→  return (
+   633→   633→    <Dialog>
+   634→   634→      <DialogTrigger asChild>
+   635→   635→        <Button variant="outline" size="sm" className="text-xs">
+   636→   636→          <AlertCircle className="h-3 w-3 mr-1" />
+   637→   637→          Allergy &amp; Diet Settings
+   638→   638→        </Button>
+   639→   639→      </DialogTrigger>
+   640→   640→      <DialogContent className="sm:max-w-md">
+   641→   641→        <DialogHeader>
+   642→   642→          <DialogTitle>Allergy &amp; Diet Preferences</DialogTitle>
+   643→   643→        </DialogHeader>
+   644→   644→        <div className="space-y-4 pt-2">
+   645→   645→          <div className="space-y-2">
+   646→   646→            <p className="text-sm font-medium">Current Diet Preference</p>
+   647→   647→            <Input
+   648→   648→              value={dietPref}
+   649→   649→              onChange={(e) => setDietPref(e.target.value)}
+   650→   650→              className="text-sm"
+   651→   651→            />
+   652→   652→          </div>
+   653→   653→
+   654→   654→          <Separator />
+   655→   655→
+   656→   656→          <div className="space-y-2">
+   657→   657→            <p className="text-sm font-medium">Allergies &amp; Intolerances</p>
+   658→   658→            <div className="flex flex-wrap gap-1.5">
+   659→   659→              {allergies.map((a) => (
+   660→   660→                <Badge
+   661→   661→                  key={a}
+   662→   662→                  className="bg-red-100 text-red-700 border-red-200 text-xs pr-1"
+   663→   663→                >
+   664→   664→                  {a}
+   665→   665→                  <button
+   666→   666→                    onClick={() => setAllergies(allergies.filter((x) => x !== a))}
+   667→   667→                    className="ml-1 hover:bg-red-200 rounded-full p-0.5"
+   668→   668→                  >
+   669→   669→                    <Minus className="h-2.5 w-2.5" />
+   670→   670→                  </button>
+   671→   671→                </Badge>
+   672→   672→              ))}
+   673→   673→            </div>
+   674→   674→            <div className="flex gap-2">
+   675→   675→              <Input
+   676→   676→                placeholder="Add allergy..."
+   677→   677→                value={newAllergy}
+   678→   678→                onChange={(e) => setNewAllergy(e.target.value)}
+   679→   679→                className="text-sm"
+   680→   680→                onKeyDown={(e) => {
+   681→   681→                  if (e.key === 'Enter' && newAllergy.trim()) {
+   682→   682→                    setAllergies([...allergies, newAllergy.trim()]);
+   683→   683→                    setNewAllergy('');
+   684→   684→                  }
+   685→   685→                }}
+   686→   686→              />
+   687→   687→              <Button
+   688→   688→                size="sm"
+   689→   689→                onClick={() => {
+   690→   690→                  if (newAllergy.trim()) {
+   691→   691→                    setAllergies([...allergies, newAllergy.trim()]);
+   692→   692→                    setNewAllergy('');
+   693→   693→                  }
+   694→   694→                }}
+   695→   695→              >
+   696→   696→                <Plus className="h-4 w-4" />
+   697→   697→              </Button>
+   698→   698→            </div>
+   699→   699→          </div>
+   700→   700→        </div>
+   701→   701→      </DialogContent>
+   702→   702→    </Dialog>
+   703→   703→  );
+   704→   704→}
+   705→   705→
+   706→   706→// ── Main component ─────────────────────────────────────────────────────
+   707→   707→export default function Nutrition() {
+   708→   708→  const [mealLog, setMealLog] = useState<FoodItem[]>(initialMealLog);
+   709→   709→  const totalConsumed = mealLog.reduce((s, m) => s + m.calories, 0);
+   710→   710→  const calorieTarget = 2000;
+   711→   711→
+   712→   712→  const totalProtein = mealLog.reduce((s, m) => s + m.protein, 0);
+   713→   713→  const totalCarbs = mealLog.reduce((s, m) => s + m.carbs, 0);
+   714→   714→  const totalFat = mealLog.reduce((s, m) => s + m.fat, 0);
+   715→   715→  const totalFiber = mealLog.reduce((s, m) => s + m.fiber, 0);
+   716→   716→
+   717→   717→  const macroData = [
+   718→   718→    { name: 'Protein', value: totalProtein, color: '#10b981' },
+   719→   719→    { name: 'Carbs', value: totalCarbs, color: '#f59e0b' },
+   720→   720→    { name: 'Fat', value: totalFat, color: '#ef4444' },
+   721→   721→    { name: 'Fiber', value: totalFiber, color: '#8b5cf6' },
+   722→   722→  ];
+   723→   723→
+   724→   724→  return (
+   725→   725→    <section className="w-full space-y-6">
+   726→   726→      {/* Header */}
+   727→   727→      <motion.div
+   728→   728→        initial={{ opacity: 0, y: -20 }}
+   729→   729→        animate={{ opacity: 1, y: 0 }}
+   730→   730→        className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+   731→   731→      >
+   732→   732→        <div className="flex items-center gap-3">
+   733→   733→          <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center shadow-lg">
+   734→   734→            <Apple className="h-6 w-6 text-white" />
+   735→   735→          </div>
+   736→   736→          <div>
+   737→   737→            <h2 className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">
+   738→   738→              AI Nutrition Hub
+   739→   739→            </h2>
+   740→   740→            <p className="text-sm text-muted-foreground">
+   741→   741→              Smart food logging, calorie tracking &amp; diet planning
+   742→   742→            </p>
+   743→   743→          </div>
+   744→   744→        </div>
+   745→   745→        <AllergyDietSettings />
+   746→   746→      </motion.div>
+   747→   747→
+   748→   748→      {/* Two-column layout */}
+   749→   749→      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+   750→   750→        {/* ── Left column: Logging & Charts ── */}
+   751→   751→        <div className="space-y-6">
+   752→   752→          {/* AI Food Scanner */}
+   753→   753→          <AIFoodScanner />
+   754→   754→
+   755→   755→          {/* Calorie tracker + Macro breakdown */}
+   756→   756→          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+   757→   757→            {/* Daily Calorie Tracker */}
+   758→   758→            <Card>
+   759→   759→              <CardHeader className="pb-2">
+   760→   760→                <CardTitle className="text-sm">Daily Calories</CardTitle>
+   761→   761→              </CardHeader>
+   762→   762→              <CardContent className="flex flex-col items-center">
+   763→   763→                <CircularCalorieTracker consumed={totalConsumed} target={calorieTarget} />
+   764→   764→              </CardContent>
+   765→   765→            </Card>
+   766→   766→
+   767→   767→            {/* Macro Breakdown Donut */}
+   768→   768→            <Card>
+   769→   769→              <CardHeader className="pb-2">
+   770→   770→                <CardTitle className="text-sm">Macro Breakdown</CardTitle>
+   771→   771→              </CardHeader>
+   772→   772→              <CardContent>
+   773→   773→                <div className="h-44">
+   774→   774→                  <ResponsiveContainer width="100%" height="100%">
+   775→   775→                    <PieChart>
+   776→   776→                      <Pie
+   777→   777→                        data={macroData}
+   778→   778→                        cx="50%"
+   779→   779→                        cy="50%"
+   780→   780→                        innerRadius={45}
+   781→   781→                        outerRadius={65}
+   782→   782→                        paddingAngle={3}
+   783→   783→                        dataKey="value"
+   784→   784→                        animationBegin={0}
+   785→   785→                        animationDuration={800}
+   786→   786→                      >
+   787→   787→                        {macroData.map((entry, index) => (
+   788→   788→                          <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+   789→   789→                        ))}
+   790→   790→                      </Pie>
+   791→   791→                      <Tooltip
+   792→   792→                        formatter={(value: number, name: string) => [`${value}g`, name]}
+   793→   793→                        contentStyle={{
+   794→   794→                          borderRadius: '8px',
+   795→   795→                          border: '1px solid #e5e7eb',
+   796→   796→                          fontSize: '12px',
+   797→   797→                        }}
+   798→   798→                      />
+   799→   799→                    </PieChart>
+   800→   800→                  </ResponsiveContainer>
+   801→   801→                </div>
+   802→   802→                <div className="grid grid-cols-2 gap-1 mt-1">
+   803→   803→                  {macroData.map((m) => (
+   804→   804→                    <div key={m.name} className="flex items-center gap-1.5 text-xs">
+   805→   805→                      <span
+   806→   806→                        className="h-2.5 w-2.5 rounded-full shrink-0"
+   807→   807→                        style={{ backgroundColor: m.color }}
+   808→   808→                      />
+   809→   809→                      <span className="text-muted-foreground">{m.name}</span>
+   810→   810→                      <span className="font-medium ml-auto">{m.value}g</span>
+   811→   811→                    </div>
+   812→   812→                  ))}
+   813→   813→                </div>
+   814→   814→              </CardContent>
+   815→   815→            </Card>
+   816→   816→          </div>
+   817→   817→
+   818→   818→          {/* Water Intake Tracker */}
+   819→   819→          <Card>
+   820→   820→            <CardContent className="pt-6">
+   821→   821→              <WaterTracker />
+   822→   822→            </CardContent>
+   823→   823→          </Card>
+   824→   824→
+   825→   825→          {/* Meal Log */}
+   826→   826→          <MealLog meals={mealLog} />
+   827→   827→
+   828→   828→          {/* Calorie Trend Chart */}
+   829→   829→          <Card>
+   830→   830→            <CardHeader className="pb-2">
+   831→   831→              <div className="flex items-center gap-2">
+   832→   832→                <Flame className="h-5 w-5 text-orange-500" />
+   833→   833→                <CardTitle className="text-base">Weekly Calorie Trend</CardTitle>
+   834→   834→              </div>
+   835→   835→              <CardDescription className="text-xs">
+   836→   836→                Daily intake vs burned vs target
+   837→   837→              </CardDescription>
+   838→   838→            </CardHeader>
+   839→   839→            <CardContent>
+   840→   840→              <div className="h-56">
+   841→   841→                <ResponsiveContainer width="100%" height="100%">
+   842→   842→                  <BarChart data={calorieTrackingData} barGap={2}>
+   843→   843→                    <Tooltip
+   844→   844→                      contentStyle={{
+   845→   845→                        borderRadius: '8px',
+   846→   846→                        border: '1px solid #e5e7eb',
+   847→   847→                        fontSize: '12px',
+   848→   848→                      }}
+   849→   849→                    />
+   850→   850→                    <Legend
+   851→   851→                      verticalAlign="top"
+   852→   852→                      height={36}
+   853→   853→                      iconType="circle"
+   854→   854→                      iconSize={8}
+   855→   855→                      formatter={(value: string) => (
+   856→   856→                        <span className="text-xs">{value}</span>
+   857→   857→                      )}
+   858→   858→                    />
+   859→   859→                    <Bar dataKey="intake" fill="#f59e0b" radius={[4, 4, 0, 0]} name="Intake" />
+   860→   860→                    <Bar dataKey="burned" fill="#10b981" radius={[4, 4, 0, 0]} name="Burned" />
+   861→   861→                    <Bar dataKey="target" fill="#94a3b8" radius={[4, 4, 0, 0]} name="Target" opacity={0.3} />
+   862→   862→                  </BarChart>
+   863→   863→                </ResponsiveContainer>
+   864→   864→              </div>
+   865→   865→            </CardContent>
+   866→   866→          </Card>
+   867→   867→        </div>
+   868→   868→
+   869→   869→        {/* ── Right column: Diet Plan ── */}
+   870→   870→        <div className="space-y-6">
+   871→   871→          {/* Hero illustration */}
+   872→   872→          <motion.div
+   873→   873→            initial={{ opacity: 0, scale: 0.95 }}
+   874→   874→            animate={{ opacity: 1, scale: 1 }}
+   875→   875→            transition={{ delay: 0.2 }}
+   876→   876→            className="relative rounded-xl overflow-hidden"
+   877→   877→          >
+   878→   878→            <img
+   879→   879→              src="/images/nutrition.png"
+   880→   880→              alt="Nutrition illustration"
+   881→   881→              className="w-full h-40 object-cover"
+   882→   882→            />
+   883→   883→            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+   884→   884→            <div className="absolute bottom-3 left-4 text-white">
+   885→   885→              <p className="font-bold text-sm">Your Personalized Plan</p>
+   886→   886→              <p className="text-xs opacity-80">Tailored for recovery &amp; performance</p>
+   887→   887→            </div>
+   888→   888→          </motion.div>
+   889→   889→
+   890→   890→          {/* Diet Plan */}
+   891→   891→          <DietPlan />
+   892→   892→
+   893→   893→          {/* Quick Stats */}
+   894→   894→          <Card>
+   895→   895→            <CardHeader className="pb-3">
+   896→   896→              <CardTitle className="text-sm">Quick Nutrition Stats</CardTitle>
+   897→   897→            </CardHeader>
+   898→   898→            <CardContent>
+   899→   899→              <div className="grid grid-cols-2 gap-3">
+   900→   900→                {[
+   901→   901→                  { label: 'Protein', value: `${totalProtein}g`, target: '150g', color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-950/30' },
+   902→   902→                  { label: 'Carbs', value: `${totalCarbs}g`, target: '250g', color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-950/30' },
+   903→   903→                  { label: 'Fat', value: `${totalFat}g`, target: '65g', color: 'text-rose-600', bg: 'bg-rose-50 dark:bg-rose-950/30' },
+   904→   904→                  { label: 'Fiber', value: `${totalFiber}g`, target: '30g', color: 'text-violet-600', bg: 'bg-violet-50 dark:bg-violet-950/30' },
+   905→   905→                ].map((stat) => (
+   906→   906→                  <motion.div
+   907→   907→                    key={stat.label}
+   908→   908→                    initial={{ opacity: 0, scale: 0.9 }}
+   909→   909→                    animate={{ opacity: 1, scale: 1 }}
+   910→   910→                    className={`rounded-lg p-3 ${stat.bg} space-y-1`}
+   911→   911→                  >
+   912→   912→                    <p className="text-[10px] text-muted-foreground">{stat.label}</p>
+   913→   913→                    <p className={`text-lg font-bold ${stat.color}`}>{stat.value}</p>
+   914→   914→                    <p className="text-[10px] text-muted-foreground">Target: {stat.target}</p>
+   915→   915→                  </motion.div>
+   916→   916→                ))}
+   917→   917→              </div>
+   918→   918→            </CardContent>
+   919→   919→          </Card>
+   920→   920→        </div>
+   921→   921→      </div>
+   922→   922→    </section>
+   923→   923→  );
+   924→   924→}
+   925→   925→

@@ -1,0 +1,115 @@
+{
+  "personas": [
+    {
+      "id": "wheelchair-upper-body",
+      "name": "Wheelchair Upper-Body Strength User",
+      "description": "A seated-only wheelchair user who wants upper-body and core strength.",
+      "profile": {
+        "ageRange": "25-34",
+        "preferredUnits": "metric",
+        "activityLevel": "light",
+        "fitnessExperience": "beginner",
+        "usesWheelchair": true,
+        "standingAbility": "none",
+        "walkingAbility": "none",
+        "balanceConfidence": "low",
+        "leftArmAbility": "full",
+        "rightArmAbility": "full",
+        "leftLegAbility": "limited",
+        "rightLegAbility": "limited",
+        "painAreas": [],
+        "injuryAreas": [],
+        "movementsToAvoid": ["standing", "floor exercises", "jumping"],
+        "supportSystems": ["wheelchair", "resistance band"],
+        "equipment": ["resistance band"],
+        "goals": ["build strength", "improve stamina", "increase confidence"],
+        "targetMuscles": ["shoulders", "back", "arms", "core"],
+        "preferences": {
+          "durationMinutes": 20,
+          "exerciseCount": 8,
+          "seatedOnly": true,
+          "floorExercisesAllowed": false,
+          "intensity": "gentle"
+        },
+        "accessibility": {
+          "voiceGuidance": true,
+          "largeText": false,
+          "highContrast": false,
+          "reducedMotion": false
+        }
+      },
+      "mustAvoid": ["squats", "lunges", "running", "jumping", "planks", "burpees", "floor pushups"],
+      "expectedExerciseTypes": ["seated band rows", "seated shoulder mobility", "seated punches", "seated core rotations", "wheelchair-friendly stretches"]
+    },
+    {
+      "id": "one-arm-beginner",
+      "name": "One-Arm Beginner / Veteran",
+      "description": "A user with one unavailable arm, medium balance, and a goal of rebuilding strength and confidence.",
+      "profile": {
+        "ageRange": "35-44",
+        "preferredUnits": "metric",
+        "activityLevel": "light",
+        "fitnessExperience": "beginner",
+        "usesWheelchair": false,
+        "standingAbility": "yes",
+        "walkingAbility": "yes",
+        "balanceConfidence": "medium",
+        "leftArmAbility": "full",
+        "rightArmAbility": "none",
+        "leftLegAbility": "full",
+        "rightLegAbility": "full",
+        "painAreas": [],
+        "injuryAreas": ["right arm"],
+        "movementsToAvoid": ["two-arm loading", "pullups", "floor pushups"],
+        "supportSystems": ["chair", "wall"],
+        "equipment": ["chair", "wall", "resistance band"],
+        "goals": ["build strength", "increase confidence", "gentle daily movement"],
+        "targetMuscles": ["legs", "core", "left arm", "back"],
+        "preferences": {
+          "durationMinutes": 15,
+          "exerciseCount": 6,
+          "seatedOnly": false,
+          "floorExercisesAllowed": false,
+          "intensity": "gentle"
+        }
+      },
+      "mustAvoid": ["standard pushups", "pullups", "two-arm planks", "two-handed dumbbell moves"],
+      "expectedExerciseTypes": ["one-arm wall press", "chair-supported lower-body movement", "single-arm band exercises", "standing supported core stability"]
+    },
+    {
+      "id": "knee-friendly-low-impact",
+      "name": "Knee-Friendly Low-Impact User",
+      "description": "A user with knee pain who wants low-impact strength without jumping, deep squats, or lunges.",
+      "profile": {
+        "ageRange": "25-34",
+        "preferredUnits": "metric",
+        "activityLevel": "moderate",
+        "fitnessExperience": "beginner",
+        "usesWheelchair": false,
+        "standingAbility": "yes",
+        "walkingAbility": "yes",
+        "balanceConfidence": "medium",
+        "leftArmAbility": "full",
+        "rightArmAbility": "full",
+        "leftLegAbility": "limited",
+        "rightLegAbility": "full",
+        "painAreas": ["left knee"],
+        "injuryAreas": ["left knee"],
+        "movementsToAvoid": ["jumping", "deep squats", "lunges", "high-impact cardio"],
+        "supportSystems": ["chair", "wall"],
+        "equipment": ["chair", "resistance band"],
+        "goals": ["build strength", "improve mobility", "increase confidence"],
+        "targetMuscles": ["hips", "glutes", "core", "back"],
+        "preferences": {
+          "durationMinutes": 20,
+          "exerciseCount": 8,
+          "seatedOnly": false,
+          "floorExercisesAllowed": false,
+          "intensity": "low-impact"
+        }
+      },
+      "mustAvoid": ["jumping", "lunges", "deep squats", "burpees", "running"],
+      "expectedExerciseTypes": ["seated leg extensions", "hip mobility", "glute activation", "low-impact core work", "shallow chair sit-to-stand if safe"]
+    }
+  ]
+}

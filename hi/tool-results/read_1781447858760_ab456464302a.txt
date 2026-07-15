@@ -1,0 +1,844 @@
+     1→'use client';
+     2→
+     3→import { useState, useEffect, useCallback, useRef } from 'react';
+     4→import { motion, AnimatePresence } from 'framer-motion';
+     5→import {
+     6→  Wind,
+     7→  Timer,
+     8→  Play,
+     9→  Pause,
+    10→  RotateCcw,
+    11→  Volume2,
+    12→  VolumeX,
+    13→  Activity,
+    14→  Heart,
+    15→  Flame,
+    16→  Clock,
+    17→  Trophy,
+    18→  Calendar,
+    19→  TrendingUp,
+    20→  ChevronRight,
+    21→  Sparkles,
+    22→  CheckCircle2,
+    23→} from 'lucide-react';
+    24→import {
+    25→  Card,
+    26→  CardHeader,
+    27→  CardTitle,
+    28→  CardContent,
+    29→  CardDescription,
+    30→} from '@/components/ui/card';
+    31→import { Button } from '@/components/ui/button';
+    32→import { Badge } from '@/components/ui/badge';
+    33→import { Progress } from '@/components/ui/progress';
+    34→import {
+    35→  AreaChart,
+    36→  Area,
+    37→  XAxis,
+    38→  YAxis,
+    39→  CartesianGrid,
+    40→  Tooltip,
+    41→} from 'recharts';
+    42→import { useTTS } from '@/hooks/use-tts';
+    43→import { useAppStore } from '@/stores/app-store';
+    44→
+    45→// ── Breathing Pattern Types ─────────────────────────────────────────────────
+    46→
+    47→type BreathingPhase = 'inhale' | 'hold' | 'exhale' | 'holdAfterExhale';
+    48→
+    49→interface BreathingPattern {
+    50→  id: string;
+    51→  name: string;
+    52→  description: string;
+    53→  phases: { phase: BreathingPhase; duration: number }[];
+    54→  totalCycleDuration: number;
+    55→  color: string;
+    56→  icon: React.ReactNode;
+    57→}
+    58→
+    59→// ── Breathing Patterns ──────────────────────────────────────────────────────
+    60→
+    61→const BREATHING_PATTERNS: BreathingPattern[] = [
+    62→  {
+    63→    id: '4-7-8',
+    64→    name: '4-7-8 Relaxation',
+    65→    description: 'Deep relaxation technique for stress relief',
+    66→    phases: [
+    67→      { phase: 'inhale', duration: 4 },
+    68→      { phase: 'hold', duration: 7 },
+    69→      { phase: 'exhale', duration: 8 },
+    70→    ],
+    71→    totalCycleDuration: 19,
+    72→    color: 'emerald',
+    73→    icon: <Heart className="w-5 h-5" />,
+    74→  },
+    75→  {
+    76→    id: 'box',
+    77→    name: 'Box Breathing',
+    78→    description: 'Navy SEAL technique for calm focus',
+    79→    phases: [
+    80→      { phase: 'inhale', duration: 4 },
+    81→      { phase: 'hold', duration: 4 },
+    82→      { phase: 'exhale', duration: 4 },
+    83→      { phase: 'holdAfterExhale', duration: 4 },
+    84→    ],
+    85→    totalCycleDuration: 16,
+    86→    color: 'teal',
+    87→    icon: <Activity className="w-5 h-5" />,
+    88→  },
+    89→  {
+    90→    id: 'coherent',
+    91→    name: 'Coherent Breathing',
+    92→    description: 'Balance your nervous system',
+    93→    phases: [
+    94→      { phase: 'inhale', duration: 5 },
+    95→      { phase: 'exhale', duration: 5 },
+    96→    ],
+    97→    totalCycleDuration: 10,
+    98→    color: 'cyan',
+    99→    icon: <Wind className="w-5 h-5" />,
+   100→  },
+   101→  {
+   102→    id: 'energizing',
+   103→    name: 'Energizing Breath',
+   104→    description: 'Quick pace to boost energy',
+   105→    phases: [
+   106→      { phase: 'inhale', duration: 2 },
+   107→      { phase: 'exhale', duration: 2 },
+   108→    ],
+   109→    totalCycleDuration: 4,
+   110→    color: 'amber',
+   111→    icon: <Flame className="w-5 h-5" />,
+   112→  },
+   113→];
+   114→
+   115→// ── Mock Data ───────────────────────────────────────────────────────────────
+   116→
+   117→const weeklyBreathingData = [
+   118→  { day: 'Mon', minutes: 8 },
+   119→  { day: 'Tue', minutes: 12 },
+   120→  { day: 'Wed', minutes: 5 },
+   121→  { day: 'Thu', minutes: 15 },
+   122→  { day: 'Fri', minutes: 10 },
+   123→  { day: 'Sat', minutes: 20 },
+   124→  { day: 'Sun', minutes: 14 },
+   125→];
+   126→
+   127→const mockSessionHistory = [
+   128→  { id: 1, pattern: '4-7-8 Relaxation', duration: 5, date: 'Today, 9:30 AM', completed: true },
+   129→  { id: 2, pattern: 'Box Breathing', duration: 10, date: 'Today, 7:15 AM', completed: true },
+   130→  { id: 3, pattern: 'Coherent Breathing', duration: 5, date: 'Yesterday, 8:00 PM', completed: true },
+   131→  { id: 4, pattern: '4-7-8 Relaxation', duration: 15, date: 'Yesterday, 6:30 AM', completed: true },
+   132→  { id: 5, pattern: 'Energizing Breath', duration: 2, date: '2 days ago, 12:00 PM', completed: true },
+   133→  { id: 6, pattern: 'Box Breathing', duration: 5, date: '2 days ago, 7:00 AM', completed: false },
+   134→];
+   135→
+   136→// ── Duration Options ────────────────────────────────────────────────────────
+   137→
+   138→const DURATION_OPTIONS = [
+   139→  { label: '2 min', value: 120 },
+   140→  { label: '5 min', value: 300 },
+   141→  { label: '10 min', value: 600 },
+   142→  { label: '15 min', value: 900 },
+   143→];
+   144→
+   145→// ── Phase Helpers ───────────────────────────────────────────────────────────
+   146→
+   147→const PHASE_LABELS: Record<BreathingPhase, string> = {
+   148→  inhale: 'Breathe In',
+   149→  hold: 'Hold',
+   150→  exhale: 'Breathe Out',
+   151→  holdAfterExhale: 'Hold',
+   152→};
+   153→
+   154→const PHASE_TTS_LABELS: Record<BreathingPhase, string> = {
+   155→  inhale: 'Breathe in',
+   156→  hold: 'Hold',
+   157→  exhale: 'Breathe out',
+   158→  holdAfterExhale: 'Hold',
+   159→};
+   160→
+   161→const PHASE_COLORS: Record<BreathingPhase, { bg: string; ring: string; text: string; glow: string }> = {
+   162→  inhale: {
+   163→    bg: 'bg-emerald-500/20',
+   164→    ring: 'ring-emerald-400',
+   165→    text: 'text-emerald-400',
+   166→    glow: 'shadow-emerald-400/40',
+   167→  },
+   168→  hold: {
+   169→    bg: 'bg-amber-500/20',
+   170→    ring: 'ring-amber-400',
+   171→    text: 'text-amber-400',
+   172→    glow: 'shadow-amber-400/40',
+   173→  },
+   174→  exhale: {
+   175→    bg: 'bg-cyan-500/20',
+   176→    ring: 'ring-cyan-400',
+   177→    text: 'text-cyan-400',
+   178→    glow: 'shadow-cyan-400/40',
+   179→  },
+   180→  holdAfterExhale: {
+   181→    bg: 'bg-amber-500/20',
+   182→    ring: 'ring-amber-400',
+   183→    text: 'text-amber-400',
+   184→    glow: 'shadow-amber-400/40',
+   185→  },
+   186→};
+   187→
+   188→const PHASE_SCALE: Record<BreathingPhase, number> = {
+   189→  inhale: 1.3,
+   190→  hold: 1.3,
+   191→  exhale: 0.8,
+   192→  holdAfterExhale: 0.8,
+   193→};
+   194→
+   195→// ── Pattern Color Helpers ───────────────────────────────────────────────────
+   196→
+   197→const PATTERN_COLOR_MAP: Record<string, { bg: string; text: string; border: string; gradient: string }> = {
+   198→  emerald: {
+   199→    bg: 'bg-emerald-500/10',
+   200→    text: 'text-emerald-600 dark:text-emerald-400',
+   201→    border: 'border-emerald-500/30',
+   202→    gradient: 'from-emerald-500 to-teal-500',
+   203→  },
+   204→  teal: {
+   205→    bg: 'bg-teal-500/10',
+   206→    text: 'text-teal-600 dark:text-teal-400',
+   207→    border: 'border-teal-500/30',
+   208→    gradient: 'from-teal-500 to-cyan-500',
+   209→  },
+   210→  cyan: {
+   211→    bg: 'bg-cyan-500/10',
+   212→    text: 'text-cyan-600 dark:text-cyan-400',
+   213→    border: 'border-cyan-500/30',
+   214→    gradient: 'from-cyan-500 to-emerald-500',
+   215→  },
+   216→  amber: {
+   217→    bg: 'bg-amber-500/10',
+   218→    text: 'text-amber-600 dark:text-amber-400',
+   219→    border: 'border-amber-500/30',
+   220→    gradient: 'from-amber-500 to-orange-500',
+   221→  },
+   222→};
+   223→
+   224→// ── Animation Variants ──────────────────────────────────────────────────────
+   225→
+   226→const containerVariants = {
+   227→  hidden: { opacity: 0, y: 20 },
+   228→  visible: {
+   229→    opacity: 1,
+   230→    y: 0,
+   231→    transition: { staggerChildren: 0.1, delayChildren: 0.1 },
+   232→  },
+   233→};
+   234→
+   235→const itemVariants = {
+   236→  hidden: { opacity: 0, y: 15 },
+   237→  visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
+   238→};
+   239→
+   240→// ── Format helpers ──────────────────────────────────────────────────────────
+   241→
+   242→function formatTime(seconds: number): string {
+   243→  const m = Math.floor(seconds / 60);
+   244→  const s = seconds % 60;
+   245→  return `${m}:${s.toString().padStart(2, '0')}`;
+   246→}
+   247→
+   248→// ── Main Component ──────────────────────────────────────────────────────────
+   249→
+   250→export default function BreathingExercise() {
+   251→  const { speak, stop: stopTTS, isPlaying: ttsPlaying } = useTTS({
+   252→    voice: 'tongtong',
+   253→    speed: 0.8,
+   254→  });
+   255→  const appStore = useAppStore();
+   256→
+   257→  // Session state
+   258→  const [selectedPattern, setSelectedPattern] = useState<BreathingPattern>(BREATHING_PATTERNS[0]);
+   259→  const [selectedDuration, setSelectedDuration] = useState<number>(300); // 5 min default
+   260→  const [isRunning, setIsRunning] = useState(false);
+   261→  const [isPaused, setIsPaused] = useState(false);
+   262→  const [elapsedTime, setElapsedTime] = useState(0);
+   263→  const [completedCycles, setCompletedCycles] = useState(0);
+   264→
+   265→  // Phase state
+   266→  const [currentPhaseIndex, setCurrentPhaseIndex] = useState(0);
+   267→  const [phaseTimeRemaining, setPhaseTimeRemaining] = useState(0);
+   268→  const [currentPhase, setCurrentPhase] = useState<BreathingPhase>('inhale');
+   269→
+   270→  // Voice guidance
+   271→  const [voiceGuidance, setVoiceGuidance] = useState(true);
+   272→
+   273→  // Session completion
+   274→  const [sessionComplete, setSessionComplete] = useState(false);
+   275→
+   276→  // Refs
+   277→  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+   278→  const lastAnnouncedPhase = useRef<BreathingPhase | null>(null);
+   279→
+   280→  // Derived
+   281→  const remainingTime = Math.max(0, selectedDuration - elapsedTime);
+   282→  const progressPercent = Math.min((elapsedTime / selectedDuration) * 100, 100);
+   283→  const currentPhaseConfig = selectedPattern.phases[currentPhaseIndex];
+   284→  const phaseColors = PHASE_COLORS[currentPhase];
+   285→
+   286→  // Mock stats
+   287→  const todaySessions = 2;
+   288→  const totalMinutesToday = 15;
+   289→  const streakDays = 7;
+   290→
+   291→  // ── Timer Logic ─────────────────────────────────────────────────────────
+   292→
+   293→  const advancePhase = useCallback(() => {
+   294→    const nextIndex = (currentPhaseIndex + 1) % selectedPattern.phases.length;
+   295→    if (nextIndex === 0) {
+   296→      setCompletedCycles((prev) => prev + 1);
+   297→    }
+   298→    setCurrentPhaseIndex(nextIndex);
+   299→    const nextPhase = selectedPattern.phases[nextIndex];
+   300→    setCurrentPhase(nextPhase.phase);
+   301→    setPhaseTimeRemaining(nextPhase.duration);
+   302→  }, [currentPhaseIndex, selectedPattern]);
+   303→
+   304→  useEffect(() => {
+   305→    if (!isRunning || isPaused) {
+   306→      if (timerRef.current) {
+   307→        clearInterval(timerRef.current);
+   308→        timerRef.current = null;
+   309→      }
+   310→      return;
+   311→    }
+   312→
+   313→    timerRef.current = setInterval(() => {
+   314→      setElapsedTime((prev) => {
+   315→        if (prev + 1 >= selectedDuration) {
+   316→          setIsRunning(false);
+   317→          setSessionComplete(true);
+   318→          if (timerRef.current) {
+   319→            clearInterval(timerRef.current);
+   320→            timerRef.current = null;
+   321→          }
+   322→          return selectedDuration;
+   323→        }
+   324→        return prev + 1;
+   325→      });
+   326→
+   327→      setPhaseTimeRemaining((prev) => {
+   328→        if (prev <= 1) {
+   329→          // Phase complete - advance
+   330→          advancePhase();
+   331→          return 0;
+   332→        }
+   333→        return prev - 1;
+   334→      });
+   335→    }, 1000);
+   336→
+   337→    return () => {
+   338→      if (timerRef.current) {
+   339→        clearInterval(timerRef.current);
+   340→        timerRef.current = null;
+   341→      }
+   342→    };
+   343→  }, [isRunning, isPaused, selectedDuration, advancePhase]);
+   344→
+   345→  // ── TTS Announcement ────────────────────────────────────────────────────
+   346→
+   347→  useEffect(() => {
+   348→    if (voiceGuidance && isRunning && !isPaused && currentPhase !== lastAnnouncedPhase.current) {
+   349→      lastAnnouncedPhase.current = currentPhase;
+   350→      speak(PHASE_TTS_LABELS[currentPhase], { voice: 'tongtong', speed: 0.8 });
+   351→    }
+   352→  }, [currentPhase, voiceGuidance, isRunning, isPaused, speak]);
+   353→
+   354→  // ── Controls ────────────────────────────────────────────────────────────
+   355→
+   356→  const handleStart = useCallback(() => {
+   357→    const firstPhase = selectedPattern.phases[0];
+   358→    setCurrentPhaseIndex(0);
+   359→    setCurrentPhase(firstPhase.phase);
+   360→    setPhaseTimeRemaining(firstPhase.duration);
+   361→    setElapsedTime(0);
+   362→    setCompletedCycles(0);
+   363→    setSessionComplete(false);
+   364→    lastAnnouncedPhase.current = null;
+   365→    setIsPaused(false);
+   366→    setIsRunning(true);
+   367→  }, [selectedPattern]);
+   368→
+   369→  const handlePause = useCallback(() => {
+   370→    setIsPaused((prev) => !prev);
+   371→  }, []);
+   372→
+   373→  const handleReset = useCallback(() => {
+   374→    setIsRunning(false);
+   375→    setIsPaused(false);
+   376→    setElapsedTime(0);
+   377→    setCompletedCycles(0);
+   378→    setCurrentPhaseIndex(0);
+   379→    setCurrentPhase('inhale');
+   380→    setPhaseTimeRemaining(selectedPattern.phases[0].duration);
+   381→    setSessionComplete(false);
+   382→    lastAnnouncedPhase.current = null;
+   383→    stopTTS();
+   384→  }, [selectedPattern, stopTTS]);
+   385→
+   386→  const handlePatternChange = useCallback((pattern: BreathingPattern) => {
+   387→    if (isRunning) {
+   388→      handleReset();
+   389→    }
+   390→    setSelectedPattern(pattern);
+   391→    setCurrentPhaseIndex(0);
+   392→    setCurrentPhase(pattern.phases[0].phase);
+   393→    setPhaseTimeRemaining(pattern.phases[0].duration);
+   394→  }, [isRunning, handleReset]);
+   395→
+   396→  const toggleVoiceGuidance = useCallback(() => {
+   397→    setVoiceGuidance((prev) => {
+   398→      if (prev) stopTTS();
+   399→      return !prev;
+   400→    });
+   401→  }, [stopTTS]);
+   402→
+   403→  // ── Render ──────────────────────────────────────────────────────────────
+   404→
+   405→  return (
+   406→    <motion.div
+   407→      variants={containerVariants}
+   408→      initial="hidden"
+   409→      animate="visible"
+   410→      className="space-y-6"
+   411→    >
+   412→      {/* Header */}
+   413→      <motion.div variants={itemVariants} className="flex items-center justify-between">
+   414→        <div className="flex items-center gap-3">
+   415→          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+   416→            <Wind className="w-5 h-5 text-white" />
+   417→          </div>
+   418→          <div>
+   419→            <h2 className="text-xl font-bold text-foreground">Guided Breathing</h2>
+   420→            <p className="text-sm text-muted-foreground">Relax & restore with mindful breathing</p>
+   421→          </div>
+   422→        </div>
+   423→        <Button
+   424→          variant="outline"
+   425→          size="icon"
+   426→          onClick={toggleVoiceGuidance}
+   427→          className={`rounded-full ${voiceGuidance ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500' : ''}`}
+   428→        >
+   429→          {voiceGuidance ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+   430→        </Button>
+   431→      </motion.div>
+   432→
+   433→      {/* Pattern Selector */}
+   434→      <motion.div variants={itemVariants}>
+   435→        <Card className="bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl border-white/20 dark:border-gray-700/30">
+   436→          <CardHeader className="pb-3">
+   437→            <CardTitle className="text-base font-semibold">Breathing Pattern</CardTitle>
+   438→            <CardDescription>Choose a technique that suits your needs</CardDescription>
+   439→          </CardHeader>
+   440→          <CardContent>
+   441→            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+   442→              {BREATHING_PATTERNS.map((pattern) => {
+   443→                const colors = PATTERN_COLOR_MAP[pattern.color];
+   444→                const isSelected = selectedPattern.id === pattern.id;
+   445→                return (
+   446→                  <motion.button
+   447→                    key={pattern.id}
+   448→                    whileHover={{ scale: 1.03 }}
+   449→                    whileTap={{ scale: 0.97 }}
+   450→                    onClick={() => handlePatternChange(pattern)}
+   451→                    className={`relative p-3 rounded-xl border transition-all text-left ${
+   452→                      isSelected
+   453→                        ? `${colors.bg} ${colors.border} border-2 shadow-lg`
+   454→                        : 'border-gray-200/50 dark:border-gray-700/30 hover:border-gray-300/60 dark:hover:border-gray-600/40'
+   455→                    }`}
+   456→                  >
+   457→                    {isSelected && (
+   458→                      <motion.div
+   459→                        layoutId="patternIndicator"
+   460→                        className={`absolute inset-0 rounded-xl bg-gradient-to-br ${colors.gradient} opacity-10`}
+   461→                        transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
+   462→                      />
+   463→                    )}
+   464→                    <div className={`flex items-center gap-2 mb-1.5 ${isSelected ? colors.text : 'text-muted-foreground'}`}>
+   465→                      {pattern.icon}
+   466→                      <span className="text-xs font-semibold">{pattern.name}</span>
+   467→                    </div>
+   468→                    <p className="text-[11px] text-muted-foreground leading-tight mb-1.5">
+   469→                      {pattern.description}
+   470→                    </p>
+   471→                    <div className="flex items-center gap-1 flex-wrap">
+   472→                      {pattern.phases.map((p, i) => (
+   473→                        <Badge key={i} variant="outline" className="text-[10px] px-1.5 py-0 h-5">
+   474→                          {p.phase === 'holdAfterExhale' ? 'Hold' : p.phase.charAt(0).toUpperCase() + p.phase.slice(1)} {p.duration}s
+   475→                        </Badge>
+   476→                      ))}
+   477→                    </div>
+   478→                  </motion.button>
+   479→                );
+   480→              })}
+   481→            </div>
+   482→          </CardContent>
+   483→        </Card>
+   484→      </motion.div>
+   485→
+   486→      {/* Main Breathing Circle & Controls */}
+   487→      <motion.div variants={itemVariants}>
+   488→        <Card className="bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl border-white/20 dark:border-gray-700/30 overflow-hidden">
+   489→          <CardContent className="p-6">
+   490→            <div className="flex flex-col items-center">
+   491→              {/* Duration Selector */}
+   492→              <div className="flex items-center gap-2 mb-6">
+   493→                <Timer className="w-4 h-4 text-muted-foreground" />
+   494→                <span className="text-sm text-muted-foreground mr-1">Duration:</span>
+   495→                {DURATION_OPTIONS.map((opt) => (
+   496→                  <Button
+   497→                    key={opt.value}
+   498→                    variant={selectedDuration === opt.value ? 'default' : 'outline'}
+   499→                    size="sm"
+   500→                    onClick={() => {
+   501→                      if (isRunning) handleReset();
+   502→                      setSelectedDuration(opt.value);
+   503→                    }}
+   504→                    className={`text-xs h-7 ${
+   505→                      selectedDuration === opt.value
+   506→                        ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white border-0'
+   507→                        : ''
+   508→                    }`}
+   509→                  >
+   510→                    {opt.label}
+   511→                  </Button>
+   512→                ))}
+   513→              </div>
+   514→
+   515→              {/* Breathing Circle */}
+   516→              <div className="relative flex items-center justify-center w-64 h-64 sm:w-72 sm:h-72 mb-6">
+   517→                {/* Outer glow ring */}
+   518→                <motion.div
+   519→                  className="absolute inset-0 rounded-full"
+   520→                  animate={{
+   521→                    boxShadow: isRunning && !isPaused
+   522→                      ? `0 0 60px 15px ${currentPhase === 'inhale' ? 'rgba(16,185,129,0.3)' : currentPhase === 'exhale' ? 'rgba(6,182,212,0.3)' : 'rgba(245,158,11,0.3)'}`
+   523→                      : '0 0 0px 0px rgba(16,185,129,0)',
+   524→                  }}
+   525→                  transition={{ duration: 1 }}
+   526→                />
+   527→
+   528→                {/* Background ring */}
+   529→                <div className="absolute inset-4 rounded-full bg-gray-100/50 dark:bg-gray-800/50" />
+   530→
+   531→                {/* Animated breathing circle */}
+   532→                <motion.div
+   533→                  className="relative flex flex-col items-center justify-center rounded-full"
+   534→                  animate={{
+   535→                    scale: isRunning && !isPaused ? PHASE_SCALE[currentPhase] : 1,
+   536→                  }}
+   537→                  transition={{
+   538→                    duration: isRunning && !isPaused ? currentPhaseConfig?.duration || 4 : 0.5,
+   539→                    ease: currentPhase === 'inhale' ? 'easeIn' : currentPhase === 'exhale' ? 'easeOut' : 'linear',
+   540→                  }}
+   541→                  style={{ width: '85%', height: '85%' }}
+   542→                >
+   543→                  {/* Inner animated background */}
+   544→                  <motion.div
+   545→                    className="absolute inset-0 rounded-full"
+   546→                    animate={{
+   547→                      backgroundColor: isRunning && !isPaused
+   548→                        ? currentPhase === 'inhale'
+   549→                          ? 'rgba(16,185,129,0.15)'
+   550→                          : currentPhase === 'exhale'
+   551→                          ? 'rgba(6,182,212,0.15)'
+   552→                          : 'rgba(245,158,11,0.15)'
+   553→                        : 'rgba(16,185,129,0.08)',
+   554→                    }}
+   555→                    transition={{ duration: 1.5 }}
+   556→                  />
+   557→
+   558→                  {/* Border ring */}
+   559→                  <motion.div
+   560→                    className="absolute inset-0 rounded-full border-2"
+   561→                    animate={{
+   562→                      borderColor: isRunning && !isPaused
+   563→                        ? currentPhase === 'inhale'
+   564→                          ? 'rgba(16,185,129,0.5)'
+   565→                          : currentPhase === 'exhale'
+   566→                          ? 'rgba(6,182,212,0.5)'
+   567→                          : 'rgba(245,158,11,0.5)'
+   568→                        : 'rgba(16,185,129,0.2)',
+   569→                    }}
+   570→                    transition={{ duration: 1 }}
+   571→                  />
+   572→
+   573→                  {/* Phase Text */}
+   574→                  <AnimatePresence mode="wait">
+   575→                    <motion.div
+   576→                      key={isRunning ? currentPhase : 'idle'}
+   577→                      initial={{ opacity: 0, y: 5 }}
+   578→                      animate={{ opacity: 1, y: 0 }}
+   579→                      exit={{ opacity: 0, y: -5 }}
+   580→                      transition={{ duration: 0.3 }}
+   581→                      className="relative z-10 text-center"
+   582→                    >
+   583→                      {isRunning ? (
+   584→                        <>
+   585→                          <p className={`text-lg font-bold mb-1 ${phaseColors.text}`}>
+   586→                            {PHASE_LABELS[currentPhase]}
+   587→                          </p>
+   588→                          <motion.p
+   589→                            key={phaseTimeRemaining}
+   590→                            initial={{ scale: 1.2, opacity: 0 }}
+   591→                            animate={{ scale: 1, opacity: 1 }}
+   592→                            className="text-4xl font-bold text-foreground tabular-nums"
+   593→                          >
+   594→                            {phaseTimeRemaining}
+   595→                          </motion.p>
+   596→                        </>
+   597→                      ) : sessionComplete ? (
+   598→                        <>
+   599→                          <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto mb-2" />
+   600→                          <p className="text-lg font-bold text-emerald-500">Session Complete!</p>
+   601→                          <p className="text-sm text-muted-foreground mt-1">{completedCycles} cycles done</p>
+   602→                        </>
+   603→                      ) : (
+   604→                        <>
+   605→                          <Wind className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
+   606→                          <p className="text-base font-semibold text-muted-foreground">Ready</p>
+   607→                          <p className="text-xs text-muted-foreground mt-1">Press play to begin</p>
+   608→                        </>
+   609→                      )}
+   610→                    </motion.div>
+   611→                  </AnimatePresence>
+   612→                </motion.div>
+   613→              </div>
+   614→
+   615→              {/* Session Progress */}
+   616→              <div className="w-full max-w-sm mb-4">
+   617→                <div className="flex justify-between text-xs text-muted-foreground mb-1.5">
+   618→                  <span>{formatTime(elapsedTime)} elapsed</span>
+   619→                  <span>{formatTime(remainingTime)} remaining</span>
+   620→                </div>
+   621→                <Progress value={progressPercent} className="h-2" />
+   622→              </div>
+   623→
+   624→              {/* Cycles Counter */}
+   625→              <div className="flex items-center gap-2 mb-5">
+   626→                <Badge variant="outline" className="text-xs gap-1">
+   627→                  <Sparkles className="w-3 h-3" />
+   628→                  {completedCycles} {completedCycles === 1 ? 'cycle' : 'cycles'} completed
+   629→                </Badge>
+   630→                <Badge variant="outline" className="text-xs gap-1">
+   631→                  <Clock className="w-3 h-3" />
+   632→                  {selectedPattern.name}
+   633→                </Badge>
+   634→              </div>
+   635→
+   636→              {/* Controls */}
+   637→              <div className="flex items-center gap-3">
+   638→                {!isRunning ? (
+   639→                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+   640→                    <Button
+   641→                      onClick={handleStart}
+   642→                      size="lg"
+   643→                      className="rounded-full w-14 h-14 bg-gradient-to-br from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-lg shadow-emerald-500/25"
+   644→                    >
+   645→                      <Play className="w-6 h-6 ml-0.5" />
+   646→                    </Button>
+   647→                  </motion.div>
+   648→                ) : (
+   649→                  <>
+   650→                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+   651→                      <Button
+   652→                        onClick={handlePause}
+   653→                        size="lg"
+   654→                        variant="outline"
+   655→                        className="rounded-full w-12 h-12 border-2"
+   656→                      >
+   657→                        {isPaused ? <Play className="w-5 h-5" /> : <Pause className="w-5 h-5" />}
+   658→                      </Button>
+   659→                    </motion.div>
+   660→                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+   661→                      <Button
+   662→                        onClick={handleReset}
+   663→                        size="lg"
+   664→                        variant="outline"
+   665→                        className="rounded-full w-12 h-12 border-2 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20"
+   666→                      >
+   667→                        <RotateCcw className="w-5 h-5" />
+   668→                      </Button>
+   669→                    </motion.div>
+   670→                  </>
+   671→                )}
+   672→              </div>
+   673→            </div>
+   674→          </CardContent>
+   675→        </Card>
+   676→      </motion.div>
+   677→
+   678→      {/* Stats & Chart Row */}
+   679→      <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+   680→        {/* Stats Cards */}
+   681→        <Card className="bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl border-white/20 dark:border-gray-700/30">
+   682→          <CardHeader className="pb-3">
+   683→            <CardTitle className="text-base font-semibold flex items-center gap-2">
+   684→              <Trophy className="w-4 h-4 text-emerald-500" />
+   685→              Your Stats
+   686→            </CardTitle>
+   687→          </CardHeader>
+   688→          <CardContent className="space-y-4">
+   689→            <div className="grid grid-cols-3 gap-3">
+   690→              <motion.div
+   691→                whileHover={{ y: -2 }}
+   692→                className="text-center p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20"
+   693→              >
+   694→                <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{todaySessions}</p>
+   695→                <p className="text-[11px] text-muted-foreground mt-0.5">Sessions Today</p>
+   696→              </motion.div>
+   697→              <motion.div
+   698→                whileHover={{ y: -2 }}
+   699→                className="text-center p-3 rounded-xl bg-teal-500/10 border border-teal-500/20"
+   700→              >
+   701→                <p className="text-2xl font-bold text-teal-600 dark:text-teal-400">{totalMinutesToday}</p>
+   702→                <p className="text-[11px] text-muted-foreground mt-0.5">Minutes Today</p>
+   703→              </motion.div>
+   704→              <motion.div
+   705→                whileHover={{ y: -2 }}
+   706→                className="text-center p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/20"
+   707→              >
+   708→                <p className="text-2xl font-bold text-cyan-600 dark:text-cyan-400">{streakDays}</p>
+   709→                <p className="text-[11px] text-muted-foreground mt-0.5">Day Streak 🔥</p>
+   710→              </motion.div>
+   711→            </div>
+   712→
+   713→            {/* Weekly Chart */}
+   714→            <div>
+   715→              <p className="text-sm font-medium mb-2 flex items-center gap-1.5">
+   716→                <TrendingUp className="w-3.5 h-3.5 text-teal-500" />
+   717→                Weekly Breathing Minutes
+   718→              </p>
+   719→              <div className="h-40">
+   720→                <AreaChart
+   721→                  width={undefined}
+   722→                  height={160}
+   723→                  data={weeklyBreathingData}
+   724→                  margin={{ top: 5, right: 5, left: -20, bottom: 0 }}
+   725→                >
+   726→                  <defs>
+   727→                    <linearGradient id="breathGradient" x1="0" y1="0" x2="0" y2="1">
+   728→                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+   729→                      <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+   730→                    </linearGradient>
+   731→                  </defs>
+   732→                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.15)" />
+   733→                  <XAxis dataKey="day" tick={{ fontSize: 11 }} stroke="rgba(128,128,128,0.4)" />
+   734→                  <YAxis tick={{ fontSize: 11 }} stroke="rgba(128,128,128,0.4)" />
+   735→                  <Tooltip
+   736→                    contentStyle={{
+   737→                      backgroundColor: 'rgba(255,255,255,0.95)',
+   738→                      border: '1px solid rgba(0,0,0,0.1)',
+   739→                      borderRadius: '8px',
+   740→                      fontSize: '12px',
+   741→                    }}
+   742→                  />
+   743→                  <Area
+   744→                    type="monotone"
+   745→                    dataKey="minutes"
+   746→                    stroke="#10b981"
+   747→                    strokeWidth={2}
+   748→                    fill="url(#breathGradient)"
+   749→                  />
+   750→                </AreaChart>
+   751→              </div>
+   752→            </div>
+   753→          </CardContent>
+   754→        </Card>
+   755→
+   756→        {/* Session History */}
+   757→        <Card className="bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl border-white/20 dark:border-gray-700/30">
+   758→          <CardHeader className="pb-3">
+   759→            <CardTitle className="text-base font-semibold flex items-center gap-2">
+   760→              <Calendar className="w-4 h-4 text-teal-500" />
+   761→              Recent Sessions
+   762→            </CardTitle>
+   763→          </CardHeader>
+   764→          <CardContent>
+   765→            <div className="space-y-2 max-h-80 overflow-y-auto pr-1 custom-scrollbar">
+   766→              {mockSessionHistory.map((session, index) => (
+   767→                <motion.div
+   768→                  key={session.id}
+   769→                  initial={{ opacity: 0, x: -10 }}
+   770→                  animate={{ opacity: 1, x: 0 }}
+   771→                  transition={{ delay: index * 0.05 }}
+   772→                  className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors group"
+   773→                >
+   774→                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+   775→                    session.completed
+   776→                      ? 'bg-emerald-500/10 text-emerald-500'
+   777→                      : 'bg-amber-500/10 text-amber-500'
+   778→                  }`}>
+   779→                    {session.completed ? (
+   780→                      <CheckCircle2 className="w-4 h-4" />
+   781→                    ) : (
+   782→                      <Clock className="w-4 h-4" />
+   783→                    )}
+   784→                  </div>
+   785→                  <div className="flex-1 min-w-0">
+   786→                    <p className="text-sm font-medium truncate">{session.pattern}</p>
+   787→                    <p className="text-xs text-muted-foreground">{session.date}</p>
+   788→                  </div>
+   789→                  <div className="flex items-center gap-2">
+   790→                    <Badge variant="outline" className="text-[10px]">
+   791→                      {session.duration} min
+   792→                    </Badge>
+   793→                    <ChevronRight className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+   794→                  </div>
+   795→                </motion.div>
+   796→              ))}
+   797→            </div>
+   798→          </CardContent>
+   799→        </Card>
+   800→      </motion.div>
+   801→
+   802→      {/* Tips Section */}
+   803→      <motion.div variants={itemVariants}>
+   804→        <Card className="bg-gradient-to-r from-emerald-500/5 via-teal-500/5 to-cyan-500/5 dark:from-emerald-500/10 dark:via-teal-500/10 dark:to-cyan-500/10 backdrop-blur-xl border-emerald-500/20 dark:border-emerald-500/10">
+   805→          <CardContent className="p-4">
+   806→            <div className="flex items-start gap-3">
+   807→              <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0">
+   808→                <Heart className="w-4 h-4 text-emerald-500" />
+   809→              </div>
+   810→              <div>
+   811→                <p className="text-sm font-semibold text-foreground mb-1">Breathing Tips</p>
+   812→                <ul className="text-xs text-muted-foreground space-y-1">
+   813→                  <li>• Sit comfortably with your back straight and shoulders relaxed</li>
+   814→                  <li>• Breathe through your nose when possible for better airflow</li>
+   815→                  <li>• Start with shorter sessions and gradually increase duration</li>
+   816→                  <li>• 4-7-8 technique is especially helpful for falling asleep</li>
+   817→                  <li>• Box breathing is great for managing acute stress and anxiety</li>
+   818→                </ul>
+   819→              </div>
+   820→            </div>
+   821→          </CardContent>
+   822→        </Card>
+   823→      </motion.div>
+   824→
+   825→      {/* Custom scrollbar styles */}
+   826→      <style jsx global>{`
+   827→        .custom-scrollbar::-webkit-scrollbar {
+   828→          width: 4px;
+   829→        }
+   830→        .custom-scrollbar::-webkit-scrollbar-track {
+   831→          background: transparent;
+   832→        }
+   833→        .custom-scrollbar::-webkit-scrollbar-thumb {
+   834→          background: rgba(128, 128, 128, 0.3);
+   835→          border-radius: 2px;
+   836→        }
+   837→        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+   838→          background: rgba(128, 128, 128, 0.5);
+   839→        }
+   840→      `}</style>
+   841→    </motion.div>
+   842→  );
+   843→}
+   844→

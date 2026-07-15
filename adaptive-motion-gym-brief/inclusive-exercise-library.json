@@ -1,0 +1,172 @@
+{
+  "exercises": [
+    {
+      "id": "seated-band-row",
+      "name": "Seated Resistance Band Row",
+      "targetMuscles": ["back", "biceps", "shoulders"],
+      "tags": ["seated", "wheelchair-friendly", "low-impact", "resistance-band", "no-floor", "upper-body"],
+      "contraindicationTags": ["severe-shoulder-pain"],
+      "equipment": ["resistance band"],
+      "startingPosition": "Sit tall in a stable chair or wheelchair with the band secured safely.",
+      "steps": [
+        "Hold the band with one or both hands as comfortable.",
+        "Pull your elbow back slowly.",
+        "Pause for one second.",
+        "Return with control."
+      ],
+      "repsOrTime": "8-12 reps",
+      "rest": "45 seconds",
+      "safetyNotes": ["Avoid jerking the band.", "Stop if shoulder pain appears."],
+      "easierAlternative": "Use a lighter band or reduce the range of motion.",
+      "harderProgression": "Increase band resistance or add a pause.",
+      "seatedAlternative": "Already seated.",
+      "voiceGuidance": "Sit tall. Pull the band slowly toward you. Pause, then return with control.",
+      "visualDescription": "A seated person pulls a resistance band toward their torso with controlled movement.",
+      "confidenceNote": "Controlled pulling builds strength while keeping your body supported."
+    },
+    {
+      "id": "seated-march",
+      "name": "Seated March",
+      "targetMuscles": ["hips", "core", "thighs"],
+      "tags": ["seated", "chair-supported", "low-impact", "no-floor", "beginner"],
+      "contraindicationTags": ["severe-hip-pain"],
+      "equipment": ["chair"],
+      "startingPosition": "Sit tall in a stable chair with feet on the floor if comfortable.",
+      "steps": [
+        "Lift one knee gently.",
+        "Lower it with control.",
+        "Repeat on the other side if comfortable.",
+        "Keep your upper body steady."
+      ],
+      "repsOrTime": "30-45 seconds",
+      "rest": "30 seconds",
+      "safetyNotes": ["Keep movement small if hips or knees feel uncomfortable."],
+      "easierAlternative": "Lift each foot only slightly.",
+      "harderProgression": "Increase time or slow the lowering phase.",
+      "seatedAlternative": "Already seated.",
+      "voiceGuidance": "Lift one knee gently, lower with control, then switch sides if comfortable.",
+      "visualDescription": "A seated person gently lifts one knee at a time like marching in place.",
+      "confidenceNote": "Small controlled movements can build confidence and circulation."
+    },
+    {
+      "id": "wall-push",
+      "name": "Wall Push",
+      "targetMuscles": ["chest", "shoulders", "triceps"],
+      "tags": ["wall-supported", "standing-supported", "low-impact", "no-floor", "upper-body"],
+      "contraindicationTags": ["severe-shoulder-pain", "one-arm-none-unless-adapted"],
+      "equipment": ["wall"],
+      "startingPosition": "Stand facing a wall with hands on the wall at comfortable height.",
+      "steps": [
+        "Place your hand or hands on the wall.",
+        "Bend your elbow slowly toward the wall.",
+        "Push back gently.",
+        "Keep the movement controlled."
+      ],
+      "repsOrTime": "6-10 reps",
+      "rest": "45 seconds",
+      "safetyNotes": ["Use one-arm version if only one arm is available.", "Stop if shoulder pain appears."],
+      "easierAlternative": "Stand closer to the wall.",
+      "harderProgression": "Stand slightly farther away if stable.",
+      "seatedAlternative": "Seated forward press with a resistance band if available.",
+      "voiceGuidance": "Place your hand on the wall. Bend slowly, then press back with control.",
+      "visualDescription": "A person presses gently against a wall with controlled elbow movement.",
+      "confidenceNote": "This builds pushing strength without needing the floor."
+    },
+    {
+      "id": "seated-core-rotation",
+      "name": "Seated Core Rotation",
+      "targetMuscles": ["core", "obliques", "back"],
+      "tags": ["seated", "wheelchair-friendly", "low-impact", "no-floor", "core"],
+      "contraindicationTags": ["severe-back-pain"],
+      "equipment": ["chair"],
+      "startingPosition": "Sit tall with feet supported if possible.",
+      "steps": [
+        "Place hands comfortably on your lap or across your chest.",
+        "Rotate your torso slightly to one side.",
+        "Return to center.",
+        "Rotate gently to the other side if comfortable."
+      ],
+      "repsOrTime": "6-10 slow rotations",
+      "rest": "30 seconds",
+      "safetyNotes": ["Keep the range small.", "Avoid twisting into pain."],
+      "easierAlternative": "Use smaller rotations.",
+      "harderProgression": "Hold each side for two seconds.",
+      "seatedAlternative": "Already seated.",
+      "voiceGuidance": "Sit tall. Rotate gently to one side, return to center, then switch if comfortable.",
+      "visualDescription": "A seated person gently rotates their torso from side to side.",
+      "confidenceNote": "Gentle rotation can support core awareness and control."
+    },
+    {
+      "id": "chair-supported-calf-raise",
+      "name": "Chair-Supported Calf Raise",
+      "targetMuscles": ["calves", "ankles", "balance"],
+      "tags": ["chair-supported", "standing-supported", "low-impact", "no-floor", "balance-support"],
+      "contraindicationTags": ["seated-only", "severe-ankle-pain"],
+      "equipment": ["chair"],
+      "startingPosition": "Stand behind a stable chair and hold it lightly for support.",
+      "steps": [
+        "Hold the chair for balance.",
+        "Rise gently onto your toes.",
+        "Pause briefly.",
+        "Lower slowly."
+      ],
+      "repsOrTime": "6-10 reps",
+      "rest": "45 seconds",
+      "safetyNotes": ["Use support at all times.", "Skip if standing feels unsafe."],
+      "easierAlternative": "Do seated heel raises instead.",
+      "harderProgression": "Increase reps only if stable.",
+      "seatedAlternative": "Seated heel raise.",
+      "voiceGuidance": "Hold the chair. Rise gently onto your toes, pause, and lower slowly.",
+      "visualDescription": "A standing person holds a chair and gently raises their heels.",
+      "confidenceNote": "Support makes balance training safer and more controlled."
+    },
+    {
+      "id": "seated-heel-raise",
+      "name": "Seated Heel Raise",
+      "targetMuscles": ["calves", "ankles"],
+      "tags": ["seated", "chair-supported", "wheelchair-friendly", "low-impact", "no-floor"],
+      "contraindicationTags": ["severe-ankle-pain"],
+      "equipment": ["chair"],
+      "startingPosition": "Sit comfortably with feet supported.",
+      "steps": [
+        "Keep toes on the floor if possible.",
+        "Lift heels gently.",
+        "Pause briefly.",
+        "Lower with control."
+      ],
+      "repsOrTime": "10-15 reps",
+      "rest": "30 seconds",
+      "safetyNotes": ["Keep the movement comfortable and pain-free."],
+      "easierAlternative": "Use smaller heel lifts.",
+      "harderProgression": "Add a longer pause at the top.",
+      "seatedAlternative": "Already seated.",
+      "voiceGuidance": "Lift your heels gently, pause, and lower with control.",
+      "visualDescription": "A seated person raises and lowers their heels while keeping toes supported.",
+      "confidenceNote": "This supports lower-leg movement without standing."
+    },
+    {
+      "id": "seated-shoulder-circles",
+      "name": "Seated Shoulder Circles",
+      "targetMuscles": ["shoulders", "upper back"],
+      "tags": ["seated", "wheelchair-friendly", "gentle-mobility", "no-floor", "upper-body"],
+      "contraindicationTags": ["severe-shoulder-pain"],
+      "equipment": [],
+      "startingPosition": "Sit tall with arms relaxed.",
+      "steps": [
+        "Roll shoulders gently forward.",
+        "Move slowly and comfortably.",
+        "Reverse direction.",
+        "Keep the movement small if needed."
+      ],
+      "repsOrTime": "20-30 seconds each direction",
+      "rest": "30 seconds",
+      "safetyNotes": ["Avoid large circles if shoulder discomfort appears."],
+      "easierAlternative": "Use smaller circles.",
+      "harderProgression": "Increase time slightly.",
+      "seatedAlternative": "Already seated.",
+      "voiceGuidance": "Roll your shoulders gently. Keep the movement slow and comfortable.",
+      "visualDescription": "A seated person makes small controlled shoulder circles.",
+      "confidenceNote": "Gentle mobility can help you start moving with ease."
+    }
+  ]
+}

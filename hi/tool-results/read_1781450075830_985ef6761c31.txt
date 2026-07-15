@@ -1,0 +1,1012 @@
+     1→'use client';
+     2→
+     3→import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+     4→import { motion, AnimatePresence } from 'framer-motion';
+     5→import {
+     6→  Play,
+     7→  Pause,
+     8→  Square,
+     9→  Volume2,
+    10→  VolumeX,
+    11→  CloudRain,
+    12→  Waves,
+    13→  TreePine,
+    14→  Moon,
+    15→  Clock,
+    16→  Sparkles,
+    17→  Heart,
+    18→  Brain,
+    19→  Leaf,
+    20→  Feather,
+    21→  CheckCircle2,
+    22→  RotateCcw,
+    23→} from 'lucide-react';
+    24→import {
+    25→  Card,
+    26→  CardHeader,
+    27→  CardTitle,
+    28→  CardContent,
+    29→  CardDescription,
+    30→} from '@/components/ui/card';
+    31→import { Button } from '@/components/ui/button';
+    32→import { Badge } from '@/components/ui/badge';
+    33→import { Slider } from '@/components/ui/slider';
+    34→
+    35→// ── Types ────────────────────────────────────────────────────────────────────
+    36→
+    37→type MeditationState = 'idle' | 'running' | 'paused' | 'completed';
+    38→type BreathingPhase = 'inhale' | 'hold' | 'exhale';
+    39→type AmbientSound = 'rain' | 'ocean' | 'forest' | 'silence';
+    40→type SpeedOption = 1 | 1.5 | 2;
+    41→
+    42→interface MeditationPreset {
+    43→  id: string;
+    44→  name: string;
+    45→  duration: number; // seconds
+    46→  breathing: { inhale: number; hold: number; exhale: number };
+    47→  icon: React.ReactNode;
+    48→  description: string;
+    49→  color: string;
+    50→  gradient: string;
+    51→}
+    52→
+    53→// ── Meditation Presets ───────────────────────────────────────────────────────
+    54→
+    55→const MEDITATION_PRESETS: MeditationPreset[] = [
+    56→  {
+    57→    id: 'quick-calm',
+    58→    name: 'Quick Calm',
+    59→    duration: 300, // 5 min
+    60→    breathing: { inhale: 4, hold: 4, exhale: 6 },
+    61→    icon: <Feather className="w-5 h-5" />,
+    62→    description: 'A quick reset for your mind and body',
+    63→    color: 'emerald',
+    64→    gradient: 'from-emerald-400 to-teal-500',
+    65→  },
+    66→  {
+    67→    id: 'deep-relaxation',
+    68→    name: 'Deep Relaxation',
+    69→    duration: 600, // 10 min
+    70→    breathing: { inhale: 4, hold: 7, exhale: 8 },
+    71→    icon: <Moon className="w-5 h-5" />,
+    72→    description: 'Profound relaxation with 4-7-8 breathing',
+    73→    color: 'teal',
+    74→    gradient: 'from-teal-400 to-emerald-500',
+    75→  },
+    76→  {
+    77→    id: 'body-scan',
+    78→    name: 'Body Scan',
+    79→    duration: 900, // 15 min
+    80→    breathing: { inhale: 5, hold: 5, exhale: 5 },
+    81→    icon: <Brain className="w-5 h-5" />,
+    82→    description: 'Mindful body awareness meditation',
+    83→    color: 'cyan',
+    84→    gradient: 'from-cyan-400 to-teal-500',
+    85→  },
+    86→  {
+    87→    id: 'extended-peace',
+    88→    name: 'Extended Peace',
+    89→    duration: 1200, // 20 min
+    90→    breathing: { inhale: 6, hold: 6, exhale: 6 },
+    91→    icon: <Leaf className="w-5 h-5" />,
+    92→    description: 'Deep extended meditation for inner peace',
+    93→    color: 'amber',
+    94→    gradient: 'from-amber-400 to-emerald-500',
+    95→  },
+    96→];
+    97→
+    98→// ── Ambient Sounds Config ────────────────────────────────────────────────────
+    99→
+   100→const AMBIENT_SOUNDS: { id: AmbientSound; label: string; icon: React.ReactNode }[] = [
+   101→  { id: 'rain', label: 'Rain', icon: <CloudRain className="w-4 h-4" /> },
+   102→  { id: 'ocean', label: 'Ocean', icon: <Waves className="w-4 h-4" /> },
+   103→  { id: 'forest', label: 'Forest', icon: <TreePine className="w-4 h-4" /> },
+   104→  { id: 'silence', label: 'Silence', icon: <Moon className="w-4 h-4" /> },
+   105→];
+   106→
+   107→// ── Speed Options ────────────────────────────────────────────────────────────
+   108→
+   109→const SPEED_OPTIONS: { value: SpeedOption; label: string }[] = [
+   110→  { value: 1, label: '1x' },
+   111→  { value: 1.5, label: '1.5x' },
+   112→  { value: 2, label: '2x' },
+   113→];
+   114→
+   115→// ── Phase Colors ─────────────────────────────────────────────────────────────
+   116→
+   117→const PHASE_COLORS: Record<BreathingPhase, { stroke: string; glow: string; text: string; bg: string }> = {
+   118→  inhale: {
+   119→    stroke: '#10b981',
+   120→    glow: 'rgba(16, 185, 129, 0.4)',
+   121→    text: 'text-emerald-400',
+   122→    bg: 'rgba(16, 185, 129, 0.15)',
+   123→  },
+   124→  hold: {
+   125→    stroke: '#f59e0b',
+   126→    glow: 'rgba(245, 158, 11, 0.4)',
+   127→    text: 'text-amber-400',
+   128→    bg: 'rgba(245, 158, 11, 0.15)',
+   129→  },
+   130→  exhale: {
+   131→    stroke: '#14b8a6',
+   132→    glow: 'rgba(20, 184, 166, 0.4)',
+   133→    text: 'text-teal-400',
+   134→    bg: 'rgba(20, 184, 166, 0.15)',
+   135→  },
+   136→};
+   137→
+   138→const PHASE_LABELS: Record<BreathingPhase, string> = {
+   139→  inhale: 'Breathe In',
+   140→  hold: 'Hold',
+   141→  exhale: 'Breathe Out',
+   142→};
+   143→
+   144→// ── Preset Color Map ─────────────────────────────────────────────────────────
+   145→
+   146→const PRESET_COLOR_MAP: Record<string, { bg: string; text: string; border: string; glow: string }> = {
+   147→  emerald: {
+   148→    bg: 'bg-emerald-500/10',
+   149→    text: 'text-emerald-600 dark:text-emerald-400',
+   150→    border: 'border-emerald-500/30',
+   151→    glow: 'shadow-emerald-500/20',
+   152→  },
+   153→  teal: {
+   154→    bg: 'bg-teal-500/10',
+   155→    text: 'text-teal-600 dark:text-teal-400',
+   156→    border: 'border-teal-500/30',
+   157→    glow: 'shadow-teal-500/20',
+   158→  },
+   159→  cyan: {
+   160→    bg: 'bg-cyan-500/10',
+   161→    text: 'text-cyan-600 dark:text-cyan-400',
+   162→    border: 'border-cyan-500/30',
+   163→    glow: 'shadow-cyan-500/20',
+   164→  },
+   165→  amber: {
+   166→    bg: 'bg-amber-500/10',
+   167→    text: 'text-amber-600 dark:text-amber-400',
+   168→    border: 'border-amber-500/30',
+   169→    glow: 'shadow-amber-500/20',
+   170→  },
+   171→};
+   172→
+   173→// ── Animation Variants ───────────────────────────────────────────────────────
+   174→
+   175→const containerVariants = {
+   176→  hidden: { opacity: 0, y: 20 },
+   177→  visible: {
+   178→    opacity: 1,
+   179→    y: 0,
+   180→    transition: { staggerChildren: 0.08, delayChildren: 0.1 },
+   181→  },
+   182→};
+   183→
+   184→const itemVariants = {
+   185→  hidden: { opacity: 0, y: 15 },
+   186→  visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
+   187→};
+   188→
+   189→// ── Format helpers ───────────────────────────────────────────────────────────
+   190→
+   191→function formatTimer(seconds: number): string {
+   192→  const m = Math.floor(seconds / 60);
+   193→  const s = seconds % 60;
+   194→  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+   195→}
+   196→
+   197→function formatDuration(seconds: number): string {
+   198→  const m = Math.floor(seconds / 60);
+   199→  return `${m} min`;
+   200→}
+   201→
+   202→// ── Completion Messages ──────────────────────────────────────────────────────
+   203→
+   204→const COMPLETION_MESSAGES = [
+   205→  'You found your center. Beautiful work. 🧘',
+   206→  'Stillness is a superpower. Well done. ✨',
+   207→  'Your mind thanks you for this moment. 🌿',
+   208→  'Peace flows through you. Namaste. 🕊️',
+   209→  'You invested in yourself. That matters. 💎',
+   210→];
+   211→
+   212→// ── Main Component ───────────────────────────────────────────────────────────
+   213→
+   214→export default function MeditationTimer() {
+   215→  // State
+   216→  const [meditationState, setMeditationState] = useState<MeditationState>('idle');
+   217→  const [selectedPreset, setSelectedPreset] = useState<MeditationPreset>(MEDITATION_PRESETS[0]);
+   218→  const [remainingTime, setRemainingTime] = useState(0);
+   219→  const [elapsedTime, setElapsedTime] = useState(0);
+   220→  const [completedCycles, setCompletedCycles] = useState(0);
+   221→
+   222→  // Breathing phase state
+   223→  const [currentPhase, setCurrentPhase] = useState<BreathingPhase>('inhale');
+   224→  const [phaseElapsed, setPhaseElapsed] = useState(0);
+   225→
+   226→  // Settings
+   227→  const [volume, setVolume] = useState(70);
+   228→  const [isMuted, setIsMuted] = useState(false);
+   229→  const [speed, setSpeed] = useState<SpeedOption>(1);
+   230→  const [ambientSound, setAmbientSound] = useState<AmbientSound>('silence');
+   231→
+   232→  // Refs
+   233→  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+   234→
+   235→  // Completion message (initialized lazily)
+   236→  const [completionMessage, setCompletionMessage] = useState(() =>
+   237→    COMPLETION_MESSAGES[Math.floor(Math.random() * COMPLETION_MESSAGES.length)]
+   238→  );
+   239→
+   240→  // Derived
+   241→  const totalDuration = selectedPreset.duration;
+   242→  const progressPercent = totalDuration > 0 ? (elapsedTime / totalDuration) * 100 : 0;
+   243→  const phaseColors = PHASE_COLORS[currentPhase];
+   244→  const cycleDuration =
+   245→    selectedPreset.breathing.inhale + selectedPreset.breathing.hold + selectedPreset.breathing.exhale;
+   246→
+   247→  // ── Breathing Phase Logic ──────────────────────────────────────────────
+   248→
+   249→  const currentPhaseDuration = useMemo(() => {
+   250→    return selectedPreset.breathing[currentPhase];
+   251→  }, [selectedPreset, currentPhase]);
+   252→
+   253→  const advancePhase = useCallback(() => {
+   254→    setCurrentPhase((prev) => {
+   255→      if (prev === 'inhale') return 'hold';
+   256→      if (prev === 'hold') {
+   257→        setCompletedCycles((c) => c + 1);
+   258→        return 'exhale';
+   259→      }
+   260→      return 'inhale';
+   261→    });
+   262→    setPhaseElapsed(0);
+   263→  }, []);
+   264→
+   265→  // ── Timer Logic ────────────────────────────────────────────────────────
+   266→
+   267→  useEffect(() => {
+   268→    if (meditationState !== 'running') {
+   269→      if (timerRef.current) {
+   270→        clearInterval(timerRef.current);
+   271→        timerRef.current = null;
+   272→      }
+   273→      return;
+   274→    }
+   275→
+   276→    const intervalMs = Math.max(50, Math.round(1000 / speed));
+   277→
+   278→    timerRef.current = setInterval(() => {
+   279→      setElapsedTime((prev) => {
+   280→        const next = prev + intervalMs / 1000;
+   281→        if (next >= totalDuration) {
+   282→          setMeditationState('completed');
+   283→          if (timerRef.current) {
+   284→            clearInterval(timerRef.current);
+   285→            timerRef.current = null;
+   286→          }
+   287→          return totalDuration;
+   288→        }
+   289→        return next;
+   290→      });
+   291→
+   292→      setRemainingTime((prev) => {
+   293→        const next = prev - intervalMs / 1000;
+   294→        return Math.max(0, next);
+   295→      });
+   296→
+   297→      setPhaseElapsed((prev) => {
+   298→        const next = prev + intervalMs / 1000;
+   299→        if (next >= currentPhaseDuration) {
+   300→          advancePhase();
+   301→          return 0;
+   302→        }
+   303→        return next;
+   304→      });
+   305→    }, intervalMs);
+   306→
+   307→    return () => {
+   308→      if (timerRef.current) {
+   309→        clearInterval(timerRef.current);
+   310→        timerRef.current = null;
+   311→      }
+   312→    };
+   313→  }, [meditationState, speed, totalDuration, currentPhaseDuration, advancePhase]);
+   314→
+   315→  // ── Controls ───────────────────────────────────────────────────────────
+   316→
+   317→  const handleStart = useCallback(() => {
+   318→    setSelectedPreset((prev) => {
+   319→      setRemainingTime(prev.duration);
+   320→      setElapsedTime(0);
+   321→      setCompletedCycles(0);
+   322→      setCurrentPhase('inhale');
+   323→      setPhaseElapsed(0);
+   324→      return prev;
+   325→    });
+   326→    setMeditationState('running');
+   327→  }, []);
+   328→
+   329→  const handlePause = useCallback(() => {
+   330→    setMeditationState('paused');
+   331→  }, []);
+   332→
+   333→  const handleResume = useCallback(() => {
+   334→    setMeditationState('running');
+   335→  }, []);
+   336→
+   337→  const handleStop = useCallback(() => {
+   338→    setMeditationState('idle');
+   339→    setElapsedTime(0);
+   340→    setRemainingTime(selectedPreset.duration);
+   341→    setCompletedCycles(0);
+   342→    setCurrentPhase('inhale');
+   343→    setPhaseElapsed(0);
+   344→  }, [selectedPreset.duration]);
+   345→
+   346→  const handlePresetChange = useCallback((preset: MeditationPreset) => {
+   347→    if (meditationState !== 'idle') {
+   348→      setMeditationState('idle');
+   349→    }
+   350→    setSelectedPreset(preset);
+   351→    setRemainingTime(preset.duration);
+   352→    setElapsedTime(0);
+   353→    setCompletedCycles(0);
+   354→    setCurrentPhase('inhale');
+   355→    setPhaseElapsed(0);
+   356→  }, [meditationState]);
+   357→
+   358→  const toggleMute = useCallback(() => {
+   359→    setIsMuted((prev) => !prev);
+   360→  }, []);
+   361→
+   362→  // ── SVG Breathing Ring ─────────────────────────────────────────────────
+   363→
+   364→  const ringRadius = 120;
+   365→  const ringCircumference = 2 * Math.PI * ringRadius;
+   366→  const ringStrokeDashoffset = ringCircumference * (1 - progressPercent / 100);
+   367→
+   368→  // Breathing ring scale based on phase
+   369→  const breathScale = useMemo(() => {
+   370→    if (meditationState !== 'running') return 1;
+   371→    const progress = Math.min(phaseElapsed / currentPhaseDuration, 1);
+   372→    if (currentPhase === 'inhale') {
+   373→      return 0.85 + 0.15 * progress; // expand from 0.85 to 1.0
+   374→    } else if (currentPhase === 'exhale') {
+   375→      return 1.0 - 0.15 * progress; // contract from 1.0 to 0.85
+   376→    }
+   377→    return 1.0; // hold
+   378→  }, [meditationState, phaseElapsed, currentPhaseDuration, currentPhase]);
+   379→
+   380→  // ── Render: Idle State ─────────────────────────────────────────────────
+   381→
+   382→  const renderIdleState = () => (
+   383→    <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
+   384→      {/* Preset Selection */}
+   385→      <motion.div variants={itemVariants}>
+   386→        <Card className="bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl border-white/20 dark:border-gray-700/30">
+   387→          <CardHeader className="pb-3">
+   388→            <CardTitle className="text-base font-semibold flex items-center gap-2">
+   389→              <Sparkles className="w-4 h-4 text-emerald-500" />
+   390→              Meditation Presets
+   391→            </CardTitle>
+   392→            <CardDescription>Choose a guided meditation session</CardDescription>
+   393→          </CardHeader>
+   394→          <CardContent>
+   395→            <div className="grid grid-cols-2 gap-3">
+   396→              {MEDITATION_PRESETS.map((preset) => {
+   397→                const colors = PRESET_COLOR_MAP[preset.color];
+   398→                const isSelected = selectedPreset.id === preset.id;
+   399→                return (
+   400→                  <motion.button
+   401→                    key={preset.id}
+   402→                    whileHover={{ scale: 1.04, y: -3 }}
+   403→                    whileTap={{ scale: 0.98 }}
+   404→                    onClick={() => handlePresetChange(preset)}
+   405→                    className={`relative p-4 rounded-xl border text-left transition-all overflow-hidden ${
+   406→                      isSelected
+   407→                        ? `${colors.bg} ${colors.border} border-2 shadow-lg ${colors.glow}`
+   408→                        : 'border-gray-200/50 dark:border-gray-700/30 hover:border-gray-300/60 dark:hover:border-gray-600/40 bg-white/40 dark:bg-gray-900/40 hover:shadow-md hover:shadow-emerald-500/5'
+   409→                    }`}
+   410→                    style={{
+   411→                      backdropFilter: 'blur(12px)',
+   412→                    }}
+   413→                  >
+   414→                    {isSelected && (
+   415→                      <motion.div
+   416→                        layoutId="meditationPresetIndicator"
+   417→                        className={`absolute inset-0 bg-gradient-to-br ${preset.gradient} opacity-10`}
+   418→                        transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
+   419→                      />
+   420→                    )}
+   421→                    <div className={`relative z-10`}>
+   422→                      <div className={`flex items-center gap-2 mb-2 ${isSelected ? colors.text : 'text-muted-foreground'}`}>
+   423→                        {preset.icon}
+   424→                        <span className="text-sm font-semibold">{preset.name}</span>
+   425→                      </div>
+   426→                      <p className="text-xs text-muted-foreground leading-relaxed mb-2">
+   427→                        {preset.description}
+   428→                      </p>
+   429→                      <div className="flex items-center gap-2 flex-wrap">
+   430→                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5">
+   431→                          <Clock className="w-2.5 h-2.5 mr-0.5" />
+   432→                          {formatDuration(preset.duration)}
+   433→                        </Badge>
+   434→                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5">
+   435→                          {preset.breathing.inhale}-{preset.breathing.hold}-{preset.breathing.exhale}
+   436→                        </Badge>
+   437→                      </div>
+   438→                    </div>
+   439→                  </motion.button>
+   440→                );
+   441→              })}
+   442→            </div>
+   443→          </CardContent>
+   444→        </Card>
+   445→      </motion.div>
+   446→
+   447→      {/* Ambient Sound & Settings */}
+   448→      <motion.div variants={itemVariants}>
+   449→        <Card className="bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl border-white/20 dark:border-gray-700/30">
+   450→          <CardContent className="p-4">
+   451→            <div className="flex flex-col sm:flex-row gap-4">
+   452→              {/* Ambient Sounds */}
+   453→              <div className="flex-1">
+   454→                <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
+   455→                  <Volume2 className="w-3.5 h-3.5" />
+   456→                  Ambient Sound
+   457→                </p>
+   458→                <div className="flex gap-2">
+   459→                  {AMBIENT_SOUNDS.map((sound) => (
+   460→                    <motion.button
+   461→                      key={sound.id}
+   462→                      whileHover={{ scale: 1.05 }}
+   463→                      whileTap={{ scale: 0.95 }}
+   464→                      onClick={() => setAmbientSound(sound.id)}
+   465→                      className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg text-xs transition-all ${
+   466→                        ambientSound === sound.id
+   467→                          ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+   468→                          : 'bg-gray-100/50 dark:bg-gray-800/50 text-muted-foreground border border-transparent hover:bg-gray-200/50 dark:hover:bg-gray-700/50'
+   469→                      }`}
+   470→                    >
+   471→                      {sound.icon}
+   472→                      <span>{sound.label}</span>
+   473→                    </motion.button>
+   474→                  ))}
+   475→                </div>
+   476→              </div>
+   477→
+   478→              {/* Volume & Speed */}
+   479→              <div className="flex-1 space-y-3">
+   480→                <div>
+   481→                  <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center justify-between">
+   482→                    <span className="flex items-center gap-1.5">
+   483→                      {isMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+   484→                      Volume
+   485→                    </span>
+   486→                    <span className="text-[10px]">{isMuted ? 'Muted' : `${volume}%`}</span>
+   487→                  </p>
+   488→                  <div className="flex items-center gap-2">
+   489→                    <Slider
+   490→                      value={[isMuted ? 0 : volume]}
+   491→                      min={0}
+   492→                      max={100}
+   493→                      step={1}
+   494→                      onValueChange={(val) => {
+   495→                        setVolume(val[0]);
+   496→                        if (val[0] > 0) setIsMuted(false);
+   497→                      }}
+   498→                      className="flex-1"
+   499→                    />
+   500→                    <Button
+   501→                      variant="ghost"
+   502→                      size="icon"
+   503→                      className="h-7 w-7 shrink-0"
+   504→                      onClick={toggleMute}
+   505→                    >
+   506→                      {isMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+   507→                    </Button>
+   508→                  </div>
+   509→                </div>
+   510→
+   511→                <div>
+   512→                  <p className="text-xs font-medium text-muted-foreground mb-2">Speed</p>
+   513→                  <div className="flex gap-1.5">
+   514→                    {SPEED_OPTIONS.map((opt) => (
+   515→                      <Button
+   516→                        key={opt.value}
+   517→                        variant={speed === opt.value ? 'default' : 'outline'}
+   518→                        size="sm"
+   519→                        onClick={() => setSpeed(opt.value)}
+   520→                        className={`text-xs h-7 px-3 ${
+   521→                          speed === opt.value
+   522→                            ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white border-0'
+   523→                            : ''
+   524→                        }`}
+   525→                      >
+   526→                        {opt.label}
+   527→                      </Button>
+   528→                    ))}
+   529→                  </div>
+   530→                </div>
+   531→              </div>
+   532→            </div>
+   533→          </CardContent>
+   534→        </Card>
+   535→      </motion.div>
+   536→
+   537→      {/* Start Button */}
+   538→      <motion.div variants={itemVariants} className="flex justify-center">
+   539→        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+   540→          <Button
+   541→            onClick={handleStart}
+   542→            size="lg"
+   543→            className="rounded-full px-8 h-14 bg-gradient-to-br from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-lg shadow-emerald-500/25 text-base font-semibold"
+   544→          >
+   545→            <Play className="w-5 h-5 mr-2" />
+   546→            Begin Meditation
+   547→          </Button>
+   548→        </motion.div>
+   549→      </motion.div>
+   550→    </motion.div>
+   551→  );
+   552→
+   553→  // ── Render: Active Timer ───────────────────────────────────────────────
+   554→
+   555→  const renderActiveTimer = () => {
+   556→    const isActive = meditationState === 'running';
+   557→    const phaseProgress = currentPhaseDuration > 0 ? phaseElapsed / currentPhaseDuration : 0;
+   558→
+   559→    return (
+   560→      <motion.div
+   561→        initial={{ opacity: 0, scale: 0.95 }}
+   562→        animate={{ opacity: 1, scale: 1 }}
+   563→        exit={{ opacity: 0, scale: 0.95 }}
+   564→        transition={{ duration: 0.5 }}
+   565→        className="flex flex-col items-center"
+   566→      >
+   567→        {/* Meditation Mode Background */}
+   568→        <div className={`w-full -mx-6 -mt-6 mb-6 px-6 pt-6 pb-4 rounded-t-xl transition-all duration-1000 ${
+   569→          isActive && currentPhase === 'inhale' ? 'meditation-phase-inhale' :
+   570→          isActive && currentPhase === 'hold' ? 'meditation-phase-hold' :
+   571→          isActive && currentPhase === 'exhale' ? 'meditation-phase-exhale' :
+   572→          'bg-gradient-to-b from-emerald-950/80 via-teal-950/60 to-transparent dark:from-emerald-950/90 dark:via-teal-950/70 dark:to-transparent'
+   573→        }`}>
+   574→          <div className="flex items-center justify-between mb-2">
+   575→            <Badge variant="outline" className="text-[10px] bg-emerald-900/30 border-emerald-500/30 text-emerald-300">
+   576→              <Sparkles className="w-2.5 h-2.5 mr-1" />
+   577→              {selectedPreset.name}
+   578→            </Badge>
+   579→            <Badge variant="outline" className="text-[10px] bg-emerald-900/30 border-emerald-500/30 text-emerald-300">
+   580→              {formatDuration(totalDuration)}
+   581→            </Badge>
+   582→          </div>
+   583→        </div>
+   584→
+   585→        {/* Breathing Ring SVG */}
+   586→        <div className="relative flex items-center justify-center w-64 h-64 sm:w-80 sm:h-80 mb-6">
+   587→          {/* Outer pulsing glow */}
+   588→          <motion.div
+   589→            className={`absolute inset-0 rounded-full ${isActive ? 'meditation-glow' : ''}`}
+   590→            animate={{
+   591→              boxShadow: isActive
+   592→                ? `0 0 ${40 + phaseProgress * 30}px ${10 + phaseProgress * 15}px ${phaseColors.glow}`
+   593→                : '0 0 20px 5px rgba(16, 185, 129, 0.1)',
+   594→            }}
+   595→            transition={{ duration: 1.5, ease: 'easeInOut' }}
+   596→          />
+   597→
+   598→          <motion.svg
+   599→            width="100%"
+   600→            height="100%"
+   601→            viewBox="0 0 280 280"
+   602→            className="absolute"
+   603→            style={{ transform: 'rotate(-90deg)' }}
+   604→          >
+   605→            {/* Background ring */}
+   606→            <circle
+   607→              cx="140"
+   608→              cy="140"
+   609→              r={ringRadius}
+   610→              fill="none"
+   611→              stroke="rgba(128, 128, 128, 0.1)"
+   612→              strokeWidth="8"
+   613→            />
+   614→            {/* Progress ring */}
+   615→            <motion.circle
+   616→              cx="140"
+   617→              cy="140"
+   618→              r={ringRadius}
+   619→              fill="none"
+   620→              stroke="url(#meditationGradient)"
+   621→              strokeWidth="8"
+   622→              strokeLinecap="round"
+   623→              strokeDasharray={ringCircumference}
+   624→              strokeDashoffset={ringStrokeDashoffset}
+   625→              initial={false}
+   626→              animate={{
+   627→                strokeDashoffset: ringStrokeDashoffset,
+   628→              }}
+   629→              transition={{ duration: 0.5, ease: 'easeOut' }}
+   630→            />
+   631→            {/* Gradient definition */}
+   632→            <defs>
+   633→              <linearGradient id="meditationGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+   634→                <stop offset="0%" stopColor="#10b981" />
+   635→                <stop offset="50%" stopColor="#14b8a6" />
+   636→                <stop offset="100%" stopColor="#0d9488" />
+   637→              </linearGradient>
+   638→            </defs>
+   639→          </motion.svg>
+   640→
+   641→          {/* Breathing animated circle */}
+   642→          <motion.div
+   643→            className="relative flex flex-col items-center justify-center rounded-full"
+   644→            animate={{
+   645→              scale: breathScale,
+   646→            }}
+   647→            transition={{
+   648→              duration: isActive ? currentPhaseDuration / speed : 0.5,
+   649→              ease: currentPhase === 'inhale' ? 'easeInOut' : currentPhase === 'exhale' ? 'easeInOut' : 'linear',
+   650→            }}
+   651→            style={{ width: '78%', height: '78%' }}
+   652→          >
+   653→            {/* Inner background */}
+   654→            <motion.div
+   655→              className="absolute inset-0 rounded-full"
+   656→              animate={{
+   657→                backgroundColor: isActive ? phaseColors.bg : 'rgba(16, 185, 129, 0.08)',
+   658→              }}
+   659→              transition={{ duration: 1 }}
+   660→            />
+   661→            {/* Inner border */}
+   662→            <motion.div
+   663→              className="absolute inset-0 rounded-full border-2"
+   664→              animate={{
+   665→                borderColor: isActive ? `${phaseColors.stroke}50` : 'rgba(16, 185, 129, 0.15)',
+   666→              }}
+   667→              transition={{ duration: 0.8 }}
+   668→            />
+   669→
+   670→            {/* Center content */}
+   671→            <AnimatePresence mode="wait">
+   672→              <motion.div
+   673→                key={isActive ? currentPhase : 'paused'}
+   674→                initial={{ opacity: 0, y: 5 }}
+   675→                animate={{ opacity: 1, y: 0 }}
+   676→                exit={{ opacity: 0, y: -5 }}
+   677→                transition={{ duration: 0.3 }}
+   678→                className="relative z-10 text-center"
+   679→              >
+   680→                {isActive ? (
+   681→                  <>
+   682→                    <p className={`text-base sm:text-lg font-bold mb-1 ${phaseColors.text}`}>
+   683→                      {PHASE_LABELS[currentPhase]}
+   684→                    </p>
+   685→                    <p className="text-4xl sm:text-5xl font-bold text-foreground tabular-nums">
+   686→                      {formatTimer(remainingTime)}
+   687→                    </p>
+   688→                    <p className="text-xs text-muted-foreground mt-2">
+   689→                      {completedCycles} {completedCycles === 1 ? 'cycle' : 'cycles'}
+   690→                    </p>
+   691→                  </>
+   692→                ) : (
+   693→                  <>
+   694→                    <p className="text-4xl sm:text-5xl font-bold text-foreground tabular-nums">
+   695→                      {formatTimer(remainingTime)}
+   696→                    </p>
+   697→                    <p className="text-sm font-medium text-amber-400 mt-2">Paused</p>
+   698→                  </>
+   699→                )}
+   700→              </motion.div>
+   701→            </AnimatePresence>
+   702→          </motion.div>
+   703→        </div>
+   704→
+   705→        {/* Phase Progress Bars */}
+   706→        <div className="w-full max-w-xs mb-5">
+   707→          <div className="flex items-center gap-1 mb-1.5">
+   708→            {(['inhale', 'hold', 'exhale'] as BreathingPhase[]).map((phase) => {
+   709→              const phaseDur = selectedPreset.breathing[phase];
+   710→              const phasePct = cycleDuration > 0 ? (phaseDur / cycleDuration) * 100 : 0;
+   711→              const isCurrentPhase = currentPhase === phase && isActive;
+   712→              return (
+   713→                <div key={phase} className="flex-1">
+   714→                  <div className="flex items-center justify-between mb-0.5">
+   715→                    <span className={`text-[10px] ${isCurrentPhase ? phaseColors.text : 'text-muted-foreground'}`}>
+   716→                      {PHASE_LABELS[phase]}
+   717→                    </span>
+   718→                    <span className="text-[10px] text-muted-foreground">{phaseDur}s</span>
+   719→                  </div>
+   720→                  <div className="h-1.5 rounded-full bg-gray-200/50 dark:bg-gray-700/50 overflow-hidden">
+   721→                    <motion.div
+   722→                      className={`h-full rounded-full ${
+   723→                        phase === 'inhale'
+   724→                          ? 'bg-emerald-500'
+   725→                          : phase === 'hold'
+   726→                          ? 'bg-amber-500'
+   727→                          : 'bg-teal-500'
+   728→                      }`}
+   729→                      animate={{
+   730→                        width: isCurrentPhase ? `${phaseProgress * 100}%` : currentPhase === phase ? '100%' : '0%',
+   731→                      }}
+   732→                      transition={{ duration: 0.3 }}
+   733→                    />
+   734→                  </div>
+   735→                </div>
+   736→              );
+   737→            })}
+   738→          </div>
+   739→        </div>
+   740→
+   741→        {/* Controls */}
+   742→        <div className="flex items-center gap-4 mb-4">
+   743→          {meditationState === 'running' ? (
+   744→            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+   745→              <Button
+   746→                onClick={handlePause}
+   747→                size="lg"
+   748→                variant="outline"
+   749→                className="rounded-full w-14 h-14 border-2 border-amber-500/40 hover:bg-amber-50 dark:hover:bg-amber-950/20"
+   750→              >
+   751→                <Pause className="w-6 h-6 text-amber-500" />
+   752→              </Button>
+   753→            </motion.div>
+   754→          ) : (
+   755→            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+   756→              <Button
+   757→                onClick={handleResume}
+   758→                size="lg"
+   759→                className="rounded-full w-14 h-14 bg-gradient-to-br from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-lg shadow-emerald-500/25"
+   760→              >
+   761→                <Play className="w-6 h-6 ml-0.5" />
+   762→              </Button>
+   763→            </motion.div>
+   764→          )}
+   765→
+   766→          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+   767→            <Button
+   768→              onClick={handleStop}
+   769→              size="lg"
+   770→              variant="outline"
+   771→              className="rounded-full w-12 h-12 border-2 text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20"
+   772→            >
+   773→              <Square className="w-5 h-5" />
+   774→            </Button>
+   775→          </motion.div>
+   776→        </div>
+   777→
+   778→        {/* Active Settings (faded) */}
+   779→        <AnimatePresence>
+   780→          <motion.div
+   781→            initial={{ opacity: 0 }}
+   782→            animate={{ opacity: 0.5 }}
+   783→            className="flex items-center gap-3 text-xs text-muted-foreground"
+   784→          >
+   785→            <span className="flex items-center gap-1">
+   786→              {AMBIENT_SOUNDS.find((s) => s.id === ambientSound)?.icon}
+   787→              {AMBIENT_SOUNDS.find((s) => s.id === ambientSound)?.label}
+   788→            </span>
+   789→            <span>•</span>
+   790→            <span>{speed}x speed</span>
+   791→            <span>•</span>
+   792→            <span>{isMuted ? 'Muted' : `${volume}%`}</span>
+   793→          </motion.div>
+   794→        </AnimatePresence>
+   795→      </motion.div>
+   796→    );
+   797→  };
+   798→
+   799→  // ── Render: Completed State ────────────────────────────────────────────
+   800→
+   801→  const renderCompletedState = () => (
+   802→    <motion.div
+   803→      initial={{ opacity: 0, scale: 0.9 }}
+   804→      animate={{ opacity: 1, scale: 1 }}
+   805→      exit={{ opacity: 0, scale: 0.9 }}
+   806→      transition={{ duration: 0.6, ease: 'easeOut' }}
+   807→      className="flex flex-col items-center text-center celebration-bg rounded-xl py-4"
+   808→    >
+   809→      {/* Completion animation */}
+   810→      <motion.div
+   811→        initial={{ scale: 0, rotate: -180 }}
+   812→        animate={{ scale: 1, rotate: 0 }}
+   813→        transition={{ type: 'spring', bounce: 0.4, duration: 0.8 }}
+   814→        className="mb-6"
+   815→      >
+   816→        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-emerald-500/20 to-teal-500/20 flex items-center justify-center border-2 border-emerald-500/30">
+   817→          <CheckCircle2 className="w-12 h-12 text-emerald-500" />
+   818→        </div>
+   819→      </motion.div>
+   820→
+   821→      {/* Completion Message */}
+   822→      <motion.div
+   823→        initial={{ opacity: 0, y: 20 }}
+   824→        animate={{ opacity: 1, y: 0 }}
+   825→        transition={{ delay: 0.3, duration: 0.5 }}
+   826→      >
+   827→        <h3 className="text-2xl font-bold text-foreground mb-2">Meditation Complete</h3>
+   828→        <p className="text-base text-muted-foreground mb-6 max-w-xs">
+   829→          {completionMessage}
+   830→        </p>
+   831→      </motion.div>
+   832→
+   833→      {/* Stats */}
+   834→      <motion.div
+   835→        initial={{ opacity: 0, y: 20 }}
+   836→        animate={{ opacity: 1, y: 0 }}
+   837→        transition={{ delay: 0.5, duration: 0.5 }}
+   838→        className="grid grid-cols-2 gap-4 mb-8 w-full max-w-sm"
+   839→      >
+   840→        <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-center">
+   841→          <Clock className="w-5 h-5 text-emerald-500 mx-auto mb-1.5" />
+   842→          <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400">
+   843→            {formatTimer(elapsedTime)}
+   844→          </p>
+   845→          <p className="text-[11px] text-muted-foreground">Duration</p>
+   846→        </div>
+   847→        <div className="p-4 rounded-xl bg-teal-500/10 border border-teal-500/20 text-center">
+   848→          <Sparkles className="w-5 h-5 text-teal-500 mx-auto mb-1.5" />
+   849→          <p className="text-xl font-bold text-teal-600 dark:text-teal-400">
+   850→            {completedCycles}
+   851→          </p>
+   852→          <p className="text-[11px] text-muted-foreground">Breathing Cycles</p>
+   853→        </div>
+   854→      </motion.div>
+   855→
+   856→      {/* Preset Info */}
+   857→      <motion.div
+   858→        initial={{ opacity: 0, y: 20 }}
+   859→        animate={{ opacity: 1, y: 0 }}
+   860→        transition={{ delay: 0.7, duration: 0.5 }}
+   861→        className="mb-6"
+   862→      >
+   863→        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+   864→          <Badge variant="outline" className="text-xs bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+   865→            {selectedPreset.name}
+   866→          </Badge>
+   867→          <Badge variant="outline" className="text-xs">
+   868→            {selectedPreset.breathing.inhale}-{selectedPreset.breathing.hold}-{selectedPreset.breathing.exhale} breathing
+   869→          </Badge>
+   870→        </div>
+   871→      </motion.div>
+   872→
+   873→      {/* Action Buttons */}
+   874→      <motion.div
+   875→        initial={{ opacity: 0, y: 20 }}
+   876→        animate={{ opacity: 1, y: 0 }}
+   877→        transition={{ delay: 0.9, duration: 0.5 }}
+   878→        className="flex items-center gap-3"
+   879→      >
+   880→        <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+   881→          <Button
+   882→            onClick={() => {
+   883→              setCompletionMessage(
+   884→                COMPLETION_MESSAGES[Math.floor(Math.random() * COMPLETION_MESSAGES.length)]
+   885→              );
+   886→              handleStart();
+   887→            }}
+   888→            className="bg-gradient-to-br from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-lg shadow-emerald-500/25"
+   889→          >
+   890→            <RotateCcw className="w-4 h-4 mr-2" />
+   891→            Meditate Again
+   892→          </Button>
+   893→        </motion.div>
+   894→        <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+   895→          <Button
+   896→            variant="outline"
+   897→            onClick={handleStop}
+   898→            className="border-emerald-500/30"
+   899→          >
+   900→            <Heart className="w-4 h-4 mr-2 text-emerald-500" />
+   901→            Log Session
+   902→          </Button>
+   903→        </motion.div>
+   904→      </motion.div>
+   905→    </motion.div>
+   906→  );
+   907→
+   908→  // ── Main Render ────────────────────────────────────────────────────────
+   909→
+   910→  return (
+   911→    <motion.div
+   912→      variants={containerVariants}
+   913→      initial="hidden"
+   914→      animate="visible"
+   915→      className="space-y-6"
+   916→    >
+   917→      {/* Header */}
+   918→      <motion.div variants={itemVariants} className="flex items-center justify-between">
+   919→        <div className="flex items-center gap-3">
+   920→          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+   921→            <Moon className="w-5 h-5 text-white" />
+   922→          </div>
+   923→          <div>
+   924→            <h2 className="text-xl font-bold text-foreground">Guided Meditation</h2>
+   925→            <p className="text-sm text-muted-foreground">Timer with breathing guidance</p>
+   926→          </div>
+   927→        </div>
+   928→      </motion.div>
+   929→
+   930→      {/* Main Content Area */}
+   931→      <motion.div variants={itemVariants}>
+   932→        <Card
+   933→          className={`overflow-hidden transition-all duration-700 ${
+   934→            meditationState === 'running'
+   935→              ? 'bg-gradient-to-b from-emerald-950/30 via-gray-900/60 to-white/60 dark:from-emerald-950/40 dark:via-gray-900/70 dark:to-gray-900/60 border-emerald-500/20'
+   936→              : meditationState === 'paused'
+   937→              ? 'bg-gradient-to-b from-amber-950/20 via-gray-900/40 to-white/60 dark:from-amber-950/30 dark:via-gray-900/50 dark:to-gray-900/60 border-amber-500/20'
+   938→              : meditationState === 'completed'
+   939→              ? 'bg-gradient-to-b from-emerald-950/20 via-gray-900/40 to-white/60 dark:from-emerald-950/30 dark:via-gray-900/50 dark:to-gray-900/60 border-emerald-500/20'
+   940→              : 'bg-white/60 dark:bg-gray-900/60 border-white/20 dark:border-gray-700/30'
+   941→          } backdrop-blur-xl`}
+   942→        >
+   943→          <CardContent className="p-6">
+   944→            <AnimatePresence mode="wait">
+   945→              {meditationState === 'idle' && (
+   946→                <motion.div
+   947→                  key="idle"
+   948→                  initial={{ opacity: 0, y: 15 }}
+   949→                  animate={{ opacity: 1, y: 0 }}
+   950→                  exit={{ opacity: 0, y: -15, scale: 0.98 }}
+   951→                  transition={{ duration: 0.4, ease: 'easeOut' }}
+   952→                >
+   953→                  {renderIdleState()}
+   954→                </motion.div>
+   955→              )}
+   956→
+   957→              {(meditationState === 'running' || meditationState === 'paused') && (
+   958→                <motion.div
+   959→                  key="active"
+   960→                  initial={{ opacity: 0, y: 15, scale: 0.98 }}
+   961→                  animate={{ opacity: 1, y: 0, scale: 1 }}
+   962→                  exit={{ opacity: 0, y: -15, scale: 0.98 }}
+   963→                  transition={{ duration: 0.4, ease: 'easeOut' }}
+   964→                >
+   965→                  {renderActiveTimer()}
+   966→                </motion.div>
+   967→              )}
+   968→
+   969→              {meditationState === 'completed' && (
+   970→                <motion.div
+   971→                  key="completed"
+   972→                  initial={{ opacity: 0, y: 15, scale: 0.98 }}
+   973→                  animate={{ opacity: 1, y: 0, scale: 1 }}
+   974→                  exit={{ opacity: 0, y: -15, scale: 0.98 }}
+   975→                  transition={{ duration: 0.4, ease: 'easeOut' }}
+   976→                >
+   977→                  {renderCompletedState()}
+   978→                </motion.div>
+   979→              )}
+   980→            </AnimatePresence>
+   981→          </CardContent>
+   982→        </Card>
+   983→      </motion.div>
+   984→
+   985→      {/* Tips Section */}
+   986→      {meditationState === 'idle' && (
+   987→        <motion.div variants={itemVariants}>
+   988→          <Card className="bg-gradient-to-r from-emerald-500/5 via-teal-500/5 to-cyan-500/5 dark:from-emerald-500/10 dark:via-teal-500/10 dark:to-cyan-500/10 backdrop-blur-xl border-emerald-500/20 dark:border-emerald-500/10">
+   989→            <CardContent className="p-4">
+   990→              <div className="flex items-start gap-3">
+   991→                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0">
+   992→                  <Leaf className="w-4 h-4 text-emerald-500" />
+   993→                </div>
+   994→                <div>
+   995→                  <p className="text-sm font-semibold text-foreground mb-1">Meditation Tips</p>
+   996→                  <ul className="text-xs text-muted-foreground space-y-1">
+   997→                    <li>• Find a quiet, comfortable space where you won&apos;t be disturbed</li>
+   998→                    <li>• Close your eyes and focus on the rhythm of your breath</li>
+   999→                    <li>• Let thoughts pass without judgment — return to your breath</li>
+  1000→                    <li>• Start with shorter sessions and gradually extend your practice</li>
+  1001→                    <li>• Consistency matters more than duration — meditate daily</li>
+  1002→                  </ul>
+  1003→                </div>
+  1004→              </div>
+  1005→            </CardContent>
+  1006→          </Card>
+  1007→        </motion.div>
+  1008→      )}
+  1009→    </motion.div>
+  1010→  );
+  1011→}
+  1012→

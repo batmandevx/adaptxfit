@@ -1,0 +1,600 @@
+     1→     1→'use client';
+     2→     2→
+     3→     3→import { useState, useRef, useEffect, useCallback } from 'react';
+     4→     4→import { motion, AnimatePresence } from 'framer-motion';
+     5→     5→import { useAppStore, type AppSection } from '@/stores/app-store';
+     6→     6→import { Button } from '@/components/ui/button';
+     7→     7→import { Input } from '@/components/ui/input';
+     8→     8→import { Badge } from '@/components/ui/badge';
+     9→     9→import { ScrollArea } from '@/components/ui/scroll-area';
+    10→    10→import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+    11→    11→import {
+    12→    12→  Tooltip,
+    13→    13→  TooltipTrigger,
+    14→    14→  TooltipContent,
+    15→    15→} from '@/components/ui/tooltip';
+    16→    16→import {
+    17→    17→  MessageCircle,
+    18→    18→  Send,
+    19→    19→  X,
+    20→    20→  Sparkles,
+    21→    21→  Bot,
+    22→    22→  User,
+    23→    23→  Mic,
+    24→    24→} from 'lucide-react';
+    25→    25→import TTSSpeaker from '@/components/features/tts-speaker';
+    26→    26→
+    27→    27→// ─── Types ───────────────────────────────────────────────────────────────────
+    28→    28→
+    29→    29→interface ChatMessage {
+    30→    30→  id: string;
+    31→    31→  role: 'user' | 'ai';
+    32→    32→  content: string;
+    33→    33→  timestamp: Date;
+    34→    34→  isTyping?: boolean;
+    35→    35→}
+    36→    36→
+    37→    37→// ─── Contextual Quick Prompts ────────────────────────────────────────────────
+    38→    38→
+    39→    39→const quickPrompts: Record<string, string[]> = {
+    40→    40→  home: [
+    41→    41→    'How can I improve my form?',
+    42→    42→    'Suggest an adaptive exercise',
+    43→    43→    'Track my mood',
+    44→    44→  ],
+    45→    45→  dashboard: [
+    46→    46→    'What should I focus on today?',
+    47→    47→    'How am I doing this week?',
+    48→    48→    'Set a new fitness goal',
+    49→    49→  ],
+    50→    50→  'body-scan': [
+    51→    51→    'Is my form correct?',
+    52→    52→    'What muscles am I targeting?',
+    53→    53→    'How can I improve my squat?',
+    54→    54→  ],
+    55→    55→  exercises: [
+    56→    56→    'Suggest a rehab exercise',
+    57→    57→    'What exercises avoid knee strain?',
+    58→    58→    'Show me seated alternatives',
+    59→    59→  ],
+    60→    60→  mood: [
+    61→    61→    "I'm feeling anxious",
+    62→    62→    'Help me relax',
+    63→    63→    'How to improve my mood?',
+    64→    64→  ],
+    65→    65→  nutrition: [
+    66→    66→    'What should I eat today?',
+    67→    67→    'Analyze my meal',
+    68→    68→    'High-protein snack ideas',
+    69→    69→  ],
+    70→    70→  community: [
+    71→    71→    'How to stay motivated?',
+    72→    72→    'Tips for sharing my journey',
+    73→    73→    'Connect with others like me',
+    74→    74→  ],
+    75→    75→  wearable: [
+    76→    76→    'What do my heart rate zones mean?',
+    77→    77→    'Am I overtraining?',
+    78→    78→    'Set up health alerts',
+    79→    79→  ],
+    80→    80→};
+    81→    81→
+    82→    82→// ─── Simulated AI Responses ──────────────────────────────────────────────────
+    83→    83→
+    84→    84→const aiResponses: Record<string, string[]> = {
+    85→    85→  form: [
+    86→    86→    "Great question about form! Focus on keeping your core engaged and maintaining a neutral spine. For adaptive exercises, modify the range of motion to what feels comfortable while still challenging your muscles. Remember: quality over quantity!",
+    87→    87→    "Form is everything in rehabilitation. Start with smaller movements and gradually increase your range as your confidence builds. Use a mirror or record yourself to check alignment. Would you like me to suggest specific form cues for your current exercise?",
+    88→    88→    "The key to good form is mind-muscle connection. Slow down your reps, breathe steadily, and focus on the target muscle group. If you feel any sharp pain, stop immediately and adjust. Consistent practice with proper form leads to faster recovery!",
+    89→    89→  ],
+    90→    90→  exercise: [
+    91→    91→    "Here's a great adaptive exercise: Seated Resistance Band Rows. Sit upright with good posture, wrap a band around a sturdy anchor, and pull back squeezing your shoulder blades together. 3 sets of 12 reps with controlled tempo. This builds back strength without lower body strain!",
+    92→    92→    "I recommend trying Wall Push-Ups as a starting point. Stand arm's length from a wall, place palms flat, and slowly lower your chest toward the wall. This builds upper body strength with minimal joint stress. Progress to incline push-ups as you get stronger!",
+    93→    93→    "Try Seated Leg Extensions: Sit in a chair with back support, slowly extend one leg until straight, hold for 2 seconds, then lower with control. 3 sets of 10 per leg. This strengthens quads while being gentle on knees. Perfect for rehabilitation!",
+    94→    94→  ],
+    95→    95→  mood: [
+    96→    96→    "It's completely normal to have tough days in your recovery journey. Here are some strategies: 1) Practice 4-7-8 breathing (inhale 4s, hold 7s, exhale 8s), 2) Write down 3 things you're grateful for, 3) Take a gentle 10-minute walk. You're stronger than you think! 💚",
+    97→    97→    "Your mental health is just as important as physical recovery. When anxiety strikes, try the 5-4-3-2-1 grounding technique: name 5 things you see, 4 you can touch, 3 you hear, 2 you smell, 1 you taste. This brings you back to the present moment.",
+    98→    98→    "Remember: healing isn't linear. Some days will be harder than others, and that's okay. Celebrate small victories, connect with your support system, and be gentle with yourself. Would you like me to guide you through a quick relaxation exercise?",
+    99→    99→  ],
+   100→   100→  nutrition: [
+   101→   101→    "For optimal recovery, focus on: 1) Lean protein (chicken, fish, tofu) at every meal for muscle repair, 2) Colorful vegetables for antioxidants, 3) Whole grains for sustained energy, 4) Stay hydrated - aim for 8 glasses of water daily. Would you like a specific meal plan?",
+   102→   102→    "Great nutrition question! Post-workout, aim for a 2:1 carb-to-protein ratio within 30 minutes. A banana with almond butter or a protein smoothie works great. For anti-inflammatory benefits, add turmeric, ginger, and omega-3 rich foods like salmon to your diet!",
+   103→   103→    "Fueling your body right speeds up recovery! Try this balanced day: Oatmeal with berries for breakfast, grilled chicken salad for lunch, salmon with sweet potato for dinner. Snack on Greek yogurt, nuts, or hummus with veggies. Remember to adjust portions to your needs!",
+   104→   104→  ],
+   105→   105→  rehabilitation: [
+   106→   106→    "Rehabilitation is a marathon, not a sprint. Key principles: 1) Progressive overload - gradually increase difficulty, 2) Consistency over intensity, 3) Rest days are growth days, 4) Listen to your body. Small daily improvements compound into major progress over time!",
+   107→   107→    "For your rehabilitation journey, I recommend tracking three things daily: pain level (1-10), range of motion, and mood. This data helps identify patterns and adjust your program. Remember, setbacks are part of the process - they don't define your outcome!",
+   108→   108→    "Rehabilitation tip: Focus on what you CAN do, not what you can't. Every adaptive exercise strengthens both body and mind. Set micro-goals (like 'hold for 5 more seconds') and celebrate achieving them. Your dedication inspires others on similar journeys!",
+   109→   109→  ],
+   110→   110→  motivation: [
+   111→   111→    "You showed up today, and that's already a win! Remember: every rep, every stretch, every healthy meal is an investment in your future self. The road may be long, but you're already walking it. Keep going - your body and mind will thank you! 🌟",
+   112→   112→    "Fun fact: Studies show that adaptive athletes often develop stronger mental resilience than their able-bodied peers. Your challenges are building incredible strength - not just physical, but mental. You're not just recovering; you're evolving into something even stronger!",
+   113→   113→    "Here's your daily reminder: You are capable of amazing things. Your injury or disability does not define your limits - your determination does. Every step forward, no matter how small, is progress. I believe in you, and so does the AdaptiFit community! 💪",
+   114→   114→  ],
+   115→   115→  default: [
+   116→   116→    "I'm AdaptiFit AI, your personal adaptive fitness assistant! I can help with exercise recommendations, form tips, mood support, nutrition advice, and rehabilitation guidance. What would you like to explore today?",
+   117→   117→    "Thanks for reaching out! I'm here to support your fitness and rehabilitation journey. Whether you need exercise modifications, nutrition tips, or just some motivation - I've got you covered. What's on your mind?",
+   118→   118→    "Hello! I'm your AdaptiFit AI companion. I can help with adaptive exercises, track your wellness, provide rehabilitation tips, and keep you motivated. How can I assist you on your journey today?",
+   119→   119→  ],
+   120→   120→};
+   121→   121→
+   122→   122→function getResponseCategory(message: string): string {
+   123→   123→  const lower = message.toLowerCase();
+   124→   124→  if (/form|posture|alignment|technique|correct/i.test(lower)) return 'form';
+   125→   125→  if (/exercise|workout|routine|movement|stretch/i.test(lower)) return 'exercise';
+   126→   126→  if (/mood|anxious|relax|stress|sad|happy|calm|feeling/i.test(lower)) return 'mood';
+   127→   127→  if (/nutrition|eat|food|meal|diet|protein|calorie/i.test(lower)) return 'nutrition';
+   128→   128→  if (/rehab|recovery|injury|healing|therapy|pain/i.test(lower)) return 'rehabilitation';
+   129→   129→  if (/motivat|inspire|encourage|keep going|give up/i.test(lower)) return 'motivation';
+   130→   130→  return 'default';
+   131→   131→}
+   132→   132→
+   133→   133→function getSimulatedResponse(message: string): string {
+   134→   134→  const category = getResponseCategory(message);
+   135→   135→  const responses = aiResponses[category];
+   136→   136→  return responses[Math.floor(Math.random() * responses.length)];
+   137→   137→}
+   138→   138→
+   139→   139→// ─── Typing Effect Hook ──────────────────────────────────────────────────────
+   140→   140→
+   141→   141→function useTypingEffect(text: string, speed: number = 20) {
+   142→   142→  const [displayedText, setDisplayedText] = useState('');
+   143→   143→  const [isComplete, setIsComplete] = useState(false);
+   144→   144→
+   145→   145→  useEffect(() => {
+   146→   146→    setDisplayedText('');
+   147→   147→    setIsComplete(false);
+   148→   148→    let index = 0;
+   149→   149→
+   150→   150→    const timer = setInterval(() => {
+   151→   151→      if (index < text.length) {
+   152→   152→        setDisplayedText(text.slice(0, index + 1));
+   153→   153→        index++;
+   154→   154→      } else {
+   155→   155→        setIsComplete(true);
+   156→   156→        clearInterval(timer);
+   157→   157→      }
+   158→   158→    }, speed);
+   159→   159→
+   160→   160→    return () => clearInterval(timer);
+   161→   161→  }, [text, speed]);
+   162→   162→
+   163→   163→  return { displayedText, isComplete };
+   164→   164→}
+   165→   165→
+   166→   166→// ─── Typing Message Component ────────────────────────────────────────────────
+   167→   167→
+   168→   168→function TypingMessage({ content, onComplete }: { content: string; onComplete: () => void }) {
+   169→   169→  const { displayedText, isComplete } = useTypingEffect(content, 18);
+   170→   170→
+   171→   171→  useEffect(() => {
+   172→   172→    if (isComplete) onComplete();
+   173→   173→  }, [isComplete, onComplete]);
+   174→   174→
+   175→   175→  return (
+   176→   176→    <span>
+   177→   177→      {displayedText}
+   178→   178→      {!isComplete && (
+   179→   179→        <motion.span
+   180→   180→          animate={{ opacity: [1, 0] }}
+   181→   181→          transition={{ repeat: Infinity, duration: 0.6 }}
+   182→   182→          className="inline-block w-1.5 h-4 bg-emerald-500 ml-0.5 align-middle rounded-sm"
+   183→   183→        />
+   184→   184→      )}
+   185→   185→    </span>
+   186→   186→  );
+   187→   187→}
+   188→   188→
+   189→   189→// ─── Main Component ──────────────────────────────────────────────────────────
+   190→   190→
+   191→   191→export default function AIChat() {
+   192→   192→  const { activeSection } = useAppStore();
+   193→   193→  const [isOpen, setIsOpen] = useState(false);
+   194→   194→  const [messages, setMessages] = useState<ChatMessage[]>([]);
+   195→   195→  const [inputValue, setInputValue] = useState('');
+   196→   196→  const [unreadCount, setUnreadCount] = useState(0);
+   197→   197→  const [typingMessageId, setTypingMessageId] = useState<string | null>(null);
+   198→   198→  const messagesEndRef = useRef<HTMLDivElement>(null);
+   199→   199→  const inputRef = useRef<HTMLInputElement>(null);
+   200→   200→  const panelRef = useRef<HTMLDivElement>(null);
+   201→   201→
+   202→   202→  const scrollToBottom = useCallback(() => {
+   203→   203→    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+   204→   204→  }, []);
+   205→   205→
+   206→   206→  useEffect(() => {
+   207→   207→    scrollToBottom();
+   208→   208→  }, [messages, scrollToBottom]);
+   209→   209→
+   210→   210→  // Focus input when panel opens
+   211→   211→  useEffect(() => {
+   212→   212→    if (isOpen) {
+   213→   213→      setTimeout(() => inputRef.current?.focus(), 300);
+   214→   214→    }
+   215→   215→  }, [isOpen]);
+   216→   216→
+   217→   217→  // Keyboard: Escape to close
+   218→   218→  useEffect(() => {
+   219→   219→    const handleKeyDown = (e: KeyboardEvent) => {
+   220→   220→      if (e.key === 'Escape' && isOpen) {
+   221→   221→        setIsOpen(false);
+   222→   222→      }
+   223→   223→    };
+   224→   224→    document.addEventListener('keydown', handleKeyDown);
+   225→   225→    return () => document.removeEventListener('keydown', handleKeyDown);
+   226→   226→  }, [isOpen]);
+   227→   227→
+   228→   228→  // Focus trap
+   229→   229→  useEffect(() => {
+   230→   230→    if (!isOpen || !panelRef.current) return;
+   231→   231→
+   232→   232→    const panel = panelRef.current;
+   233→   233→    const focusableElements = panel.querySelectorAll<HTMLElement>(
+   234→   234→      'button, input, [tabindex]:not([tabindex="-1"])'
+   235→   235→    );
+   236→   236→    const firstEl = focusableElements[0];
+   237→   237→    const lastEl = focusableElements[focusableElements.length - 1];
+   238→   238→
+   239→   239→    const handleTab = (e: KeyboardEvent) => {
+   240→   240→      if (e.key !== 'Tab') return;
+   241→   241→
+   242→   242→      if (e.shiftKey) {
+   243→   243→        if (document.activeElement === firstEl) {
+   244→   244→          e.preventDefault();
+   245→   245→          lastEl?.focus();
+   246→   246→        }
+   247→   247→      } else {
+   248→   248→        if (document.activeElement === lastEl) {
+   249→   249→          e.preventDefault();
+   250→   250→          firstEl?.focus();
+   251→   251→        }
+   252→   252→      }
+   253→   253→    };
+   254→   254→
+   255→   255→    panel.addEventListener('keydown', handleTab);
+   256→   256→    return () => panel.removeEventListener('keydown', handleTab);
+   257→   257→  }, [isOpen]);
+   258→   258→
+   259→   259→  const sendMessage = useCallback(
+   260→   260→    (text: string) => {
+   261→   261→      if (!text.trim()) return;
+   262→   262→
+   263→   263→      const userMessage: ChatMessage = {
+   264→   264→        id: `user-${Date.now()}`,
+   265→   265→        role: 'user',
+   266→   266→        content: text.trim(),
+   267→   267→        timestamp: new Date(),
+   268→   268→      };
+   269→   269→
+   270→   270→      setMessages((prev) => [...prev, userMessage]);
+   271→   271→      setInputValue('');
+   272→   272→
+   273→   273→      // Simulate AI response with delay
+   274→   274→      const aiId = `ai-${Date.now()}`;
+   275→   275→      setTimeout(() => {
+   276→   276→        const response = getSimulatedResponse(text);
+   277→   277→        const aiMessage: ChatMessage = {
+   278→   278→          id: aiId,
+   279→   279→          role: 'ai',
+   280→   280→          content: response,
+   281→   281→          timestamp: new Date(),
+   282→   282→          isTyping: true,
+   283→   283→        };
+   284→   284→
+   285→   285→        setMessages((prev) => [...prev, aiMessage]);
+   286→   286→        setTypingMessageId(aiId);
+   287→   287→
+   288→   288→        if (!isOpen) {
+   289→   289→          setUnreadCount((prev) => prev + 1);
+   290→   290→        }
+   291→   291→      }, 800 + Math.random() * 700);
+   292→   292→    },
+   293→   293→    [isOpen]
+   294→   294→  );
+   295→   295→
+   296→   296→  const handleSubmit = (e: React.FormEvent) => {
+   297→   297→    e.preventDefault();
+   298→   298→    sendMessage(inputValue);
+   299→   299→  };
+   300→   300→
+   301→   301→  const handleQuickPrompt = (prompt: string) => {
+   302→   302→    sendMessage(prompt);
+   303→   303→  };
+   304→   304→
+   305→   305→  const handleTypingComplete = useCallback(
+   306→   306→    (messageId: string) => {
+   307→   307→      setMessages((prev) =>
+   308→   308→        prev.map((m) =>
+   309→   309→          m.id === messageId ? { ...m, isTyping: false } : m
+   310→   310→        )
+   311→   311→      );
+   312→   312→      setTypingMessageId((prev) => (prev === messageId ? null : prev));
+   313→   313→    },
+   314→   314→    []
+   315→   315→  );
+   316→   316→
+   317→   317→  const currentPrompts = quickPrompts[activeSection] || quickPrompts.home;
+   318→   318→
+   319→   319→  return (
+   320→   320→    <>
+   321→   321→      {/* Floating Chat Button */}
+   322→   322→      <AnimatePresence>
+   323→   323→        {!isOpen && (
+   324→   324→          <motion.div
+   325→   325→            initial={{ scale: 0, opacity: 0 }}
+   326→   326→            animate={{ scale: 1, opacity: 1 }}
+   327→   327→            exit={{ scale: 0, opacity: 0 }}
+   328→   328→            transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+   329→   329→            className="fixed bottom-6 right-6 z-50"
+   330→   330→          >
+   331→   331→            <Tooltip>
+   332→   332→              <TooltipTrigger asChild>
+   333→   333→                <motion.button
+   334→   334→                  onClick={() => { setIsOpen(true); setUnreadCount(0); }}
+   335→   335→                  className="relative w-14 h-14 rounded-full shadow-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center hover:shadow-2xl hover:shadow-emerald-500/30 transition-shadow focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2"
+   336→   336→                  aria-label="Open AdaptiFit AI Chat"
+   337→   337→                  whileHover={{ scale: 1.08 }}
+   338→   338→                  whileTap={{ scale: 0.95 }}
+   339→   339→                >
+   340→   340→                  {/* Pulse ring */}
+   341→   341→                  <motion.span
+   342→   342→                    className="absolute inset-0 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500"
+   343→   343→                    animate={{
+   344→   344→                      scale: [1, 1.4, 1],
+   345→   345→                      opacity: [0.5, 0, 0.5],
+   346→   346→                    }}
+   347→   347→                    transition={{
+   348→   348→                      repeat: Infinity,
+   349→   349→                      duration: 2,
+   350→   350→                      ease: 'easeInOut',
+   351→   351→                    }}
+   352→   352→                  />
+   353→   353→
+   354→   354→                  <Sparkles className="w-6 h-6 relative z-10" />
+   355→   355→
+   356→   356→                  {/* Unread badge */}
+   357→   357→                  {unreadCount > 0 && (
+   358→   358→                    <motion.span
+   359→   359→                      initial={{ scale: 0 }}
+   360→   360→                      animate={{ scale: 1 }}
+   361→   361→                      className="absolute -top-1 -right-1 z-20"
+   362→   362→                    >
+   363→   363→                      <Badge className="bg-rose-500 text-white border-0 min-w-[20px] h-5 flex items-center justify-center px-1.5 text-[10px] font-bold">
+   364→   364→                        {unreadCount > 9 ? '9+' : unreadCount}
+   365→   365→                      </Badge>
+   366→   366→                    </motion.span>
+   367→   367→                  )}
+   368→   368→                </motion.button>
+   369→   369→              </TooltipTrigger>
+   370→   370→              <TooltipContent side="left" sideOffset={8}>
+   371→   371→                <p>Ask AdaptiFit AI</p>
+   372→   372→              </TooltipContent>
+   373→   373→            </Tooltip>
+   374→   374→          </motion.div>
+   375→   375→        )}
+   376→   376→      </AnimatePresence>
+   377→   377→
+   378→   378→      {/* Chat Panel */}
+   379→   379→      <AnimatePresence>
+   380→   380→        {isOpen && (
+   381→   381→          <motion.div
+   382→   382→            ref={panelRef}
+   383→   383→            role="dialog"
+   384→   384→            aria-label="AdaptiFit AI Chat"
+   385→   385→            aria-modal="true"
+   386→   386→            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+   387→   387→            animate={{ opacity: 1, y: 0, scale: 1 }}
+   388→   388→            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+   389→   389→            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+   390→   390→            className="fixed bottom-6 right-6 z-50 w-[calc(100vw-3rem)] sm:w-96 max-h-[500px] rounded-2xl shadow-2xl border border-white/20 bg-white/80 backdrop-blur-xl flex flex-col overflow-hidden"
+   391→   391→          >
+   392→   392→            {/* Header */}
+   393→   393→            <div className="flex items-center justify-between px-4 py-3 border-b border-emerald-100 bg-gradient-to-r from-emerald-500/10 to-teal-500/10">
+   394→   394→              <div className="flex items-center gap-3">
+   395→   395→                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center ring-2 ring-emerald-200">
+   396→   396→                  <Bot className="w-4 h-4 text-white" />
+   397→   397→                </div>
+   398→   398→                <div>
+   399→   399→                  <h3 className="text-sm font-semibold text-foreground">
+   400→   400→                    AdaptiFit AI
+   401→   401→                  </h3>
+   402→   402→                  <div className="flex items-center gap-1.5">
+   403→   403→                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+   404→   404→                    <span className="text-[10px] text-muted-foreground">
+   405→   405→                      Always here for you
+   406→   406→                    </span>
+   407→   407→                  </div>
+   408→   408→                </div>
+   409→   409→              </div>
+   410→   410→              <Button
+   411→   411→                variant="ghost"
+   412→   412→                size="icon"
+   413→   413→                className="h-8 w-8 rounded-full hover:bg-muted"
+   414→   414→                onClick={() => setIsOpen(false)}
+   415→   415→                aria-label="Close chat"
+   416→   416→              >
+   417→   417→                <X className="w-4 h-4" />
+   418→   418→              </Button>
+   419→   419→            </div>
+   420→   420→
+   421→   421→            {/* Messages Area */}
+   422→   422→            <ScrollArea className="flex-1 px-4 py-3 min-h-0">
+   423→   423→              <div className="space-y-3">
+   424→   424→                {messages.length === 0 && (
+   425→   425→                  <motion.div
+   426→   426→                    initial={{ opacity: 0, y: 10 }}
+   427→   427→                    animate={{ opacity: 1, y: 0 }}
+   428→   428→                    className="text-center py-6"
+   429→   429→                  >
+   430→   430→                    <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-gradient-to-br from-emerald-100 to-teal-100 flex items-center justify-center">
+   431→   431→                      <MessageCircle className="w-6 h-6 text-emerald-600" />
+   432→   432→                    </div>
+   433→   433→                    <p className="text-sm font-medium text-foreground mb-1">
+   434→   434→                      Hi! I&apos;m AdaptiFit AI
+   435→   435→                    </p>
+   436→   436→                    <p className="text-xs text-muted-foreground max-w-[240px] mx-auto">
+   437→   437→                      Your personal adaptive fitness assistant. Ask me about exercises, form, nutrition, or anything on your mind!
+   438→   438→                    </p>
+   439→   439→                  </motion.div>
+   440→   440→                )}
+   441→   441→
+   442→   442→                {messages.map((message) => (
+   443→   443→                  <motion.div
+   444→   444→                    key={message.id}
+   445→   445→                    initial={{ opacity: 0, y: 10 }}
+   446→   446→                    animate={{ opacity: 1, y: 0 }}
+   447→   447→                    transition={{ duration: 0.3 }}
+   448→   448→                    className={`flex items-start gap-2 ${
+   449→   449→                      message.role === 'user' ? 'flex-row-reverse' : 'flex-row'
+   450→   450→                    }`}
+   451→   451→                  >
+   452→   452→                    {/* Avatar */}
+   453→   453→                    {message.role === 'ai' ? (
+   454→   454→                      <div className="flex-shrink-0">
+   455→   455→                        <Avatar className="w-7 h-7 ring-2 ring-emerald-300 ring-offset-1">
+   456→   456→                          <AvatarFallback className="bg-gradient-to-br from-emerald-500 to-teal-600 text-white text-[10px] font-bold">
+   457→   457→                            AI
+   458→   458→                          </AvatarFallback>
+   459→   459→                        </Avatar>
+   460→   460→                      </div>
+   461→   461→                    ) : (
+   462→   462→                      <div className="flex-shrink-0">
+   463→   463→                        <Avatar className="w-7 h-7 ring-2 ring-gray-200 ring-offset-1">
+   464→   464→                          <AvatarFallback className="bg-gray-100 text-gray-600 text-[10px]">
+   465→   465→                            <User className="w-3.5 h-3.5" />
+   466→   466→                          </AvatarFallback>
+   467→   467→                        </Avatar>
+   468→   468→                      </div>
+   469→   469→                    )}
+   470→   470→
+   471→   471→                    {/* Message Bubble */}
+   472→   472→                    <div
+   473→   473→                      className={`max-w-[80%] px-3 py-2 text-sm leading-relaxed ${
+   474→   474→                        message.role === 'user'
+   475→   475→                          ? 'bg-gradient-to-br from-emerald-500 to-emerald-600 text-white rounded-2xl rounded-tr-md'
+   476→   476→                          : 'bg-gradient-to-br from-emerald-50 to-teal-50 text-foreground border border-emerald-200/60 rounded-2xl rounded-tl-md'
+   477→   477→                      }`}
+   478→   478→                    >
+   479→   479→                      {message.role === 'ai' && message.isTyping && typingMessageId === message.id ? (
+   480→   480→                        <TypingMessage
+   481→   481→                          content={message.content}
+   482→   482→                          onComplete={() => handleTypingComplete(message.id)}
+   483→   483→                        />
+   484→   484→                      ) : (
+   485→   485→                        <span>{message.content}</span>
+   486→   486→                      )}
+   487→   487→                    </div>
+   488→   488→                    {/* TTS Speaker for AI messages */}
+   489→   489→                    {message.role === 'ai' && !message.isTyping && (
+   490→   490→                      <div className="flex-shrink-0 mt-1">
+   491→   491→                        <TTSSpeaker
+   492→   492→                          text={message.content}
+   493→   493→                          size="sm"
+   494→   494→                          voice="tongtong"
+   495→   495→                        />
+   496→   496→                      </div>
+   497→   497→                    )}
+   498→   498→                  </motion.div>
+   499→   499→                ))}
+   500→   500→
+   501→   501→                {/* AI typing indicator */}
+   502→   502→                {messages.length > 0 &&
+   503→   503→                  messages[messages.length - 1].role === 'user' &&
+   504→   504→                  !messages.some((m) => m.id.startsWith('ai-') && m.isTyping) && (
+   505→   505→                    <motion.div
+   506→   506→                      initial={{ opacity: 0 }}
+   507→   507→                      animate={{ opacity: 1 }}
+   508→   508→                      className="flex items-start gap-2"
+   509→   509→                    >
+   510→   510→                      <Avatar className="w-7 h-7 ring-2 ring-emerald-300 ring-offset-1">
+   511→   511→                        <AvatarFallback className="bg-gradient-to-br from-emerald-500 to-teal-600 text-white text-[10px] font-bold">
+   512→   512→                          AI
+   513→   513→                        </AvatarFallback>
+   514→   514→                      </Avatar>
+   515→   515→                      <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200/60 rounded-2xl rounded-tl-md px-3 py-2">
+   516→   516→                        <div className="flex items-center gap-1">
+   517→   517→                          <motion.span
+   518→   518→                            animate={{ y: [0, -4, 0] }}
+   519→   519→                            transition={{ repeat: Infinity, duration: 0.6, delay: 0 }}
+   520→   520→                            className="w-1.5 h-1.5 rounded-full bg-emerald-400"
+   521→   521→                          />
+   522→   522→                          <motion.span
+   523→   523→                            animate={{ y: [0, -4, 0] }}
+   524→   524→                            transition={{ repeat: Infinity, duration: 0.6, delay: 0.15 }}
+   525→   525→                            className="w-1.5 h-1.5 rounded-full bg-emerald-400"
+   526→   526→                          />
+   527→   527→                          <motion.span
+   528→   528→                            animate={{ y: [0, -4, 0] }}
+   529→   529→                            transition={{ repeat: Infinity, duration: 0.6, delay: 0.3 }}
+   530→   530→                            className="w-1.5 h-1.5 rounded-full bg-emerald-400"
+   531→   531→                          />
+   532→   532→                        </div>
+   533→   533→                      </div>
+   534→   534→                    </motion.div>
+   535→   535→                  )}
+   536→   536→
+   537→   537→                <div ref={messagesEndRef} />
+   538→   538→              </div>
+   539→   539→            </ScrollArea>
+   540→   540→
+   541→   541→            {/* Quick Prompts */}
+   542→   542→            <div className="px-4 py-2 border-t border-emerald-100/60">
+   543→   543→              <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+   544→   544→                {currentPrompts.map((prompt) => (
+   545→   545→                  <motion.button
+   546→   546→                    key={prompt}
+   547→   547→                    whileHover={{ scale: 1.03 }}
+   548→   548→                    whileTap={{ scale: 0.97 }}
+   549→   549→                    onClick={() => handleQuickPrompt(prompt)}
+   550→   550→                    className="flex-shrink-0 px-2.5 py-1 text-[11px] font-medium rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/70 hover:bg-emerald-100 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-400"
+   551→   551→                  >
+   552→   552→                    {prompt}
+   553→   553→                  </motion.button>
+   554→   554→                ))}
+   555→   555→              </div>
+   556→   556→            </div>
+   557→   557→
+   558→   558→            {/* Input Area */}
+   559→   559→            <form
+   560→   560→              onSubmit={handleSubmit}
+   561→   561→              className="px-4 py-3 border-t border-emerald-100/60 bg-white/50 backdrop-blur-sm"
+   562→   562→            >
+   563→   563→              <div className="flex items-center gap-2">
+   564→   564→                <Button
+   565→   565→                  type="button"
+   566→   566→                  variant="ghost"
+   567→   567→                  size="icon"
+   568→   568→                  className="h-8 w-8 rounded-full text-muted-foreground hover:text-emerald-600 flex-shrink-0"
+   569→   569→                  aria-label="Voice input"
+   570→   570→                >
+   571→   571→                  <Mic className="w-4 h-4" />
+   572→   572→                </Button>
+   573→   573→                <div className="flex-1 relative">
+   574→   574→                  <Input
+   575→   575→                    ref={inputRef}
+   576→   576→                    value={inputValue}
+   577→   577→                    onChange={(e) => setInputValue(e.target.value)}
+   578→   578→                    placeholder="Ask AdaptiFit AI..."
+   579→   579→                    className="rounded-full pr-10 h-9 text-sm bg-muted/50 border-emerald-200/50 focus-visible:border-emerald-400 focus-visible:ring-emerald-400/30"
+   580→   580→                    aria-label="Chat message input"
+   581→   581→                  />
+   582→   582→                  <Button
+   583→   583→                    type="submit"
+   584→   584→                    size="icon"
+   585→   585→                    disabled={!inputValue.trim()}
+   586→   586→                    className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-sm disabled:opacity-40"
+   587→   587→                    aria-label="Send message"
+   588→   588→                  >
+   589→   589→                    <Send className="w-3.5 h-3.5" />
+   590→   590→                  </Button>
+   591→   591→                </div>
+   592→   592→              </div>
+   593→   593→            </form>
+   594→   594→          </motion.div>
+   595→   595→        )}
+   596→   596→      </AnimatePresence>
+   597→   597→    </>
+   598→   598→  );
+   599→   599→}
+   600→   600→
