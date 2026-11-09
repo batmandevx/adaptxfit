@@ -1,8 +1,10 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
+import SwRegister from "@/lib/offline/sw-register";
+import PwaInstall from "@/components/features/pwa-install";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -20,8 +22,22 @@ export const metadata: Metadata = {
   keywords: ["adaptive fitness", "rehabilitation", "AI fitness", "disability", "Paralympic", "injury recovery"],
   authors: [{ name: "AdaptiFit Team" }],
   icons: {
-    icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
+    icon: "/icons/icon.svg",
+    apple: "/icons/apple-touch-icon.png",
   },
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    title: "AdaptiFit",
+    statusBarStyle: "default",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#1c1c1c" },
+  ],
 };
 
 export default function RootLayout({
@@ -42,6 +58,9 @@ export default function RootLayout({
         >
           {children}
           <Toaster />
+          {/* Offline-first PWA: SW registration + install/offline UX */}
+          <SwRegister />
+          <PwaInstall />
         </ThemeProvider>
       </body>
     </html>

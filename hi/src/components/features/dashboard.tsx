@@ -80,6 +80,7 @@ import {
   recentAchievements,
 } from '@/lib/mock-data';
 import { useAppStore } from '@/stores/app-store';
+import { speechLocale, useI18n, type Locale, type TranslateFn, type TranslationKey } from '@/lib/i18n';
 
 // ── Animation variants ──────────────────────────────────────────────────────
 
@@ -102,34 +103,34 @@ const itemVariants = {
 
 // ── Chart configs ────────────────────────────────────────────────────────────
 
-const weeklyExerciseConfig: ChartConfig = {
-  minutes: { label: 'Minutes', color: '#10b981' },
-  target: { label: 'Target', color: '#f59e0b' },
-};
+const getWeeklyExerciseConfig = (t: TranslateFn): ChartConfig => ({
+  minutes: { label: t('dashboard.chart.minutes'), color: '#10b981' },
+  target: { label: t('dashboard.chart.target'), color: '#f59e0b' },
+});
 
-const progressConfig: ChartConfig = {
-  strength: { label: 'Strength', color: '#10b981' },
-  flexibility: { label: 'Flexibility', color: '#f59e0b' },
-  endurance: { label: 'Endurance', color: '#f43f5e' },
-  balance: { label: 'Balance', color: '#06b6d4' },
-};
+const getProgressConfig = (t: TranslateFn): ChartConfig => ({
+  strength: { label: t('dashboard.chart.strength'), color: '#10b981' },
+  flexibility: { label: t('dashboard.chart.flexibility'), color: '#f59e0b' },
+  endurance: { label: t('dashboard.chart.endurance'), color: '#f43f5e' },
+  balance: { label: t('dashboard.chart.balance'), color: '#06b6d4' },
+});
 
-const calorieConfig: ChartConfig = {
-  intake: { label: 'Intake', color: '#f59e0b' },
-  burned: { label: 'Burned', color: '#f43f5e' },
-  target: { label: 'Target', color: '#10b981' },
-};
+const getCalorieConfig = (t: TranslateFn): ChartConfig => ({
+  intake: { label: t('dashboard.chart.intake'), color: '#f59e0b' },
+  burned: { label: t('dashboard.chart.burned'), color: '#f43f5e' },
+  target: { label: t('dashboard.chart.target'), color: '#10b981' },
+});
 
-const heartRateConfig: ChartConfig = {
-  bpm: { label: 'BPM', color: '#f43f5e' },
-};
+const getHeartRateConfig = (t: TranslateFn): ChartConfig => ({
+  bpm: { label: t('dashboard.chart.bpm'), color: '#f43f5e' },
+});
 
-const moodConfig: ChartConfig = {
-  happy: { label: 'Happy', color: '#10b981' },
-  calm: { label: 'Calm', color: '#06b6d4' },
-  anxious: { label: 'Anxious', color: '#f59e0b' },
-  sad: { label: 'Sad', color: '#f43f5e' },
-};
+const getMoodConfig = (t: TranslateFn): ChartConfig => ({
+  happy: { label: t('dashboard.chart.happy'), color: '#10b981' },
+  calm: { label: t('dashboard.chart.calm'), color: '#06b6d4' },
+  anxious: { label: t('dashboard.chart.anxious'), color: '#f59e0b' },
+  sad: { label: t('dashboard.chart.sad'), color: '#f43f5e' },
+});
 
 // ── Heart rate zone colouring ───────────────────────────────────────────────
 
@@ -140,10 +141,17 @@ const zoneColors: Record<string, string> = {
   Vigorous: '#f43f5e',
 };
 
+const zoneLabelKeys: Record<string, TranslationKey> = {
+  Resting: 'dashboard.zone.resting',
+  Light: 'dashboard.zone.light',
+  Moderate: 'dashboard.zone.moderate',
+  Vigorous: 'dashboard.zone.vigorous',
+};
+
 // ── Helper: today's date string ─────────────────────────────────────────────
 
-function getFormattedDate(): string {
-  return new Date().toLocaleDateString('en-US', {
+function getFormattedDate(locale: Locale): string {
+  return new Date().toLocaleDateString(speechLocale(locale), {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
@@ -174,9 +182,9 @@ const formSparkline = [82, 85, 88, 84, 90, 87, 89];
 
 const statCards = [
   {
-    title: 'Exercise Minutes',
+    titleKey: 'dashboard.stats.exerciseMinutes.title' as TranslationKey,
     value: `${totalMinutesThisWeek}`,
-    subtitle: `of ${totalTargetThisWeek} min target`,
+    subtitleKey: 'dashboard.stats.exerciseMinutes.subtitle' as TranslationKey,
     progress: Math.round((totalMinutesThisWeek / totalTargetThisWeek) * 100),
     icon: Activity,
     gradient: 'from-emerald-500 to-emerald-600',
@@ -188,9 +196,9 @@ const statCards = [
     cardGradient: 'from-emerald-500/5 via-emerald-500/10 to-emerald-500/5',
   },
   {
-    title: 'Calories Burned',
+    titleKey: 'dashboard.stats.caloriesBurned.title' as TranslationKey,
     value: `${caloriesBurnedToday}`,
-    subtitle: 'kcal today',
+    subtitleKey: 'dashboard.stats.caloriesBurned.subtitle' as TranslationKey,
     progress: Math.round((caloriesBurnedToday / 300) * 100),
     icon: Flame,
     gradient: 'from-amber-500 to-amber-600',
@@ -202,9 +210,9 @@ const statCards = [
     cardGradient: 'from-amber-500/5 via-amber-500/10 to-amber-500/5',
   },
   {
-    title: 'Mood Score',
+    titleKey: 'dashboard.stats.moodScore.title' as TranslationKey,
     value: `${moodScore}`,
-    subtitle: 'out of 10',
+    subtitleKey: 'dashboard.stats.moodScore.subtitle' as TranslationKey,
     progress: moodScore * 10,
     icon: Heart,
     gradient: 'from-rose-500 to-rose-600',
@@ -216,9 +224,9 @@ const statCards = [
     cardGradient: 'from-rose-500/5 via-rose-500/10 to-rose-500/5',
   },
   {
-    title: 'Form Accuracy',
+    titleKey: 'dashboard.stats.formAccuracy.title' as TranslationKey,
     value: `${formAccuracy}%`,
-    subtitle: 'average this week',
+    subtitleKey: 'dashboard.stats.formAccuracy.subtitle' as TranslationKey,
     progress: formAccuracy,
     icon: Target,
     gradient: 'from-cyan-500 to-cyan-600',
@@ -242,18 +250,27 @@ const streakCalendar: { week: number; days: DayStatus[] }[] = [
   { week: 4, days: ['completed', 'completed', 'partial', 'completed', 'today', 'missed', 'missed'] },
 ];
 
-const dayLabels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+const dayLabelKeys: TranslationKey[] = [
+  'common.day.mon',
+  'common.day.tue',
+  'common.day.wed',
+  'common.day.thu',
+  'common.day.fri',
+  'common.day.sat',
+  'common.day.sun',
+];
 
 // ── Quick action buttons ────────────────────────────────────────────────────
 
-const quickActions: { label: string; icon: typeof PlayCircle; color: string; bgColor: string; section: 'body-scan' | 'mood' | 'nutrition' | 'wearable' }[] = [
-  { label: 'Start Exercise', icon: PlayCircle, color: 'text-emerald-600', bgColor: 'bg-emerald-500/10 hover:bg-emerald-500/20 border-emerald-500/20', section: 'body-scan' },
-  { label: 'Log Mood', icon: SmilePlus, color: 'text-rose-600', bgColor: 'bg-rose-500/10 hover:bg-rose-500/20 border-rose-500/20', section: 'mood' },
-  { label: 'Scan Food', icon: ScanLine, color: 'text-orange-600', bgColor: 'bg-orange-500/10 hover:bg-orange-500/20 border-orange-500/20', section: 'nutrition' },
-  { label: 'Check Heart', icon: HeartPulse, color: 'text-teal-600', bgColor: 'bg-teal-500/10 hover:bg-teal-500/20 border-teal-500/20', section: 'wearable' },
+const quickActions: { labelKey: TranslationKey; icon: typeof PlayCircle; color: string; bgColor: string; section: 'body-scan' | 'mood' | 'nutrition' | 'wearable' }[] = [
+  { labelKey: 'dashboard.quick.startExercise', icon: PlayCircle, color: 'text-emerald-600', bgColor: 'bg-emerald-500/10 hover:bg-emerald-500/20 border-emerald-500/20', section: 'body-scan' },
+  { labelKey: 'dashboard.quick.logMood', icon: SmilePlus, color: 'text-rose-600', bgColor: 'bg-rose-500/10 hover:bg-rose-500/20 border-rose-500/20', section: 'mood' },
+  { labelKey: 'dashboard.quick.scanFood', icon: ScanLine, color: 'text-orange-600', bgColor: 'bg-orange-500/10 hover:bg-orange-500/20 border-orange-500/20', section: 'nutrition' },
+  { labelKey: 'dashboard.quick.checkHeart', icon: HeartPulse, color: 'text-teal-600', bgColor: 'bg-teal-500/10 hover:bg-teal-500/20 border-teal-500/20', section: 'wearable' },
 ];
 
 // ── All achievements (including unearned) ───────────────────────────────────
+// Achievement records are English demo data here; localize the data layer post-merge.
 
 const allAchievements = [
   ...recentAchievements,
@@ -266,25 +283,27 @@ const allAchievements = [
 
 interface PlanExercise {
   id: string;
-  name: string;
+  nameKey: TranslationKey;
   time: string;
   duration: string;
   completed: boolean;
 }
 
 const todaysExercises: PlanExercise[] = [
-  { id: '1', name: 'Seated Shoulder Press', time: '9:00 AM', duration: '10 min', completed: true },
-  { id: '2', name: 'Resisted Leg Extensions', time: '10:00 AM', duration: '15 min', completed: true },
-  { id: '3', name: 'Wheelchair Yoga Flow', time: '2:00 PM', duration: '20 min', completed: false },
-  { id: '4', name: 'Upper Body Circuit', time: '4:00 PM', duration: '30 min', completed: false },
+  { id: '1', nameKey: 'dashboard.exercise.seatedShoulderPress', time: '9:00 AM', duration: '10 min', completed: true },
+  { id: '2', nameKey: 'dashboard.exercise.resistedLegExtensions', time: '10:00 AM', duration: '15 min', completed: true },
+  { id: '3', nameKey: 'dashboard.exercise.wheelchairYogaFlow', time: '2:00 PM', duration: '20 min', completed: false },
+  { id: '4', nameKey: 'dashboard.exercise.upperBodyCircuit', time: '4:00 PM', duration: '30 min', completed: false },
 ];
 
-const upcomingReminders = [
-  { id: '1', text: 'Take medication', time: '1:00 PM' },
-  { id: '2', text: 'Evening stretching', time: '6:00 PM' },
-  { id: '3', text: 'Log dinner nutrition', time: '7:30 PM' },
+const upcomingReminders: { id: string; textKey: TranslationKey; time: string }[] = [
+  { id: '1', textKey: 'dashboard.reminder.medication', time: '1:00 PM' },
+  { id: '2', textKey: 'dashboard.reminder.stretching', time: '6:00 PM' },
+  { id: '3', textKey: 'dashboard.reminder.dinner', time: '7:30 PM' },
 ];
 
+// Long-form motivational copy stays English in this reference integration; it is
+// marketing/demo prose rather than UI chrome or coaching instructions.
 const motivationalQuotes = [
   '"Every step forward is progress, no matter how small."',
   '"Your body can stand almost anything. It\'s your mind you have to convince."',
@@ -306,13 +325,15 @@ function HeartRateTooltip({
   active?: boolean;
   payload?: HeartRatePayloadEntry[];
 }) {
+  const { t } = useI18n();
   if (!active || !payload?.length) return null;
   const data = payload[0].payload;
+  const zone = t(zoneLabelKeys[data.zone] ?? 'dashboard.zone.resting');
   return (
     <div className="rounded-lg border border-border/50 bg-background px-3 py-2 text-xs shadow-xl">
       <p className="font-medium">{data.time}</p>
       <p style={{ color: zoneColors[data.zone] ?? '#f43f5e' }}>
-        {data.bpm} BPM — {data.zone}
+        {t('dashboard.chart.tooltip', { bpm: data.bpm, zone })}
       </p>
     </div>
   );
@@ -351,6 +372,7 @@ function MiniSparkline({ data, color }: { data: number[]; color: string }) {
 // ── Health Score circular gauge ─────────────────────────────────────────────
 
 function HealthScoreGauge({ score }: { score: number }) {
+  const { t } = useI18n();
   const [animatedScore, setAnimatedScore] = useState(0);
   const radius = 72;
   const strokeWidth = 12;
@@ -442,15 +464,15 @@ function HealthScoreGauge({ score }: { score: number }) {
       </div>
       <div className="mt-3 text-center">
         <div className="flex items-center justify-center gap-2">
-          <h3 className="text-base sm:text-lg font-bold">Overall Health Score</h3>
+          <h3 className="text-base sm:text-lg font-bold">{t('dashboard.healthScore.title')}</h3>
           <TTSSpeaker
-            text={`Your overall health score is ${Math.min(score, 100)} out of 100, based on exercise, mood, nutrition, and heart health data.`}
+            text={t('dashboard.healthScore.tts', { score: Math.min(score, 100) })}
             size="sm"
             voice="tongtong"
           />
         </div>
         <p className="text-muted-foreground text-xs mt-0.5">
-          Based on exercise, mood, nutrition &amp; heart health
+          {t('dashboard.healthScore.description')}
         </p>
       </div>
     </div>
@@ -460,6 +482,7 @@ function HealthScoreGauge({ score }: { score: number }) {
 // ── Weekly Streak Calendar component ────────────────────────────────────────
 
 function StreakCalendar() {
+  const { t } = useI18n();
   const statusColors: Record<DayStatus, string> = {
     completed: 'bg-emerald-500',
     partial: 'bg-amber-400',
@@ -471,16 +494,16 @@ function StreakCalendar() {
     <div className="space-y-2">
       <div className="grid grid-cols-8 gap-1 text-center">
         <div />
-        {dayLabels.map((d, i) => (
+        {dayLabelKeys.map((dayKey, i) => (
           <span key={i} className="text-muted-foreground text-[10px] font-medium">
-            {d}
+            {t(dayKey)}
           </span>
         ))}
       </div>
       {streakCalendar.map((week) => (
         <div key={week.week} className="grid grid-cols-8 gap-1">
           <span className="text-muted-foreground flex items-center justify-center text-[10px] font-medium">
-            W{week.week}
+            {t('dashboard.streak.week', { week: week.week })}
           </span>
           {week.days.map((status, dayIdx) => (
             <motion.div
@@ -502,15 +525,15 @@ function StreakCalendar() {
       <div className="flex items-center gap-3 pt-1 text-[10px]">
         <span className="flex items-center gap-1">
           <span className="inline-block h-2.5 w-2.5 rounded-sm bg-emerald-500" />
-          Completed
+          {t('dashboard.streak.completed')}
         </span>
         <span className="flex items-center gap-1">
           <span className="inline-block h-2.5 w-2.5 rounded-sm bg-amber-400" />
-          Partial
+          {t('dashboard.streak.partial')}
         </span>
         <span className="flex items-center gap-1">
           <span className="inline-block h-2.5 w-2.5 rounded-sm bg-muted-foreground/25" />
-          Missed
+          {t('dashboard.streak.missed')}
         </span>
       </div>
     </div>
@@ -523,6 +546,8 @@ function StreakCalendar() {
 
 // ── Daily Inspiration Card ────────────────────────────────────────────────────
 
+// Quotation/author demo content intentionally remains English; only the card chrome
+// is localized in this bounded reference integration.
 const inspirationQuotes = [
   { text: 'The only way to do great work is to love what you do.', author: 'Steve Jobs' },
   { text: 'Recovery is not a race. You are brave for showing up every day.', author: 'AdaptiFit Community' },
@@ -534,6 +559,7 @@ const inspirationQuotes = [
 ];
 
 function DailyInspirationCard() {
+  const { t } = useI18n();
   // Use day of year to pick a quote that changes daily
   const now = new Date();
   const dayOfYear = Math.floor(
@@ -561,7 +587,7 @@ function DailyInspirationCard() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-white/90 text-xs font-semibold uppercase tracking-wider mb-2">
-                ✨ Daily Inspiration
+                {t('dashboard.inspiration.daily')}
               </p>
               <p className="text-white text-lg sm:text-xl font-medium leading-relaxed mb-3">
                 &ldquo;{quote.text}&rdquo;
@@ -579,6 +605,12 @@ function DailyInspirationCard() {
 
 export default function Dashboard() {
   const setActiveSection = useAppStore((s) => s.setActiveSection);
+  const { locale, t } = useI18n();
+  const weeklyExerciseConfig = getWeeklyExerciseConfig(t);
+  const progressConfig = getProgressConfig(t);
+  const calorieConfig = getCalorieConfig(t);
+  const heartRateConfig = getHeartRateConfig(t);
+  const moodConfig = getMoodConfig(t);
   const [mounted, setMounted] = useState(false);
   const [checkedExercises, setCheckedExercises] = useState<Set<string>>(
     new Set(todaysExercises.filter((e) => e.completed).map((e) => e.id))
@@ -627,11 +659,11 @@ export default function Dashboard() {
         <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
-              Welcome back, <span className="text-emerald-500">Alex</span>
+              {t('dashboard.welcomeBack')} <span className="text-emerald-500">Alex</span>
             </h1>
             <p className="text-muted-foreground flex items-center gap-1.5 text-sm">
               <Calendar className="h-4 w-4" />
-              {mounted ? getFormattedDate() : '\u00A0'}
+              {mounted ? getFormattedDate(locale) : '\u00A0'}
             </p>
           </div>
           <Badge
@@ -640,7 +672,7 @@ export default function Dashboard() {
           >
             <span className="status-dot status-dot-online mr-1" />
             <Zap className="h-3.5 w-3.5" />
-            AI Monitoring Active
+            {t('dashboard.aiMonitoring')}
           </Badge>
         </div>
       </motion.div>
@@ -650,14 +682,14 @@ export default function Dashboard() {
         <div className="flex flex-wrap gap-3">
           {quickActions.map((action) => (
             <Button
-              key={action.label}
+              key={action.labelKey}
               variant="outline"
               size="sm"
               className={`gap-2 border ${action.bgColor} transition-all`}
               onClick={() => setActiveSection(action.section)}
             >
               <action.icon className={`h-4 w-4 ${action.color}`} />
-              <span className={action.color}>{action.label}</span>
+              <span className={action.color}>{t(action.labelKey)}</span>
             </Button>
           ))}
           <ProgressExport />
@@ -674,10 +706,10 @@ export default function Dashboard() {
             <HealthScoreGauge score={Math.min(healthScore, 100)} />
             <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
               {[
-                { label: 'Exercise', value: exerciseAdherence, color: 'text-emerald-500' },
-                { label: 'Mood', value: moodPercent, color: 'text-rose-500' },
-                { label: 'Nutrition', value: nutritionBalance, color: 'text-amber-500' },
-                { label: 'Heart', value: heartHealth, color: 'text-cyan-500' },
+                { label: t('dashboard.metrics.exercise'), value: exerciseAdherence, color: 'text-emerald-500' },
+                { label: t('dashboard.metrics.mood'), value: moodPercent, color: 'text-rose-500' },
+                { label: t('dashboard.metrics.nutrition'), value: nutritionBalance, color: 'text-amber-500' },
+                { label: t('dashboard.metrics.heart'), value: heartHealth, color: 'text-cyan-500' },
               ].map((m) => (
                 <div key={m.label}>
                   <p className={`text-sm font-bold ${m.color}`}>{m.value}%</p>
@@ -693,9 +725,9 @@ export default function Dashboard() {
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-base">
                 <Calendar className="h-5 w-5 text-emerald-500" />
-                4-Week Streak
+                {t('dashboard.streak.title')}
               </CardTitle>
-              <CardDescription>Exercise completion history</CardDescription>
+              <CardDescription>{t('dashboard.streak.description')}</CardDescription>
             </CardHeader>
             <CardContent className="p-4 pt-0">
               <StreakCalendar />
@@ -708,21 +740,21 @@ export default function Dashboard() {
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-base">
                 <Trophy className="h-5 w-5 text-amber-500" />
-                Next Goal
+                {t('dashboard.nextGoal.title')}
               </CardTitle>
-              <CardDescription>Closest achievement to unlock</CardDescription>
+              <CardDescription>{t('dashboard.nextGoal.description')}</CardDescription>
             </CardHeader>
             <CardContent className="p-4 pt-0">
               <div className="flex items-center gap-3 rounded-lg border border-amber-500/20 bg-gradient-to-r from-amber-500/5 to-amber-500/10 p-4">
                 <span className="text-3xl">❤️‍🔥</span>
                 <div className="min-w-0 flex-1">
-                  <p className="font-semibold">Heart Champion</p>
+                  <p className="font-semibold">{t('dashboard.nextGoal.heartChampion')}</p>
                   <p className="text-muted-foreground text-xs">
-                    Maintain resting HR below 70 for 30 days
+                    {t('dashboard.nextGoal.heartChampionDescription')}
                   </p>
                   <div className="mt-2">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="text-muted-foreground">22 / 30 days</span>
+                      <span className="text-muted-foreground">{t('dashboard.nextGoal.daysProgress', { current: 22, total: 30 })}</span>
                       <span className="font-medium text-amber-600">73%</span>
                     </div>
                     <Progress value={73} className="mt-1 h-2" />
@@ -737,7 +769,7 @@ export default function Dashboard() {
       {/* ── Quick Stats Row ──────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         {statCards.map((card) => (
-          <motion.div key={card.title} variants={itemVariants}>
+          <motion.div key={card.titleKey} variants={itemVariants}>
             <Card className={`relative overflow-hidden rounded-xl bg-gradient-to-br ${card.cardGradient} py-0 dash-stat-glass skeleton-shimmer`}>
               {/* Gradient accent bar */}
               <div
@@ -745,7 +777,7 @@ export default function Dashboard() {
               />
               <CardHeader className="flex flex-row items-center justify-between pb-2 pt-5">
                 <CardDescription className="text-sm font-medium">
-                  {card.title}
+                  {t(card.titleKey)}
                 </CardDescription>
                 <div className={`rounded-lg p-2 ${card.bgGlow}`}>
                   <card.icon className={`h-5 w-5 ${card.iconColor}`} />
@@ -759,7 +791,12 @@ export default function Dashboard() {
                         {card.value}
                       </span>
                       <span className="text-muted-foreground mb-1 text-xs">
-                        {card.subtitle}
+                        {t(
+                          card.subtitleKey,
+                          card.subtitleKey === 'dashboard.stats.exerciseMinutes.subtitle'
+                            ? { target: totalTargetThisWeek }
+                            : undefined
+                        )}
                       </span>
                     </div>
                     {/* Comparison text */}
@@ -777,7 +814,7 @@ export default function Dashboard() {
                         }`}
                       >
                         {card.comparison.direction === 'up' ? '↑' : '↓'}{' '}
-                        {card.comparison.value}% from last week
+                        {card.comparison.value}% {t('dashboard.stats.fromLastWeek')}
                       </span>
                     </div>
                   </div>
@@ -789,13 +826,13 @@ export default function Dashboard() {
                         <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
                         <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
                       </span>
-                      <span className="text-muted-foreground text-[9px]">Live</span>
+                      <span className="text-muted-foreground text-[9px]">{t('dashboard.stats.live')}</span>
                     </span>
                   </div>
                 </div>
                 <Progress value={card.progress} className="mt-3 h-2" />
                 <p className="text-muted-foreground mt-1 text-xs">
-                  {card.progress}% of goal
+                  {t('dashboard.stats.ofGoal', { percent: card.progress })}
                 </p>
               </CardContent>
             </Card>
@@ -809,14 +846,14 @@ export default function Dashboard() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <CheckCircle2 className="h-5 w-5 text-emerald-500" />
-              Today&apos;s Plan
+              {t('dashboard.todayPlan.title')}
               <TTSSpeaker
-                text="Today's plan includes morning stretching, upper body workout, and evening meditation. Stay consistent!"
+                text={t('dashboard.todayPlan.tts')}
                 size="sm"
                 voice="tongtong"
               />
             </CardTitle>
-            <CardDescription>Your scheduled exercises and reminders</CardDescription>
+            <CardDescription>{t('dashboard.todayPlan.description')}</CardDescription>
           </CardHeader>
           <CardContent className="p-4 pt-0">
             <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
@@ -824,7 +861,7 @@ export default function Dashboard() {
               <div className="space-y-3 md:col-span-1">
                 <h4 className="text-sm font-semibold flex items-center gap-1.5">
                   <Activity className="h-4 w-4 text-emerald-500" />
-                  Exercises
+                  {t('dashboard.todayPlan.exercises')}
                 </h4>
                 <div className="space-y-2">
                   {todaysExercises.map((exercise) => (
@@ -842,7 +879,7 @@ export default function Dashboard() {
                             ? 'text-muted-foreground line-through'
                             : ''
                         }`}>
-                          {exercise.name}
+                          {t(exercise.nameKey)}
                         </p>
                         <p className="text-muted-foreground text-[11px]">
                           {exercise.time} · {exercise.duration}
@@ -862,7 +899,7 @@ export default function Dashboard() {
               <div className="space-y-3 md:col-span-1">
                 <h4 className="text-sm font-semibold flex items-center gap-1.5">
                   <Bell className="h-4 w-4 text-amber-500" />
-                  Reminders
+                  {t('dashboard.todayPlan.reminders')}
                 </h4>
                 <div className="space-y-2">
                   {upcomingReminders.map((reminder) => (
@@ -871,7 +908,7 @@ export default function Dashboard() {
                       className="flex items-center gap-2 rounded-lg border p-2.5"
                     >
                       <Bell className="text-amber-500 h-3.5 w-3.5 shrink-0" />
-                      <span className="text-sm flex-1">{reminder.text}</span>
+                      <span className="text-sm flex-1">{t(reminder.textKey)}</span>
                       <Badge variant="outline" className="text-[10px] shrink-0">
                         {reminder.time}
                       </Badge>
@@ -885,26 +922,26 @@ export default function Dashboard() {
                 <div>
                   <h4 className="text-sm font-semibold flex items-center gap-1.5 mb-3">
                     <Target className="h-4 w-4 text-cyan-500" />
-                    Daily Goals
+                    {t('dashboard.todayPlan.dailyGoals')}
                   </h4>
                   <div className="space-y-2">
                     <div>
                       <div className="flex items-center justify-between text-xs mb-1">
-                        <span>Exercises</span>
+                        <span>{t('dashboard.todayPlan.exercises')}</span>
                         <span className="font-medium">{completedGoals}/{totalGoals}</span>
                       </div>
                       <Progress value={goalsPercent} className="h-2" />
                     </div>
                     <div>
                       <div className="flex items-center justify-between text-xs mb-1">
-                        <span>Calories</span>
+                        <span>{t('dashboard.todayPlan.calories')}</span>
                         <span className="font-medium">150/300 kcal</span>
                       </div>
                       <Progress value={50} className="h-2" />
                     </div>
                     <div>
                       <div className="flex items-center justify-between text-xs mb-1">
-                        <span>Water Intake</span>
+                        <span>{t('dashboard.todayPlan.waterIntake')}</span>
                         <span className="font-medium">5/8 glasses</span>
                       </div>
                       <Progress value={62} className="h-2" />
@@ -930,9 +967,9 @@ export default function Dashboard() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <Award className="h-5 w-5 text-amber-500" />
-              Achievements
+              {t('dashboard.achievements.title')}
             </CardTitle>
-            <CardDescription>Your milestones and badges</CardDescription>
+            <CardDescription>{t('dashboard.achievements.description')}</CardDescription>
           </CardHeader>
           <CardContent className="p-4 pt-0">
             <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-thin">
@@ -967,7 +1004,7 @@ export default function Dashboard() {
                       )}
                       {!isEarned && (
                         <Badge variant="outline" className="mt-2 text-[10px]">
-                          In Progress
+                          {t('dashboard.achievements.inProgress')}
                         </Badge>
                       )}
                     </div>
@@ -988,10 +1025,10 @@ export default function Dashboard() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
                 <Activity className="h-5 w-5 text-emerald-500" />
-                Weekly Exercise
+                {t('dashboard.charts.weeklyExercise.title')}
               </CardTitle>
               <CardDescription>
-                Daily exercise minutes vs target
+                {t('dashboard.charts.weeklyExercise.description')}
               </CardDescription>
             </CardHeader>
             <CardContent className="p-4 pt-0 overflow-x-auto">
@@ -1043,10 +1080,10 @@ export default function Dashboard() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
                 <TrendingUp className="h-5 w-5 text-cyan-500" />
-                Progress Over Time
+                {t('dashboard.charts.progress.title')}
               </CardTitle>
               <CardDescription>
-                Strength, flexibility, endurance &amp; balance
+                {t('dashboard.charts.progress.description')}
               </CardDescription>
             </CardHeader>
             <CardContent className="p-4 pt-0 overflow-x-auto">
@@ -1117,10 +1154,10 @@ export default function Dashboard() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
                 <Flame className="h-5 w-5 text-amber-500" />
-                Calorie Tracking
+                {t('dashboard.charts.calories.title')}
               </CardTitle>
               <CardDescription>
-                Daily intake vs burned vs target
+                {t('dashboard.charts.calories.description')}
               </CardDescription>
             </CardHeader>
             <CardContent className="p-4 pt-0 overflow-x-auto">
@@ -1179,10 +1216,10 @@ export default function Dashboard() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
                 <Heart className="h-5 w-5 text-rose-500" />
-                Heart Rate Timeline
+                {t('dashboard.charts.heartRate.title')}
               </CardTitle>
               <CardDescription>
-                BPM throughout the day with zone indicators
+                {t('dashboard.charts.heartRate.description')}
               </CardDescription>
             </CardHeader>
             <CardContent className="p-4 pt-0 overflow-x-auto">
@@ -1263,7 +1300,7 @@ export default function Dashboard() {
                       className="inline-block h-2.5 w-2.5 rounded-full"
                       style={{ backgroundColor: color }}
                     />
-                    {zone}
+                    {t(zoneLabelKeys[zone] ?? 'dashboard.zone.resting')}
                   </span>
                 ))}
               </div>
@@ -1278,17 +1315,17 @@ export default function Dashboard() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <Heart className="h-5 w-5 text-rose-500" />
-              Mood Trend
+              {t('dashboard.charts.moodTrend.title')}
             </CardTitle>
             <CardDescription>
-              Mood distribution over recent weeks
+              {t('dashboard.charts.moodTrend.description')}
             </CardDescription>
           </CardHeader>
           <CardContent className="p-4 pt-0 overflow-x-auto">
             <Tabs defaultValue="chart">
               <TabsList className="mb-4">
-                <TabsTrigger value="chart">Chart</TabsTrigger>
-                <TabsTrigger value="details">Details</TabsTrigger>
+                <TabsTrigger value="chart">{t('common.chart')}</TabsTrigger>
+                <TabsTrigger value="details">{t('common.details')}</TabsTrigger>
               </TabsList>
               <TabsContent value="chart">
                 <ChartContainer
@@ -1382,10 +1419,10 @@ export default function Dashboard() {
                         />
                       </div>
                       <p className="text-muted-foreground mt-1 text-xs">
-                        Happy {week.happy} · Calm {week.calm}
+                        {t('dashboard.chart.moodSummaryPositive', { happy: week.happy, calm: week.calm })}
                       </p>
                       <p className="text-muted-foreground text-xs">
-                        Anxious {week.anxious} · Sad {week.sad}
+                        {t('dashboard.chart.moodSummaryNegative', { anxious: week.anxious, sad: week.sad })}
                       </p>
                     </div>
                   ))}

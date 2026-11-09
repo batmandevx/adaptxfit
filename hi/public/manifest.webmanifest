@@ -1,0 +1,62 @@
+{
+  "name": "AdaptiFit — Inclusive Fitness & Rehab",
+  "short_name": "AdaptiFit",
+  "description": "Personalized rehabilitation and fitness for everyone — works fully offline: workouts, Live Coach rep counting, Mind Gym and logs sync when you reconnect.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#1c1c1c",
+  "background_color": "#ffffff",
+  "lang": "en",
+  "categories": ["health", "fitness", "medical"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Start Live Coach",
+      "short_name": "Live Coach",
+      "description": "Jump straight into on-device pose coaching and rep counting.",
+      "url": "/?section=live-coach",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Mind Gym",
+      "short_name": "Mind Gym",
+      "description": "Open cognitive training exercises.",
+      "url": "/?section=mind-gym",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ]
+}

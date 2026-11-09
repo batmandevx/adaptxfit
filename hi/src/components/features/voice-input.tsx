@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mic, MicOff, Loader2, AlertCircle, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/tooltip';
 import { useASR } from '@/hooks/use-asr';
 import { useAppStore, type AppSection } from '@/stores/app-store';
+import { useCommander } from '@/voice/use-commander';
 
 interface VoiceInputProps {
   /** Callback when transcription is ready */
@@ -23,7 +24,7 @@ interface VoiceInputProps {
   disabled?: boolean;
 }
 
-// ── Voice command mapping ──────────────────────────────────────────────────────
+// ── Legacy voice command mapping (fallback when the commander matches nothing) ─
 
 const voiceCommands: { patterns: string[]; section: AppSection; label: string }[] = [
   { patterns: ['go to dashboard', 'open dashboard', 'show dashboard', 'dashboard'], section: 'dashboard', label: 'Dashboard' },
@@ -85,20 +86,37 @@ export default function VoiceInput({
   disabled = false,
 }: VoiceInputProps) {
   const setActiveSection = useAppStore((s) => s.setActiveSection);
+  const commander = useCommander();
   const [commandDetected, setCommandDetected] = useState<string | null>(null);
   const commandTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const flashCommand = useCallback((label: string) => {
+    setCommandDetected(label);
+    if (commandTimeoutRef.current) clearTimeout(commandTimeoutRef.current);
+    commandTimeoutRef.current = setTimeout(() => setCommandDetected(null), 2500);
+  }, []);
+
   // Handle transcription through the hook callback (no effect needed)
   const handleTranscription = useCallback((text: string) => {
+    // 1) Voice Commander 2.0 — action-level intents first (start/stop/next,
+    //    log water, help, …). A matched intent is dispatched by the provider
+    //    and confirmed aloud + via the aria-live announcer, so the transcript
+    //    is consumed and we stop here.
+    const intent = commander?.processTranscript(text) ?? null;
+    if (intent) {
+      flashCommand(intent.label);
+      return;
+    }
+
+    // 2) Legacy section-navigation fallback (pre-v2 behavior, kept intact for
+    //    standalone usage without a VoiceCommanderProvider).
     const command = matchVoiceCommand(text);
     if (command) {
-      setCommandDetected(command.label);
+      flashCommand(`Opening ${command.label}`);
       setActiveSection(command.section);
-      if (commandTimeoutRef.current) clearTimeout(commandTimeoutRef.current);
-      commandTimeoutRef.current = setTimeout(() => setCommandDetected(null), 2000);
     }
     onTranscription(text);
-  }, [onTranscription, setActiveSection]);
+  }, [commander, flashCommand, onTranscription, setActiveSection]);
 
   const handleError = useCallback((err: string) => {
     console.warn('ASR Error:', err);
@@ -122,6 +140,15 @@ export default function VoiceInput({
     error.includes('NotAllowedError') ||
     error.includes('denied')
   );
+
+  // "stop listening" / "mic off" — hands-free way to end the recording.
+  const registerHandler = commander?.registerHandler;
+  useEffect(() => {
+    if (!registerHandler) return;
+    return registerHandler('system.stopListening', () => {
+      void stopRecording();
+    });
+  }, [registerHandler, stopRecording]);
 
   const handleClick = useCallback(async () => {
     if (isRecording) {
@@ -231,7 +258,7 @@ export default function VoiceInput({
               ? 'Transcribing...'
               : isRecording
                 ? 'Tap to stop recording'
-                : 'Tap to speak — try "go to dashboard"'}
+                : 'Tap to speak — try "start workout" or say "help"'}
         </TooltipContent>
       </Tooltip>
 
@@ -265,18 +292,20 @@ export default function VoiceInput({
         )}
       </AnimatePresence>
 
-      {/* Voice command detected indicator */}
+      {/* Voice command detected indicator (visual only — screen readers get the
+          same confirmation through the announcer's aria-live region) */}
       <AnimatePresence>
         {commandDetected && (
           <motion.div
+            aria-hidden="true"
             initial={{ opacity: 0, scale: 0.8, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.8, y: -10 }}
-            className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-3 py-1"
+            className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 motion-reduce:transition-none"
           >
             <Sparkles className="h-3.5 w-3.5 text-emerald-500" />
             <span className="text-xs font-medium text-emerald-600">
-              Opening {commandDetected}
+              {commandDetected}
             </span>
           </motion.div>
         )}

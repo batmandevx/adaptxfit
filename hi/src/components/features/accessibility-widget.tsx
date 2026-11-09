@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAccessibilityStore } from '@/stores/accessibility-store';
 import { Switch } from '@/components/ui/switch';
@@ -20,7 +20,15 @@ import {
   Volume2,
   Gauge,
   RotateCcw,
+  Languages,
 } from 'lucide-react';
+import {
+  LOCALE_OPTIONS,
+  speechLocale,
+  translate,
+  useT,
+  type Locale,
+} from '@/lib/i18n';
 
 // ─── Panel Animation Variants ─────────────────────────────────────────────────
 
@@ -112,6 +120,57 @@ function SectionHeader({ icon, title }: { icon: React.ReactNode; title: string }
 
 export default function AccessibilityWidget() {
   const store = useAccessibilityStore();
+  const t = useT();
+  const languageRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const [languageAnnouncement, setLanguageAnnouncement] = useState('');
+
+  const selectLanguage = useCallback(
+    (locale: Locale) => {
+      const option = LOCALE_OPTIONS.find((item) => item.code === locale);
+      const nativeName = option?.nativeName ?? locale;
+      store.setLocale(locale);
+      setLanguageAnnouncement(translate(locale, 'accessibility.language.changed', { language: nativeName }));
+
+      if (store.ttsEnabled && typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(
+          translate(locale, 'accessibility.language.changed', { language: nativeName })
+        );
+        utterance.lang = speechLocale(locale);
+        utterance.rate = store.voiceSpeed;
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(utterance);
+      }
+    },
+    [store]
+  );
+
+  const handleLanguageKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
+      const currentIndex = Math.max(
+        0,
+        LOCALE_OPTIONS.findIndex((option) => option.code === store.locale)
+      );
+      let nextIndex = currentIndex;
+
+      if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
+        nextIndex = (currentIndex + 1) % LOCALE_OPTIONS.length;
+      } else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
+        nextIndex = (currentIndex - 1 + LOCALE_OPTIONS.length) % LOCALE_OPTIONS.length;
+      } else if (event.key === 'Home') {
+        nextIndex = 0;
+      } else if (event.key === 'End') {
+        nextIndex = LOCALE_OPTIONS.length - 1;
+      } else {
+        return;
+      }
+
+      event.preventDefault();
+      const nextLocale = LOCALE_OPTIONS[nextIndex].code;
+      selectLanguage(nextLocale);
+      requestAnimationFrame(() => languageRefs.current[nextIndex]?.focus());
+    },
+    [selectLanguage, store.locale]
+  );
 
   // Apply root CSS classes based on store state
   useEffect(() => {
@@ -250,6 +309,56 @@ export default function AccessibilityWidget() {
               {/* Scrollable Content */}
               <ScrollArea className="max-h-[60vh]">
                 <div className="px-4 pb-4 pt-1 space-y-1">
+                  {/* ── Language / Coaching Locale ── */}
+                  <SectionHeader
+                    icon={<Languages className="w-3.5 h-3.5" />}
+                    title={t('accessibility.language.title')}
+                  />
+                  <div className="pb-2">
+                    <p className="text-[11px] text-muted-foreground pb-2">
+                      {t('accessibility.language.description')}
+                    </p>
+                    <div
+                      role="radiogroup"
+                      aria-label={t('accessibility.language.title')}
+                      onKeyDown={handleLanguageKeyDown}
+                      className="grid grid-cols-1 gap-1.5"
+                    >
+                      {LOCALE_OPTIONS.map((option, index) => {
+                        const selected = store.locale === option.code;
+                        return (
+                          <button
+                            key={option.code}
+                            ref={(element) => {
+                              languageRefs.current[index] = element;
+                            }}
+                            type="button"
+                            role="radio"
+                            aria-checked={selected}
+                            tabIndex={selected ? 0 : -1}
+                            onClick={() => selectLanguage(option.code)}
+                            className={`flex min-h-10 items-center gap-2.5 rounded-xl border px-3 py-2 text-left text-sm transition-colors focus-visible:outline-2 focus-visible:outline-emerald-500 focus-visible:outline-offset-2 ${
+                              selected
+                                ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                                : 'border-border/60 bg-muted/40 text-foreground hover:border-emerald-500/30 hover:bg-emerald-500/5'
+                            }`}
+                          >
+                            <span aria-hidden="true" className="text-base leading-none">
+                              {option.flag}
+                            </span>
+                            <span className="flex-1 font-medium">{option.nativeName}</span>
+                            <span className="text-[10px] text-muted-foreground">
+                              {option.englishName}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <p className="sr-only" aria-live="polite">
+                      {languageAnnouncement}
+                    </p>
+                  </div>
+
                   {/* ── Visual Settings ── */}
                   <SectionHeader
                     icon={<Contrast className="w-3.5 h-3.5" />}

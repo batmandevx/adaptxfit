@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { DEFAULT_LOCALE, type Locale } from '@/lib/i18n/types';
 
 interface AccessibilityState {
   fontSize: 'small' | 'medium' | 'large';
@@ -10,6 +11,7 @@ interface AccessibilityState {
   largerTouchTargets: boolean;
   ttsEnabled: boolean;
   voiceSpeed: number;
+  locale: Locale;
   isOpen: boolean;
   hasVisited: boolean;
   // actions
@@ -21,6 +23,7 @@ interface AccessibilityState {
   toggleLargerTouchTargets: () => void;
   toggleTts: () => void;
   setVoiceSpeed: (speed: number) => void;
+  setLocale: (locale: Locale) => void;
   toggleOpen: () => void;
   setOpen: (open: boolean) => void;
   markVisited: () => void;
@@ -38,6 +41,7 @@ export const useAccessibilityStore = create<AccessibilityState>()(
       largerTouchTargets: false,
       ttsEnabled: false,
       voiceSpeed: 1.0,
+      locale: DEFAULT_LOCALE,
       isOpen: false,
       hasVisited: false,
 
@@ -49,6 +53,7 @@ export const useAccessibilityStore = create<AccessibilityState>()(
       toggleLargerTouchTargets: () => set((s) => ({ largerTouchTargets: !s.largerTouchTargets })),
       toggleTts: () => set((s) => ({ ttsEnabled: !s.ttsEnabled })),
       setVoiceSpeed: (speed) => set({ voiceSpeed: speed }),
+      setLocale: (locale) => set({ locale }),
       toggleOpen: () => set((s) => ({ isOpen: !s.isOpen })),
       setOpen: (open) => set({ isOpen: open }),
       markVisited: () => set({ hasVisited: true }),
@@ -62,6 +67,7 @@ export const useAccessibilityStore = create<AccessibilityState>()(
           largerTouchTargets: false,
           ttsEnabled: false,
           voiceSpeed: 1.0,
+          locale: DEFAULT_LOCALE,
         }),
     }),
     {
@@ -75,6 +81,7 @@ export const useAccessibilityStore = create<AccessibilityState>()(
         largerTouchTargets: state.largerTouchTargets,
         ttsEnabled: state.ttsEnabled,
         voiceSpeed: state.voiceSpeed,
+        locale: state.locale,
         hasVisited: state.hasVisited,
       }),
     }
