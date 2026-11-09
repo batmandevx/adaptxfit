@@ -32,13 +32,7 @@ import {
   Moon,
 } from 'lucide-react';
 import { useTTS } from '@/hooks/use-tts';
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  CardDescription,
-} from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -46,6 +40,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
+import { GlassPanel, SectionHeader } from '@/components/ui/aurora';
 
 // --- Types ---
 type RiskLevel = 'low' | 'moderate' | 'high' | 'crisis';
@@ -92,7 +87,7 @@ const CRISIS_HOTLINES: CrisisHotline[] = [
     description: 'Free, confidential support for people in suicidal crisis or emotional distress',
     hours: '24/7',
     icon: <Heart className="h-5 w-5" />,
-    color: 'text-rose-500',
+    color: 'text-danger',
   },
   {
     name: 'Crisis Text Line',
@@ -100,7 +95,7 @@ const CRISIS_HOTLINES: CrisisHotline[] = [
     description: 'Text HOME to 741741 for free crisis counseling via text message',
     hours: '24/7',
     icon: <MessageSquare className="h-5 w-5" />,
-    color: 'text-emerald-500',
+    color: 'text-primary',
   },
   {
     name: 'Veterans Crisis Line',
@@ -108,7 +103,7 @@ const CRISIS_HOTLINES: CrisisHotline[] = [
     description: 'Call 988 then press 1, or text 838255. For veterans and their families',
     hours: '24/7',
     icon: <Shield className="h-5 w-5" />,
-    color: 'text-teal-500',
+    color: 'text-secondary',
   },
   {
     name: 'NAMI Helpline',
@@ -116,41 +111,41 @@ const CRISIS_HOTLINES: CrisisHotline[] = [
     description: 'Information, resource referrals, and support for mental health conditions',
     hours: 'Mon–Fri 10am–10pm ET',
     icon: <Brain className="h-5 w-5" />,
-    color: 'text-cyan-500',
+    color: 'text-info',
   },
 ];
 
 const RISK_CONFIG: Record<RiskLevel, { label: string; color: string; bg: string; border: string; icon: React.ReactNode; recommendation: string }> = {
   low: {
     label: 'Low Risk',
-    color: 'text-emerald-600',
-    bg: 'bg-emerald-50 dark:bg-emerald-950/30',
-    border: 'border-emerald-200 dark:border-emerald-800',
-    icon: <CheckCircle2 className="h-6 w-6 text-emerald-500" />,
+    color: 'text-success',
+    bg: 'bg-success-soft',
+    border: 'border-success/30',
+    icon: <CheckCircle2 className="h-6 w-6 text-success" />,
     recommendation: "You're doing well! Keep up the great self-care practices. Stay connected with your support network and continue using the grounding exercises when needed.",
   },
   moderate: {
     label: 'Moderate Risk',
-    color: 'text-amber-600',
-    bg: 'bg-amber-50 dark:bg-amber-950/30',
-    border: 'border-amber-200 dark:border-amber-800',
-    icon: <AlertTriangle className="h-6 w-6 text-amber-500" />,
+    color: 'text-warning',
+    bg: 'bg-warning-soft',
+    border: 'border-warning/30',
+    icon: <AlertTriangle className="h-6 w-6 text-warning" />,
     recommendation: "It sounds like things are a bit tough right now. Try the grounding exercise below, reach out to someone you trust, or call a crisis line to talk. You don't have to face this alone.",
   },
   high: {
     label: 'High Risk',
-    color: 'text-orange-600',
-    bg: 'bg-orange-50 dark:bg-orange-950/30',
-    border: 'border-orange-200 dark:border-orange-800',
-    icon: <AlertTriangle className="h-6 w-6 text-orange-500" />,
+    color: 'text-warning',
+    bg: 'bg-warning-soft',
+    border: 'border-warning/40',
+    icon: <AlertTriangle className="h-6 w-6 text-warning" />,
     recommendation: "Please reach out for support right now. Call 988 or text HOME to 741741. You matter, and there are people who want to help you through this. Consider using the safety plan to prepare your next steps.",
   },
   crisis: {
     label: 'Crisis',
-    color: 'text-rose-600',
-    bg: 'bg-rose-50 dark:bg-rose-950/30',
-    border: 'border-rose-200 dark:border-rose-800',
-    icon: <Phone className="h-6 w-6 text-rose-500" />,
+    color: 'text-danger',
+    bg: 'bg-danger-soft',
+    border: 'border-danger/40',
+    icon: <Phone className="h-6 w-6 text-danger" />,
     recommendation: "Please call 988 right now. You are not alone, and there is help available. If you are in immediate danger, call emergency services. A caring person is waiting to listen and support you.",
   },
 };
@@ -229,37 +224,37 @@ const SAFETY_PLAN_FIELDS: { key: keyof SafetyPlanData; label: string; placeholde
     key: 'warningSigns',
     label: 'Warning Signs',
     placeholder: 'What thoughts, feelings, or situations tell you a crisis might be coming?',
-    icon: <AlertTriangle className="h-4 w-4 text-amber-500" />,
+    icon: <AlertTriangle className="h-4 w-4 text-warning" />,
   },
   {
     key: 'copingStrategies',
     label: 'Coping Strategies',
     placeholder: 'What activities have helped you feel better in the past?',
-    icon: <Leaf className="h-4 w-4 text-emerald-500" />,
+    icon: <Leaf className="h-4 w-4 text-primary" />,
   },
   {
     key: 'distractionPeople',
     label: 'People & Places for Distraction',
     placeholder: 'People or places that help take your mind off things',
-    icon: <Waves className="h-4 w-4 text-cyan-500" />,
+    icon: <Waves className="h-4 w-4 text-secondary" />,
   },
   {
     key: 'helpPeople',
     label: 'People I Can Ask for Help',
     placeholder: 'Friends, family, or others you can reach out to',
-    icon: <Heart className="h-4 w-4 text-rose-500" />,
+    icon: <Heart className="h-4 w-4 text-danger" />,
   },
   {
     key: 'professionalContacts',
     label: 'Professionals & Agencies',
     placeholder: 'Therapists, counselors, crisis lines, or agencies you can contact',
-    icon: <Shield className="h-4 w-4 text-teal-500" />,
+    icon: <Shield className="h-4 w-4 text-secondary" />,
   },
   {
     key: 'environmentSafety',
     label: 'Making My Environment Safe',
     placeholder: 'Steps you can take to make your surroundings safer',
-    icon: <Flame className="h-4 w-4 text-orange-500" />,
+    icon: <Flame className="h-4 w-4 text-warning" />,
   },
 ];
 
@@ -298,17 +293,17 @@ function EmergencyContactsCard() {
         {CRISIS_HOTLINES.map((hotline, idx) => (
           <motion.div
             key={hotline.name}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: idx * 0.1 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.14, delay: idx * 0.04 }}
           >
-            <Card className="backdrop-blur-md bg-white/60 dark:bg-gray-900/60 border border-white/20 dark:border-gray-700/30 hover:shadow-lg transition-shadow">
-              <CardContent className="p-4">
+            <GlassPanel className="h-full">
+              <div className="p-4">
                 <div className="flex items-start gap-3">
                   <div className={`${hotline.color} mt-0.5`}>{hotline.icon}</div>
                   <div className="flex-1 min-w-0">
                     <h4 className="font-semibold text-sm leading-tight">{hotline.name}</h4>
-                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                    <p className="text-xs text-foreground-muted mt-1 line-clamp-2">
                       {hotline.description}
                     </p>
                     <div className="flex items-center gap-2 mt-2 flex-wrap">
@@ -325,15 +320,16 @@ function EmergencyContactsCard() {
                   <a
                     href={`tel:${hotline.phone.replace(/[^0-9+]/g, '')}`}
                     className="shrink-0"
+                    aria-label={`Call ${hotline.name}`}
                   >
-                    <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1">
-                      <Phone className="h-3.5 w-3.5" />
+                    <Button className="h-12 gap-1.5 rounded-[14px] bg-primary px-4 text-primary-foreground hover:bg-primary-strong">
+                      <Phone className="h-4 w-4" />
                       Call
                     </Button>
                   </a>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </GlassPanel>
           </motion.div>
         ))}
       </div>
@@ -344,14 +340,14 @@ function EmergencyContactsCard() {
       <div>
         <div className="flex items-center justify-between mb-3">
           <h4 className="font-semibold text-sm flex items-center gap-2">
-            <User className="h-4 w-4 text-teal-500" />
+            <User className="h-4 w-4 text-secondary" />
             My Emergency Contacts
           </h4>
           <Button
             variant="outline"
             size="sm"
             onClick={() => setShowAddForm(!showAddForm)}
-            className="gap-1 text-emerald-600 border-emerald-200 hover:bg-emerald-50 dark:border-emerald-800 dark:hover:bg-emerald-950"
+            className="h-11 gap-1 rounded-[14px] border-primary/40 text-primary hover:bg-primary-soft"
           >
             <Plus className="h-3.5 w-3.5" />
             Add
@@ -366,32 +362,32 @@ function EmergencyContactsCard() {
               exit={{ opacity: 0, height: 0 }}
               className="mb-3 overflow-hidden"
             >
-              <Card className="backdrop-blur-md bg-white/60 dark:bg-gray-900/60 border border-dashed border-emerald-300 dark:border-emerald-700">
+              <Card className="border border-dashed border-primary/40 bg-surface-raised/60">
                 <CardContent className="p-4 space-y-3">
                   <Input
                     placeholder="Name"
                     value={newName}
                     onChange={(e) => setNewName(e.target.value)}
-                    className="text-sm"
+                    className="min-h-11 text-sm"
                   />
                   <Input
                     placeholder="Phone number"
                     value={newPhone}
                     onChange={(e) => setNewPhone(e.target.value)}
                     type="tel"
-                    className="text-sm"
+                    className="min-h-11 text-sm"
                   />
                   <Input
                     placeholder="Relationship (optional)"
                     value={newRelationship}
                     onChange={(e) => setNewRelationship(e.target.value)}
-                    className="text-sm"
+                    className="min-h-11 text-sm"
                   />
                   <div className="flex gap-2">
                     <Button
                       size="sm"
                       onClick={addCustomContact}
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1"
+                      className="h-11 gap-1 rounded-[14px] bg-primary px-4 text-primary-foreground hover:bg-primary-strong"
                     >
                       <CheckCircle2 className="h-3.5 w-3.5" />
                       Save
@@ -399,6 +395,7 @@ function EmergencyContactsCard() {
                     <Button
                       size="sm"
                       variant="ghost"
+                      className="h-11"
                       onClick={() => setShowAddForm(false)}
                     >
                       Cancel
@@ -423,27 +420,28 @@ function EmergencyContactsCard() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -10 }}
               >
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-teal-50/50 dark:bg-teal-950/20 border border-teal-100 dark:border-teal-900">
-                  <div className="h-8 w-8 rounded-full bg-teal-100 dark:bg-teal-900 flex items-center justify-center text-teal-600 dark:text-teal-400 text-xs font-bold">
+                <div className="flex items-center gap-3 rounded-[14px] border border-secondary/25 bg-secondary-soft/60 p-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary-soft text-sm font-bold text-secondary">
                     {contact.name.charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{contact.name}</p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-foreground-muted">
                       {contact.relationship} · {contact.phone}
                     </p>
                   </div>
                   <div className="flex items-center gap-1">
-                    <a href={`tel:${contact.phone.replace(/[^0-9+]/g, '')}`}>
-                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50">
+                    <a href={`tel:${contact.phone.replace(/[^0-9+]/g, '')}`} aria-label={`Call ${contact.name}`}>
+                      <Button size="sm" variant="ghost" className="h-11 w-11 p-0 text-primary hover:bg-primary-soft">
                         <Phone className="h-4 w-4" />
                       </Button>
                     </a>
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="h-8 w-8 p-0 text-muted-foreground hover:text-rose-500 hover:bg-rose-50"
+                      className="h-11 w-11 p-0 text-foreground-muted hover:bg-danger-soft hover:text-danger"
                       onClick={() => removeCustomContact(contact.id)}
+                      aria-label={`Remove ${contact.name}`}
                     >
                       <X className="h-4 w-4" />
                     </Button>
@@ -509,7 +507,9 @@ function CrisisAssessmentCard() {
           variant="ghost"
           size="sm"
           onClick={toggleVoice}
-          className={`h-8 w-8 p-0 ${voiceEnabled ? 'text-emerald-600' : 'text-muted-foreground'}`}
+          className={`h-11 w-11 p-0 rounded-full ${voiceEnabled ? 'bg-primary-soft text-primary' : 'text-foreground-muted'}`}
+          aria-label={voiceEnabled ? 'Turn voice guidance off' : 'Turn voice guidance on'}
+          aria-pressed={voiceEnabled}
         >
           {voiceEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
         </Button>
@@ -520,30 +520,29 @@ function CrisisAssessmentCard() {
           {/* Mood Check */}
           <div>
             <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-cyan-500" />
+              <Sparkles className="h-4 w-4 text-info" />
               How are you feeling right now?
             </h4>
             <div className="flex gap-2 flex-wrap">
               {MOOD_EMOJIS.map((mood) => (
-                <motion.button
+                <button
                   key={mood.value}
-                  whileHover={{ scale: 1.15 }}
-                  whileTap={{ scale: 0.9 }}
                   onClick={() => {
                     setMoodValue(mood.value);
                     if (voiceEnabled) {
                       speak(`You selected ${mood.label}`, { voice: 'tongtong', speed: 0.75 });
                     }
                   }}
-                  className={`flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all ${
+                  aria-pressed={moodValue === mood.value}
+                  className={`flex min-h-[72px] min-w-[64px] flex-col items-center gap-1 rounded-[18px] border-2 p-3 transition-colors duration-150 ${
                     moodValue === mood.value
-                      ? 'border-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 shadow-md'
-                      : 'border-transparent bg-gray-50 dark:bg-gray-800/50 hover:border-emerald-200'
+                      ? 'border-primary/60 bg-primary-soft'
+                      : 'border-transparent bg-surface-raised hover:border-primary/30'
                   }`}
                 >
                   <span className="text-2xl">{mood.emoji}</span>
-                  <span className="text-[10px] font-medium text-muted-foreground">{mood.label}</span>
-                </motion.button>
+                  <span className="text-xs font-medium text-foreground-muted">{mood.label}</span>
+                </button>
               ))}
             </div>
           </div>
@@ -553,13 +552,13 @@ function CrisisAssessmentCard() {
           {/* PHQ-2 */}
           <div>
             <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
-              <ClipboardList className="h-4 w-4 text-teal-500" />
+              <ClipboardList className="h-4 w-4 text-secondary" />
               Quick Wellness Check (PHQ-2)
             </h4>
             <div className="space-y-5">
               {PHQ2_QUESTIONS.map((q, qIdx) => (
                 <div key={q.id} className="space-y-2">
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-foreground-muted">
                     {qIdx + 1}. {q.question}
                   </p>
                   <div className="grid grid-cols-2 gap-2">
@@ -574,10 +573,10 @@ function CrisisAssessmentCard() {
                             speak(q.question, { voice: 'tongtong', speed: 0.75 });
                           }
                         }}
-                        className={`text-xs justify-start h-auto py-2 ${
+                        className={`min-h-12 justify-start rounded-[14px] py-2 text-xs ${
                           phqAnswers[q.id] === opt.value
-                            ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                            : 'hover:border-emerald-300'
+                            ? 'bg-primary text-primary-foreground hover:bg-primary-strong'
+                            : 'hover:border-primary/40 hover:bg-primary-soft/50'
                         }`}
                       >
                         {opt.label}
@@ -592,7 +591,7 @@ function CrisisAssessmentCard() {
           <Button
             onClick={handleAssessment}
             disabled={moodValue === null || Object.keys(phqAnswers).length < 2}
-            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white gap-2"
+            className="h-12 w-full gap-2 rounded-[14px] bg-primary text-[15px] font-semibold text-primary-foreground hover:bg-primary-strong"
           >
             <Heart className="h-4 w-4" />
             See My Results
@@ -617,18 +616,16 @@ function CrisisAssessmentCard() {
               value={Math.min(100, (totalScore / 10) * 100)}
               className={`h-2 ${
                 totalScore >= 7
-                  ? '[&>div]:bg-rose-500'
-                  : totalScore >= 5
-                    ? '[&>div]:bg-orange-500'
-                    : totalScore >= 3
-                      ? '[&>div]:bg-amber-500'
-                      : '[&>div]:bg-emerald-500'
+                  ? '[&>div]:bg-danger'
+                  : totalScore >= 3
+                    ? '[&>div]:bg-warning'
+                    : '[&>div]:bg-success'
               }`}
             />
           </div>
 
           {/* Recommendation */}
-          <div className="p-4 rounded-xl bg-white/50 dark:bg-gray-900/50 border border-emerald-100 dark:border-emerald-900">
+          <div className="rounded-[18px] border border-border/60 bg-surface-raised/60 p-4">
             <p className="text-sm leading-relaxed">{riskConfig.recommendation}</p>
           </div>
 
@@ -636,17 +633,16 @@ function CrisisAssessmentCard() {
           <div className="flex gap-2 flex-wrap">
             {getRiskLevel() !== 'low' && (
               <a href="tel:988">
-                <Button variant="destructive" size="sm" className="gap-1">
-                  <Phone className="h-3.5 w-3.5" />
+                <Button variant="destructive" className="h-12 gap-1.5 rounded-[14px] px-5">
+                  <Phone className="h-4 w-4" />
                   Call 988 Now
                 </Button>
               </a>
             )}
             <Button
               variant="outline"
-              size="sm"
               onClick={resetAssessment}
-              className="gap-1 border-emerald-200 hover:bg-emerald-50 dark:border-emerald-800"
+              className="h-12 gap-1 rounded-[14px] border-primary/40 hover:bg-primary-soft"
             >
               Retake Assessment
             </Button>
@@ -728,35 +724,12 @@ function GroundingExerciseCard() {
     setVoiceEnabled(!voiceEnabled);
   };
 
-  // Pulsing circle animation - defined outside render
-  const pulsingCircle = (
+  // Static, calm visual stage — no pulsing or looping animation (crisis spec).
+  const staticStage = (
     <div className="relative flex items-center justify-center my-6">
-      <motion.div
-        className="absolute h-24 w-24 rounded-full bg-gradient-to-br from-emerald-400/30 to-teal-400/30"
-        animate={{
-          scale: [1, 1.3, 1],
-          opacity: [0.3, 0.6, 0.3],
-        }}
-        transition={{
-          duration: 4,
-          repeat: Infinity,
-          ease: 'easeInOut',
-        }}
-      />
-      <motion.div
-        className="absolute h-16 w-16 rounded-full bg-gradient-to-br from-cyan-400/40 to-emerald-400/40"
-        animate={{
-          scale: [1, 1.2, 1],
-          opacity: [0.4, 0.7, 0.4],
-        }}
-        transition={{
-          duration: 3,
-          repeat: Infinity,
-          ease: 'easeInOut',
-          delay: 0.5,
-        }}
-      />
-      <div className="relative h-10 w-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-white">
+      <div className="absolute h-24 w-24 rounded-full bg-secondary-soft" aria-hidden="true" />
+      <div className="absolute h-16 w-16 rounded-full bg-primary-soft" aria-hidden="true" />
+      <div className="relative flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground">
         {step.icon}
       </div>
     </div>
@@ -767,18 +740,20 @@ function GroundingExerciseCard() {
       {/* Voice toggle */}
       <div className="flex items-center justify-between">
         <h4 className="font-semibold text-sm flex items-center gap-2">
-          <Leaf className="h-4 w-4 text-emerald-500" />
+          <Leaf className="h-4 w-4 text-primary" />
           5-4-3-2-1 Grounding Technique
         </h4>
         <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">Voice</span>
+          <span className="text-xs text-foreground-muted">Voice</span>
           <Button
             variant="ghost"
             size="sm"
             onClick={toggleVoice}
-            className={`h-7 w-7 p-0 ${voiceEnabled ? 'text-emerald-600' : 'text-muted-foreground'}`}
+            className={`h-11 w-11 p-0 rounded-full ${voiceEnabled ? 'bg-primary-soft text-primary' : 'text-foreground-muted'}`}
+            aria-label={voiceEnabled ? 'Turn voice guidance off' : 'Turn voice guidance on'}
+            aria-pressed={voiceEnabled}
           >
-            {voiceEnabled ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
+            {voiceEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
           </Button>
         </div>
       </div>
@@ -786,41 +761,18 @@ function GroundingExerciseCard() {
       {!isActive ? (
         <div className="text-center py-8">
           <div className="relative flex items-center justify-center mb-6">
-            <motion.div
-              className="absolute h-32 w-32 rounded-full bg-gradient-to-br from-emerald-200/40 to-teal-200/40 dark:from-emerald-800/30 dark:to-teal-800/30"
-              animate={{
-                scale: [1, 1.15, 1],
-                opacity: [0.3, 0.5, 0.3],
-              }}
-              transition={{
-                duration: 5,
-                repeat: Infinity,
-                ease: 'easeInOut',
-              }}
-            />
-            <motion.div
-              className="absolute h-20 w-20 rounded-full bg-gradient-to-br from-cyan-200/50 to-emerald-200/50 dark:from-cyan-800/30 dark:to-emerald-800/30"
-              animate={{
-                scale: [1, 1.1, 1],
-                opacity: [0.4, 0.6, 0.4],
-              }}
-              transition={{
-                duration: 4,
-                repeat: Infinity,
-                ease: 'easeInOut',
-                delay: 1,
-              }}
-            />
-            <div className="relative h-14 w-14 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-white shadow-lg">
+            <div className="absolute h-32 w-32 rounded-full bg-secondary-soft" aria-hidden="true" />
+            <div className="absolute h-20 w-20 rounded-full bg-primary-soft" aria-hidden="true" />
+            <div className="relative flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground">
               <Leaf className="h-7 w-7" />
             </div>
           </div>
-          <p className="text-sm text-muted-foreground mb-6 max-w-xs mx-auto">
+          <p className="text-sm text-foreground-muted mb-6 max-w-xs mx-auto">
             A calming sensory exercise to help you feel grounded and present. Focus on each of your five senses, one at a time.
           </p>
           <Button
             onClick={startExercise}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2"
+            className="h-12 gap-2 rounded-[14px] bg-primary px-6 text-[15px] font-semibold text-primary-foreground hover:bg-primary-strong"
           >
             <Leaf className="h-4 w-4" />
             Start Grounding Exercise
@@ -828,29 +780,24 @@ function GroundingExerciseCard() {
         </div>
       ) : isComplete ? (
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.14 }}
           className="text-center py-6 space-y-4"
         >
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: 'spring', stiffness: 200, damping: 15 }}
-          >
-            <div className="h-16 w-16 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-white mx-auto shadow-lg">
-              <CheckCircle2 className="h-8 w-8" />
-            </div>
-          </motion.div>
-          <h4 className="font-bold text-lg bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-success-soft text-success">
+            <CheckCircle2 className="h-8 w-8" />
+          </div>
+          <h4 className="font-display text-lg font-semibold text-foreground">
             You did it!
           </h4>
-          <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+          <p className="text-sm text-foreground-muted max-w-xs mx-auto">
             Take a deep breath. You are here, you are safe, and you are doing well. Notice how you feel now compared to when you started.
           </p>
           <Button
             variant="outline"
             onClick={resetExercise}
-            className="gap-2 border-emerald-200 hover:bg-emerald-50 dark:border-emerald-800"
+            className="h-12 gap-2 rounded-[14px] border-primary/40 hover:bg-primary-soft"
           >
             Start Again
           </Button>
@@ -863,7 +810,7 @@ function GroundingExerciseCard() {
               <span>Progress</span>
               <span>{completedItems}/{totalItems} items</span>
             </div>
-            <Progress value={progressPercent} className="h-2 [&>div]:bg-gradient-to-r [&>div]:from-emerald-500 [&>div]:to-teal-500" />
+            <Progress value={progressPercent} className="h-2 [&>div]:bg-primary" />
           </div>
 
           {/* Step indicators */}
@@ -873,10 +820,10 @@ function GroundingExerciseCard() {
                 key={i}
                 className={`h-2 rounded-full transition-all ${
                   i === currentStep
-                    ? 'w-8 bg-emerald-500'
+                    ? 'w-8 bg-primary'
                     : (inputs[i]?.length || 0) >= s.count
-                      ? 'w-2 bg-teal-400'
-                      : 'w-2 bg-gray-200 dark:bg-gray-700'
+                      ? 'w-2 bg-secondary'
+                      : 'w-2 bg-border'
                 }`}
               />
             ))}
@@ -886,17 +833,18 @@ function GroundingExerciseCard() {
           <AnimatePresence mode="wait">
             <motion.div
               key={currentStep}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.14 }}
               className="text-center"
             >
-              {pulsingCircle}
+              {staticStage}
 
-              <h4 className="font-bold text-lg mb-1 bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+              <h4 className="font-display text-lg font-semibold text-foreground mb-1">
                 {step.count} things you can {step.sense}
               </h4>
-              <p className="text-sm text-muted-foreground mb-4">{step.prompt}</p>
+              <p className="text-sm text-foreground-muted mb-4">{step.prompt}</p>
 
               {/* Already entered items */}
               {stepInputs.length > 0 && (
@@ -904,7 +852,7 @@ function GroundingExerciseCard() {
                   {stepInputs.map((item, idx) => (
                     <Badge
                       key={idx}
-                      className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 gap-1"
+                      className="gap-1 bg-primary-soft text-primary hover:bg-primary-soft"
                     >
                       <CheckCircle2 className="h-3 w-3" />
                       {item}
@@ -921,14 +869,14 @@ function GroundingExerciseCard() {
                     onChange={(e) => setCurrentInput(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && addInput()}
                     placeholder={`${step.count - stepInputs.length} more...`}
-                    className="text-sm"
+                    className="min-h-12 rounded-[14px] text-sm"
                     autoFocus
                   />
                   <Button
                     onClick={addInput}
                     disabled={!currentInput.trim()}
-                    size="sm"
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white shrink-0"
+                    className="h-12 w-12 shrink-0 rounded-[14px] bg-primary text-primary-foreground hover:bg-primary-strong"
+                    aria-label="Add item"
                   >
                     <ChevronRight className="h-4 w-4" />
                   </Button>
@@ -939,8 +887,8 @@ function GroundingExerciseCard() {
 
           {/* All entered items summary */}
           {completedItems > 0 && (
-            <div className="mt-4 p-3 rounded-xl bg-white/40 dark:bg-gray-900/40 border border-emerald-100 dark:border-emerald-900">
-              <p className="text-xs font-medium text-muted-foreground mb-2">What you've noticed so far:</p>
+            <div className="mt-4 rounded-[18px] border border-border/60 bg-surface-raised/60 p-3">
+              <p className="text-xs font-medium text-foreground-muted mb-2">What you've noticed so far:</p>
               <div className="flex flex-wrap gap-1.5">
                 {Object.entries(inputs).map(([stepIdx, items]) =>
                   items.map((item, itemIdx) => (
@@ -1055,7 +1003,7 @@ function SafetyPlanCard() {
         <div className="flex items-center gap-2">
           <h4 className="font-semibold text-sm">My Safety Plan</h4>
           {isSaved && (
-            <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 text-[10px]">
+            <Badge className="bg-success-soft text-success hover:bg-success-soft text-xs">
               <CheckCircle2 className="h-3 w-3 mr-1" />
               Saved
             </Badge>
@@ -1064,7 +1012,7 @@ function SafetyPlanCard() {
         <span className="text-xs text-muted-foreground">{filledFields}/6 sections</span>
       </div>
 
-      <Progress value={(filledFields / 6) * 100} className="h-1.5 [&>div]:bg-emerald-500" />
+      <Progress value={(filledFields / 6) * 100} className="h-1.5 [&>div]:bg-primary" />
 
       <div className="space-y-4">
         {SAFETY_PLAN_FIELDS.map((field) => (
@@ -1086,7 +1034,7 @@ function SafetyPlanCard() {
       <div className="flex gap-2 flex-wrap">
         <Button
           onClick={savePlan}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1"
+          className="h-12 gap-1.5 rounded-[14px] bg-primary px-5 text-[15px] font-semibold text-primary-foreground hover:bg-primary-strong"
         >
           <CheckCircle2 className="h-4 w-4" />
           Save Plan
@@ -1094,7 +1042,7 @@ function SafetyPlanCard() {
         <Button
           variant="outline"
           onClick={exportPlan}
-          className="gap-1 border-teal-200 hover:bg-teal-50 dark:border-teal-800"
+          className="h-12 gap-1.5 rounded-[14px] border-secondary/40 hover:bg-secondary-soft"
         >
           <Download className="h-4 w-4" />
           Export
@@ -1107,82 +1055,64 @@ function SafetyPlanCard() {
 // --- Main Component ---
 export default function CrisisSupport() {
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-center"
-      >
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-emerald-100 to-teal-100 dark:from-emerald-900/40 dark:to-teal-900/40 border border-emerald-200 dark:border-emerald-800 mb-3">
-          <Shield className="h-4 w-4 text-emerald-600" />
-          <span className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
-            Crisis Support & Safety
-          </span>
-        </div>
-        <h2 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 bg-clip-text text-transparent">
-          You Are Not Alone
-        </h2>
-        <p className="text-sm text-muted-foreground mt-1 max-w-md mx-auto">
-          Support, resources, and tools to help you through difficult moments. Reach out anytime — there are people who care.
-        </p>
-      </motion.div>
+    <div className="mx-auto w-full max-w-[920px] space-y-6">
+      {/* Quiet, direct header — no gradients, no flourish (crisis spec) */}
+      <SectionHeader
+        eyebrow="CRISIS SUPPORT"
+        title="You are not alone."
+        description="Support, resources, and tools to help you through difficult moments. Reach out anytime — there are people who care."
+      />
 
-      {/* Urgent banner */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.2 }}
-        className="p-4 rounded-xl bg-gradient-to-r from-rose-50 to-orange-50 dark:from-rose-950/30 dark:to-orange-950/30 border border-rose-200 dark:border-rose-800"
-      >
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-full bg-rose-100 dark:bg-rose-900/40 flex items-center justify-center shrink-0">
-            <Phone className="h-5 w-5 text-rose-600" />
+      {/* Urgent banner — always first, high-contrast, direct */}
+      <div className="rounded-[18px] border border-danger/30 bg-danger-soft p-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-danger/15">
+            <Phone className="h-5 w-5 text-danger" />
           </div>
-          <div className="flex-1">
-            <p className="text-sm font-semibold text-rose-700 dark:text-rose-400">
+          <div className="min-w-[200px] flex-1">
+            <p className="text-sm font-semibold text-danger">
               If you are in immediate danger or crisis
             </p>
-            <p className="text-xs text-rose-600/80 dark:text-rose-400/80">
-              Call <strong>988</strong> (Suicide & Crisis Lifeline) or text <strong>HOME</strong> to <strong>741741</strong>
+            <p className="text-xs text-foreground-muted">
+              Call <strong>988</strong> (Suicide &amp; Crisis Lifeline) or text <strong>HOME</strong> to <strong>741741</strong>
             </p>
           </div>
           <a href="tel:988">
-            <Button variant="destructive" size="sm" className="gap-1 shrink-0">
-              <Phone className="h-3.5 w-3.5" />
+            <Button className="h-12 shrink-0 gap-1.5 rounded-[14px] bg-danger px-5 text-[15px] font-semibold text-danger-foreground hover:bg-danger/90">
+              <Phone className="h-4 w-4" />
               Call 988
             </Button>
           </a>
         </div>
-      </motion.div>
+      </div>
 
       {/* Tabs */}
       <Tabs defaultValue="contacts" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 bg-gray-100/80 dark:bg-gray-800/80 h-auto p-1">
+        <TabsList className="glass-panel grid h-auto w-full grid-cols-4 p-1">
           <TabsTrigger
             value="contacts"
-            className="text-xs data-[state=active]:bg-emerald-600 data-[state=active]:text-white gap-1 py-2"
+            className="min-h-12 gap-1 rounded-[14px] text-xs data-[state=active]:bg-primary-soft data-[state=active]:text-primary"
           >
             <Phone className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Contacts</span>
           </TabsTrigger>
           <TabsTrigger
             value="assessment"
-            className="text-xs data-[state=active]:bg-teal-600 data-[state=active]:text-white gap-1 py-2"
+            className="min-h-12 gap-1 rounded-[14px] text-xs data-[state=active]:bg-primary-soft data-[state=active]:text-primary"
           >
             <Brain className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Assessment</span>
           </TabsTrigger>
           <TabsTrigger
             value="grounding"
-            className="text-xs data-[state=active]:bg-cyan-600 data-[state=active]:text-white gap-1 py-2"
+            className="min-h-12 gap-1 rounded-[14px] text-xs data-[state=active]:bg-primary-soft data-[state=active]:text-primary"
           >
             <Leaf className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Grounding</span>
           </TabsTrigger>
           <TabsTrigger
             value="safety-plan"
-            className="text-xs data-[state=active]:bg-emerald-600 data-[state=active]:text-white gap-1 py-2"
+            className="min-h-12 gap-1 rounded-[14px] text-xs data-[state=active]:bg-primary-soft data-[state=active]:text-primary"
           >
             <ClipboardList className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Safety Plan</span>
@@ -1190,78 +1120,70 @@ export default function CrisisSupport() {
         </TabsList>
 
         <TabsContent value="contacts" className="mt-4">
-          <Card className="backdrop-blur-md bg-white/70 dark:bg-gray-900/70 border border-white/30 dark:border-gray-700/30 shadow-lg">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Phone className="h-5 w-5 text-emerald-500" />
-                Emergency Contacts
-              </CardTitle>
-              <CardDescription className="text-xs">
-                Crisis hotlines and your personal emergency contacts
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+          <GlassPanel className="p-5">
+            <h3 className="flex items-center gap-2 text-base font-semibold text-foreground">
+              <Phone className="h-5 w-5 text-primary" />
+              Emergency Contacts
+            </h3>
+            <p className="mt-0.5 text-xs text-foreground-subtle">
+              Crisis hotlines and your personal emergency contacts
+            </p>
+            <div className="mt-4">
               <EmergencyContactsCard />
-            </CardContent>
-          </Card>
+            </div>
+          </GlassPanel>
         </TabsContent>
 
         <TabsContent value="assessment" className="mt-4">
-          <Card className="backdrop-blur-md bg-white/70 dark:bg-gray-900/70 border border-white/30 dark:border-gray-700/30 shadow-lg">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Brain className="h-5 w-5 text-teal-500" />
-                Wellness Check
-              </CardTitle>
-              <CardDescription className="text-xs">
-                A gentle check-in on how you are feeling. Your answers stay private on your device.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+          <GlassPanel className="p-5">
+            <h3 className="flex items-center gap-2 text-base font-semibold text-foreground">
+              <Brain className="h-5 w-5 text-secondary" />
+              Wellness Check
+            </h3>
+            <p className="mt-0.5 text-xs text-foreground-subtle">
+              A gentle check-in on how you are feeling. Your answers stay private on your device.
+            </p>
+            <div className="mt-4">
               <CrisisAssessmentCard />
-            </CardContent>
-          </Card>
+            </div>
+          </GlassPanel>
         </TabsContent>
 
         <TabsContent value="grounding" className="mt-4">
-          <Card className="backdrop-blur-md bg-white/70 dark:bg-gray-900/70 border border-white/30 dark:border-gray-700/30 shadow-lg">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Leaf className="h-5 w-5 text-cyan-500" />
-                Grounding Exercise
-              </CardTitle>
-              <CardDescription className="text-xs">
-                5-4-3-2-1 sensory technique to help you feel calm and present
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+          <GlassPanel className="p-5">
+            <h3 className="flex items-center gap-2 text-base font-semibold text-foreground">
+              <Leaf className="h-5 w-5 text-primary" />
+              Grounding Exercise
+            </h3>
+            <p className="mt-0.5 text-xs text-foreground-subtle">
+              5-4-3-2-1 sensory technique to help you feel calm and present
+            </p>
+            <div className="mt-4">
               <GroundingExerciseCard />
-            </CardContent>
-          </Card>
+            </div>
+          </GlassPanel>
         </TabsContent>
 
         <TabsContent value="safety-plan" className="mt-4">
-          <Card className="backdrop-blur-md bg-white/70 dark:bg-gray-900/70 border border-white/30 dark:border-gray-700/30 shadow-lg">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <ClipboardList className="h-5 w-5 text-emerald-500" />
-                My Safety Plan
-              </CardTitle>
-              <CardDescription className="text-xs">
-                Create a personal plan to help you stay safe during tough times
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+          <GlassPanel className="p-5">
+            <h3 className="flex items-center gap-2 text-base font-semibold text-foreground">
+              <ClipboardList className="h-5 w-5 text-primary" />
+              My Safety Plan
+            </h3>
+            <p className="mt-0.5 text-xs text-foreground-subtle">
+              Create a personal plan to help you stay safe during tough times
+            </p>
+            <div className="mt-4">
               <SafetyPlanCard />
-            </CardContent>
-          </Card>
+            </div>
+          </GlassPanel>
         </TabsContent>
       </Tabs>
 
       {/* Footer note */}
-      <div className="text-center py-2">
-        <p className="text-xs text-muted-foreground">
-          💚 All information stays on your device. Your privacy matters.
+      <div className="py-2 text-center">
+        <p className="text-xs text-foreground-subtle">
+          All information stays on your device. Your privacy matters.
         </p>
       </div>
     </div>

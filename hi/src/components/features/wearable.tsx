@@ -79,11 +79,11 @@ interface AlertConfig {
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 const HR_ZONES: HRZone[] = [
-  { name: 'Resting', color: 'text-emerald-400', min: 0, max: 80, bgColor: 'bg-emerald-500', glowColor: 'shadow-emerald-500/50' },
-  { name: 'Light', color: 'text-cyan-400', min: 80, max: 110, bgColor: 'bg-cyan-500', glowColor: 'shadow-cyan-500/50' },
-  { name: 'Moderate', color: 'text-amber-400', min: 110, max: 135, bgColor: 'bg-amber-500', glowColor: 'shadow-amber-500/50' },
-  { name: 'Vigorous', color: 'text-orange-400', min: 135, max: 165, bgColor: 'bg-orange-500', glowColor: 'shadow-orange-500/50' },
-  { name: 'Peak', color: 'text-red-400', min: 165, max: 220, bgColor: 'bg-red-500', glowColor: 'shadow-red-500/50' },
+  { name: 'Resting', color: 'text-primary', min: 0, max: 80, bgColor: 'bg-primary', glowColor: 'shadow-[var(--shadow-glow-primary)]' },
+  { name: 'Light', color: 'text-secondary', min: 80, max: 110, bgColor: 'bg-secondary', glowColor: '' },
+  { name: 'Moderate', color: 'text-warning', min: 110, max: 135, bgColor: 'bg-warning', glowColor: '' },
+  { name: 'Vigorous', color: 'text-accent', min: 135, max: 165, bgColor: 'bg-accent', glowColor: '' },
+  { name: 'Peak', color: 'text-danger', min: 165, max: 220, bgColor: 'bg-danger', glowColor: '' },
 ];
 
 const INITIAL_DEVICES: Device[] = [
@@ -100,16 +100,16 @@ function getZoneForBPM(bpm: number): HRZone {
 }
 
 function getSpO2Color(spo2: number): { text: string; bg: string; glow: string } {
-  if (spo2 >= 95) return { text: 'text-emerald-400', bg: 'bg-emerald-500/20', glow: 'shadow-emerald-500/40' };
-  if (spo2 >= 90) return { text: 'text-yellow-400', bg: 'bg-yellow-500/20', glow: 'shadow-yellow-500/40' };
-  return { text: 'text-red-400', bg: 'bg-red-500/20', glow: 'shadow-red-500/40' };
+  if (spo2 >= 95) return { text: 'text-primary', bg: 'bg-primary/20', glow: 'shadow-[var(--shadow-glow-primary)]' };
+  if (spo2 >= 90) return { text: 'text-warning', bg: 'bg-yellow-500/20', glow: 'shadow-yellow-500/40' };
+  return { text: 'text-danger', bg: 'bg-danger/20', glow: 'shadow-red-500/40' };
 }
 
 function getBPStatus(sys: number, dia: number): { label: string; color: string } {
-  if (sys < 120 && dia < 80) return { label: 'Normal', color: 'text-emerald-400' };
-  if (sys < 130 && dia < 80) return { label: 'Elevated', color: 'text-yellow-400' };
-  if (sys < 140 || dia < 90) return { label: 'High Stage 1', color: 'text-orange-400' };
-  return { label: 'High Stage 2', color: 'text-red-400' };
+  if (sys < 120 && dia < 80) return { label: 'Normal', color: 'text-primary' };
+  if (sys < 130 && dia < 80) return { label: 'Elevated', color: 'text-warning' };
+  if (sys < 140 || dia < 90) return { label: 'High Stage 1', color: 'text-accent' };
+  return { label: 'High Stage 2', color: 'text-danger' };
 }
 
 // ─── Sub-Components ──────────────────────────────────────────────────────────
@@ -122,13 +122,13 @@ function DeviceConnectionPanel({
   onToggleConnect: (id: string) => void;
 }) {
   return (
-    <Card className="border-slate-700/50 bg-slate-900/80 backdrop-blur-sm">
+    <Card className="glass-panel">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-slate-100">
-          <Bluetooth className="size-5 text-cyan-400" />
+        <CardTitle className="flex items-center gap-2 text-foreground">
+          <Bluetooth className="size-5 text-secondary" />
           Device Connection
         </CardTitle>
-        <CardDescription className="text-slate-400">
+        <CardDescription className="text-foreground-muted">
           Connect your wearable devices for real-time monitoring
         </CardDescription>
       </CardHeader>
@@ -141,24 +141,24 @@ function DeviceConnectionPanel({
               whileTap={{ scale: 0.98 }}
               className={`relative flex items-center gap-3 rounded-lg border p-3 transition-all ${
                 device.connected
-                  ? 'border-emerald-500/30 bg-emerald-500/5'
-                  : 'border-slate-700/50 bg-slate-800/50'
+                  ? 'border-primary/30 bg-primary-soft'
+                  : 'border-border/60 bg-surface-raised'
               }`}
             >
               <div
                 className={`flex size-10 items-center justify-center rounded-lg ${
-                  device.connected ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-700/50 text-slate-500'
+                  device.connected ? 'bg-primary/20 text-primary' : 'bg-surface-raised text-foreground-subtle'
                 }`}
               >
                 {device.icon}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-slate-200 truncate">{device.name}</span>
+                  <span className="text-sm font-medium text-foreground truncate">{device.name}</span>
                   {device.connected && (
                     <span className="relative flex size-2">
-                      <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                      <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
+                      <span className="absolute inline-flex size-full motion-safe:animate-ping rounded-full bg-primary opacity-75" />
+                      <span className="relative inline-flex size-2 rounded-full bg-primary" />
                     </span>
                   )}
                 </div>
@@ -166,13 +166,13 @@ function DeviceConnectionPanel({
                   <Battery
                     className={`size-3 ${
                       device.battery > 50
-                        ? 'text-emerald-400'
+                        ? 'text-primary'
                         : device.battery > 20
-                          ? 'text-yellow-400'
-                          : 'text-red-400'
+                          ? 'text-warning'
+                          : 'text-danger'
                     }`}
                   />
-                  <span className="text-xs text-slate-500">{device.battery}%</span>
+                  <span className="text-xs text-foreground-subtle">{device.battery}%</span>
                 </div>
               </div>
               <Button
@@ -182,8 +182,8 @@ function DeviceConnectionPanel({
                 disabled={device.pairing}
                 className={`text-xs ${
                   device.connected
-                    ? 'border-slate-600 text-slate-300 hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-400'
-                    : 'bg-cyan-600 hover:bg-cyan-500 text-white'
+                    ? 'border-border text-foreground hover:bg-danger/10 hover:border-red-500/30 hover:text-danger'
+                    : 'bg-primary text-primary-foreground hover:bg-primary-strong'
                 }`}
               >
                 {device.pairing ? (
@@ -216,28 +216,28 @@ function LiveHeartRateDisplay({ bpm, zone }: { bpm: number; zone: HRZone }) {
   const pulseDuration = 60 / bpm;
 
   return (
-    <Card className="border-slate-700/50 bg-slate-900/80 backdrop-blur-sm overflow-hidden relative">
+    <Card className="glass-panel overflow-hidden relative">
       {/* Animated background glow */}
       <div
         className="absolute inset-0 opacity-10"
         style={{
           background: `radial-gradient(circle at 50% 50%, ${
             zone.name === 'Resting'
-              ? '#10b981'
+              ? '#0E7A5C'
               : zone.name === 'Light'
-                ? '#06b6d4'
+                ? '#0E7770'
                 : zone.name === 'Moderate'
-                  ? '#f59e0b'
+                  ? '#935F0A'
                   : zone.name === 'Vigorous'
-                    ? '#f97316'
-                    : '#ef4444'
+                    ? '#8A6205'
+                    : '#B42318'
           } 0%, transparent 70%)`,
         }}
       />
 
       <CardHeader className="relative">
-        <CardTitle className="flex items-center gap-2 text-slate-100">
-          <Activity className="size-5 text-red-400" />
+        <CardTitle className="flex items-center gap-2 text-foreground">
+          <Activity className="size-5 text-danger" />
           Live Heart Rate
         </CardTitle>
       </CardHeader>
@@ -257,14 +257,14 @@ function LiveHeartRateDisplay({ bpm, zone }: { bpm: number; zone: HRZone }) {
             <Heart className={`size-12 ${zone.color} fill-current drop-shadow-lg`} style={{
               filter: `drop-shadow(0 0 12px ${
                 zone.name === 'Resting'
-                  ? '#10b981'
+                  ? '#0E7A5C'
                   : zone.name === 'Light'
-                    ? '#06b6d4'
+                    ? '#0E7770'
                     : zone.name === 'Moderate'
-                      ? '#f59e0b'
+                      ? '#935F0A'
                       : zone.name === 'Vigorous'
-                        ? '#f97316'
-                        : '#ef4444'
+                        ? '#8A6205'
+                        : '#B42318'
               })`,
             }} />
           </motion.div>
@@ -282,21 +282,21 @@ function LiveHeartRateDisplay({ bpm, zone }: { bpm: number; zone: HRZone }) {
                 style={{
                   textShadow: `0 0 20px ${
                     zone.name === 'Resting'
-                      ? '#10b98180'
+                      ? '#0E7A5C80'
                       : zone.name === 'Light'
-                        ? '#06b6d480'
+                        ? '#0E777080'
                         : zone.name === 'Moderate'
-                          ? '#f59e0b80'
+                          ? '#935F0A80'
                           : zone.name === 'Vigorous'
-                            ? '#f9731680'
-                            : '#ef444480'
+                            ? '#8A620580'
+                            : '#B4231880'
                   }`,
                 }}
               >
                 {bpm}
               </motion.span>
             </AnimatePresence>
-            <span className="text-lg font-medium text-slate-400">BPM</span>
+            <span className="text-lg font-medium text-foreground-muted">BPM</span>
           </div>
         </div>
 
@@ -312,7 +312,7 @@ function LiveHeartRateDisplay({ bpm, zone }: { bpm: number; zone: HRZone }) {
           >
             {zone.name} Zone
           </Badge>
-          <span className="text-xs text-slate-500">
+          <span className="text-xs text-foreground-subtle">
             {zone.min}–{zone.max} BPM
           </span>
         </motion.div>
@@ -342,13 +342,13 @@ function LiveHeartRateDisplay({ bpm, zone }: { bpm: number; zone: HRZone }) {
 
 function HeartRateChart({ data }: { data: { time: string; bpm: number }[] }) {
   return (
-    <Card className="border-slate-700/50 bg-slate-900/80 backdrop-blur-sm">
+    <Card className="glass-panel">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-slate-100">
-          <TrendingUp className="size-5 text-cyan-400" />
+        <CardTitle className="flex items-center gap-2 text-foreground">
+          <TrendingUp className="size-5 text-secondary" />
           Heart Rate Over Time
         </CardTitle>
-        <CardDescription className="text-slate-400">Real-time heart rate monitoring</CardDescription>
+        <CardDescription className="text-foreground-muted">Real-time heart rate monitoring</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="h-64">
@@ -356,33 +356,33 @@ function HeartRateChart({ data }: { data: { time: string; bpm: number }[] }) {
             <AreaChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
               <defs>
                 <linearGradient id="hrGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#06b6d4" stopOpacity={0.4} />
-                  <stop offset="50%" stopColor="#06b6d4" stopOpacity={0.1} />
-                  <stop offset="100%" stopColor="#06b6d4" stopOpacity={0} />
+                  <stop offset="0%" stopColor="#0E7770" stopOpacity={0.4} />
+                  <stop offset="50%" stopColor="#0E7770" stopOpacity={0.1} />
+                  <stop offset="100%" stopColor="#0E7770" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
-              <XAxis dataKey="time" tick={{ fill: '#94a3b8', fontSize: 12 }} axisLine={{ stroke: '#475569' }} tickLine={false} />
-              <YAxis domain={[50, 180]} tick={{ fill: '#94a3b8', fontSize: 12 }} axisLine={{ stroke: '#475569' }} tickLine={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.18)" opacity={0.3} />
+              <XAxis dataKey="time" tick={{ fill: 'rgba(128,128,128,0.45)', fontSize: 12 }} axisLine={{ stroke: 'rgba(128,128,128,0.3)' }} tickLine={false} />
+              <YAxis domain={[50, 180]} tick={{ fill: 'rgba(128,128,128,0.45)', fontSize: 12 }} axisLine={{ stroke: 'rgba(128,128,128,0.3)' }} tickLine={false} />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: '#1e293b',
-                  border: '1px solid #334155',
+                  backgroundColor: 'var(--surface-overlay)',
+                  border: '1px solid var(--border)',
                   borderRadius: '8px',
-                  color: '#e2e8f0',
+                  color: 'var(--foreground)',
                   fontSize: '13px',
                 }}
-                labelStyle={{ color: '#94a3b8' }}
+                labelStyle={{ color: 'var(--foreground-muted)' }}
                 formatter={(value: number) => [`${value} BPM`, 'Heart Rate']}
               />
               <Area
                 type="monotone"
                 dataKey="bpm"
-                stroke="#06b6d4"
+                stroke="#0E7770"
                 strokeWidth={2.5}
                 fill="url(#hrGradient)"
                 dot={false}
-                activeDot={{ r: 5, fill: '#06b6d4', stroke: '#0e7490', strokeWidth: 2 }}
+                activeDot={{ r: 5, fill: '#0E7770', stroke: 'var(--surface)', strokeWidth: 2 }}
               />
             </AreaChart>
           </ResponsiveContainer>
@@ -396,10 +396,10 @@ function BloodOxygenDisplay({ spo2 }: { spo2: number }) {
   const colors = getSpO2Color(spo2);
 
   return (
-    <Card className="border-slate-700/50 bg-slate-900/80 backdrop-blur-sm">
+    <Card className="glass-panel">
       <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-2 text-sm text-slate-300">
-          <Droplets className="size-4 text-cyan-400" />
+        <CardTitle className="flex items-center gap-2 text-sm text-foreground">
+          <Droplets className="size-4 text-secondary" />
           Blood Oxygen (SpO2)
         </CardTitle>
       </CardHeader>
@@ -424,7 +424,7 @@ function BloodOxygenDisplay({ spo2 }: { spo2: number }) {
                 {spo2}
               </motion.span>
             </AnimatePresence>
-            <span className="text-lg text-slate-400">%</span>
+            <span className="text-lg text-foreground-muted">%</span>
             <div className="mt-0.5">
               <Badge variant="outline" className={`${colors.text} border-current/30 text-xs`}>
                 {spo2 >= 95 ? 'Normal' : spo2 >= 90 ? 'Low' : 'Critical'}
@@ -437,7 +437,7 @@ function BloodOxygenDisplay({ spo2 }: { spo2: number }) {
             value={spo2}
             className="h-2"
           />
-          <div className="mt-1 flex justify-between text-xs text-slate-500">
+          <div className="mt-1 flex justify-between text-xs text-foreground-subtle">
             <span>90%</span>
             <span>95%</span>
             <span>100%</span>
@@ -452,10 +452,10 @@ function BloodPressureDisplay({ systolic, diastolic }: { systolic: number; diast
   const status = getBPStatus(systolic, diastolic);
 
   return (
-    <Card className="border-slate-700/50 bg-slate-900/80 backdrop-blur-sm">
+    <Card className="glass-panel">
       <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-2 text-sm text-slate-300">
-          <Thermometer className="size-4 text-rose-400" />
+        <CardTitle className="flex items-center gap-2 text-sm text-foreground">
+          <Thermometer className="size-4 text-danger" />
           Blood Pressure
         </CardTitle>
       </CardHeader>
@@ -467,24 +467,24 @@ function BloodPressureDisplay({ systolic, diastolic }: { systolic: number; diast
               initial={{ y: 5, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: -5, opacity: 0 }}
-              className="text-4xl font-bold tabular-nums text-slate-100"
+              className="text-4xl font-bold tabular-nums text-foreground"
             >
               {systolic}
             </motion.span>
           </AnimatePresence>
-          <span className="text-2xl text-slate-500">/</span>
+          <span className="text-2xl text-foreground-subtle">/</span>
           <AnimatePresence mode="popLayout">
             <motion.span
               key={diastolic}
               initial={{ y: 5, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: -5, opacity: 0 }}
-              className="text-3xl font-bold tabular-nums text-slate-300"
+              className="text-3xl font-bold tabular-nums text-foreground"
             >
               {diastolic}
             </motion.span>
           </AnimatePresence>
-          <span className="ml-1 text-sm text-slate-500">mmHg</span>
+          <span className="ml-1 text-sm text-foreground-subtle">mmHg</span>
         </div>
         <div className="mt-2 flex items-center justify-center">
           <Badge variant="outline" className={`${status.color} border-current/30`}>
@@ -492,13 +492,13 @@ function BloodPressureDisplay({ systolic, diastolic }: { systolic: number; diast
           </Badge>
         </div>
         <div className="mt-3 grid grid-cols-2 gap-2 text-center">
-          <div className="rounded-lg bg-slate-800/50 p-2">
-            <div className="text-xs text-slate-500">Systolic</div>
-            <div className="text-sm font-semibold text-slate-200">{systolic}</div>
+          <div className="rounded-lg bg-surface-raised p-2">
+            <div className="text-xs text-foreground-subtle">Systolic</div>
+            <div className="text-sm font-semibold text-foreground">{systolic}</div>
           </div>
-          <div className="rounded-lg bg-slate-800/50 p-2">
-            <div className="text-xs text-slate-500">Diastolic</div>
-            <div className="text-sm font-semibold text-slate-200">{diastolic}</div>
+          <div className="rounded-lg bg-surface-raised p-2">
+            <div className="text-xs text-foreground-subtle">Diastolic</div>
+            <div className="text-sm font-semibold text-foreground">{diastolic}</div>
           </div>
         </div>
       </CardContent>
@@ -522,34 +522,34 @@ function HealthMetricsSummary({
   const stressLabel = stressLevel < 30 ? 'Low' : stressLevel < 60 ? 'Moderate' : stressLevel < 80 ? 'High' : 'Very High';
   const stressColor =
     stressLevel < 30
-      ? 'text-emerald-400'
+      ? 'text-primary'
       : stressLevel < 60
-        ? 'text-yellow-400'
+        ? 'text-warning'
         : stressLevel < 80
-          ? 'text-orange-400'
-          : 'text-red-400';
+          ? 'text-accent'
+          : 'text-danger';
 
   const metrics = [
     {
       label: 'Avg Resting HR',
       value: avgRestingHR,
       unit: 'BPM',
-      icon: <Heart className="size-4 text-emerald-400" />,
-      color: 'text-emerald-400',
+      icon: <Heart className="size-4 text-primary" />,
+      color: 'text-primary',
     },
     {
       label: 'Max HR Today',
       value: maxHR,
       unit: 'BPM',
-      icon: <Zap className="size-4 text-red-400" />,
-      color: 'text-red-400',
+      icon: <Zap className="size-4 text-danger" />,
+      color: 'text-danger',
     },
     {
       label: 'Recovery Time',
       value: recoveryTime,
       unit: 'hrs',
-      icon: <Battery className="size-4 text-cyan-400" />,
-      color: 'text-cyan-400',
+      icon: <Battery className="size-4 text-secondary" />,
+      color: 'text-secondary',
     },
     {
       label: 'Stress Level',
@@ -561,10 +561,10 @@ function HealthMetricsSummary({
   ];
 
   return (
-    <Card className="border-slate-700/50 bg-slate-900/80 backdrop-blur-sm">
+    <Card className="glass-panel">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-slate-100">
-          <Activity className="size-5 text-amber-400" />
+        <CardTitle className="flex items-center gap-2 text-foreground">
+          <Activity className="size-5 text-warning" />
           Health Metrics Summary
         </CardTitle>
       </CardHeader>
@@ -573,11 +573,11 @@ function HealthMetricsSummary({
           {metrics.map(m => (
             <div
               key={m.label}
-              className="rounded-lg border border-slate-700/50 bg-slate-800/50 p-3"
+              className="rounded-lg border border-border/60 bg-surface-raised p-3"
             >
               <div className="flex items-center gap-1.5 mb-1">
                 {m.icon}
-                <span className="text-xs text-slate-400">{m.label}</span>
+                <span className="text-xs text-foreground-muted">{m.label}</span>
               </div>
               <div className="flex items-baseline gap-1">
                 <AnimatePresence mode="popLayout">
@@ -591,7 +591,7 @@ function HealthMetricsSummary({
                     {m.value}
                   </motion.span>
                 </AnimatePresence>
-                <span className="text-xs text-slate-500">{m.unit}</span>
+                <span className="text-xs text-foreground-subtle">{m.unit}</span>
               </div>
             </div>
           ))}
@@ -599,18 +599,18 @@ function HealthMetricsSummary({
 
         {/* Zone time breakdown */}
         <div className="mt-4 space-y-2">
-          <div className="text-xs font-medium text-slate-400">Time in Heart Rate Zones</div>
+          <div className="text-xs font-medium text-foreground-muted">Time in Heart Rate Zones</div>
           {zoneTimes.map(z => (
             <div key={z.zone} className="flex items-center gap-2">
               <span className={`w-2 h-2 rounded-full ${z.color}`} />
-              <span className="text-xs text-slate-400 w-20">{z.zone}</span>
+              <span className="text-xs text-foreground-muted w-20">{z.zone}</span>
               <div className="flex-1">
                 <Progress
                   value={(z.minutes / 120) * 100}
                   className="h-1.5"
                 />
               </div>
-              <span className="text-xs text-slate-300 tabular-nums w-12 text-right">{z.minutes}min</span>
+              <span className="text-xs text-foreground tabular-nums w-12 text-right">{z.minutes}min</span>
             </div>
           ))}
         </div>
@@ -628,27 +628,27 @@ function ActivityZones({ zoneTimes }: { zoneTimes: { zone: string; minutes: numb
   ];
 
   return (
-    <Card className="border-slate-700/50 bg-slate-900/80 backdrop-blur-sm">
+    <Card className="glass-panel">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-slate-100">
-          <Zap className="size-5 text-orange-400" />
+        <CardTitle className="flex items-center gap-2 text-foreground">
+          <Zap className="size-5 text-accent" />
           Activity Zones
         </CardTitle>
-        <CardDescription className="text-slate-400">Time spent in each heart rate zone</CardDescription>
+        <CardDescription className="text-foreground-muted">Time spent in each heart rate zone</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="h-40">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} layout="vertical" margin={{ top: 0, right: 10, left: 10, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.2} horizontal={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.18)" opacity={0.2} horizontal={false} />
               <XAxis type="number" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
               <YAxis dataKey="name" type="category" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} width={40} />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: '#1e293b',
-                  border: '1px solid #334155',
+                  backgroundColor: 'var(--surface-overlay)',
+                  border: '1px solid var(--border)',
                   borderRadius: '8px',
-                  color: '#e2e8f0',
+                  color: 'var(--foreground)',
                   fontSize: '13px',
                 }}
                 formatter={(value: number, name: string) => [`${value} min`, name]}
@@ -681,7 +681,7 @@ function ActivityZones({ zoneTimes }: { zoneTimes: { zone: string; minutes: numb
             {zoneTimes.map(z => (
               <div key={z.zone} className="flex items-center gap-1.5">
                 <span className={`w-2.5 h-2.5 rounded-sm ${z.barColor}`} />
-                <span className="text-xs text-slate-400">{z.zone}</span>
+                <span className="text-xs text-foreground-muted">{z.zone}</span>
               </div>
             ))}
           </div>
@@ -701,13 +701,13 @@ function AlertsSettings({
   onThresholdChange: (id: string, value: number) => void;
 }) {
   return (
-    <Card className="border-slate-700/50 bg-slate-900/80 backdrop-blur-sm">
+    <Card className="glass-panel">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-slate-100">
-          <AlertTriangle className="size-5 text-yellow-400" />
+        <CardTitle className="flex items-center gap-2 text-foreground">
+          <AlertTriangle className="size-5 text-warning" />
           Alert Settings
         </CardTitle>
-        <CardDescription className="text-slate-400">
+        <CardDescription className="text-foreground-muted">
           Configure heart rate alert thresholds
         </CardDescription>
       </CardHeader>
@@ -718,18 +718,18 @@ function AlertsSettings({
               key={alert.id}
               className={`rounded-lg border p-3 transition-colors ${
                 alert.enabled
-                  ? 'border-slate-600/50 bg-slate-800/50'
-                  : 'border-slate-700/30 bg-slate-800/20 opacity-60'
+                  ? 'border-border/50 bg-surface-raised'
+                  : 'border-border/40 bg-surface-raised opacity-60'
               }`}
             >
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <AlertTriangle
                     className={`size-4 ${
-                      alert.enabled ? 'text-yellow-400' : 'text-slate-600'
+                      alert.enabled ? 'text-warning' : 'text-foreground-muted'
                     }`}
                   />
-                  <span className="text-sm font-medium text-slate-200">{alert.label}</span>
+                  <span className="text-sm font-medium text-foreground">{alert.label}</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <AnimatePresence mode="popLayout">
@@ -738,7 +738,7 @@ function AlertsSettings({
                       initial={{ y: 5, opacity: 0 }}
                       animate={{ y: 0, opacity: 1 }}
                       exit={{ y: -5, opacity: 0 }}
-                      className="text-sm font-semibold tabular-nums text-slate-300"
+                      className="text-sm font-semibold tabular-nums text-foreground"
                     >
                       {alert.threshold} {alert.unit}
                     </motion.span>
@@ -755,7 +755,7 @@ function AlertsSettings({
                 disabled={!alert.enabled}
                 className="mt-1"
               />
-              <div className="mt-1 flex justify-between text-xs text-slate-600">
+              <div className="mt-1 flex justify-between text-xs text-foreground-muted">
                 <span>{alert.min} {alert.unit}</span>
                 <span>{alert.max} {alert.unit}</span>
               </div>
@@ -765,15 +765,15 @@ function AlertsSettings({
 
         {/* Active alerts preview */}
         <div className="mt-4 space-y-2">
-          <div className="text-xs font-medium text-slate-400">Active Alerts</div>
+          <div className="text-xs font-medium text-foreground-muted">Active Alerts</div>
           {alerts.filter(a => a.enabled).length === 0 ? (
-            <div className="text-xs text-slate-600 italic">No active alerts configured</div>
+            <div className="text-xs text-foreground-muted italic">No active alerts configured</div>
           ) : (
             alerts
               .filter(a => a.enabled)
               .map(a => (
                 <Alert key={a.id} className="border-yellow-500/20 bg-yellow-500/5 py-2">
-                  <AlertTriangle className="size-4 text-yellow-400" />
+                  <AlertTriangle className="size-4 text-warning" />
                   <AlertDescription className="text-xs text-yellow-200">
                     Alert when {a.label.toLowerCase()} exceeds {a.threshold} {a.unit}
                   </AlertDescription>
@@ -810,11 +810,11 @@ export default function Wearable() {
   const [stressLevel, setStressLevel] = useState(35);
 
   const [zoneTimes] = useState([
-    { zone: 'Resting', minutes: 45, color: 'bg-emerald-500', barColor: '#10b981' },
-    { zone: 'Light', minutes: 30, color: 'bg-cyan-500', barColor: '#06b6d4' },
-    { zone: 'Moderate', minutes: 25, color: 'bg-amber-500', barColor: '#f59e0b' },
-    { zone: 'Vigorous', minutes: 15, color: 'bg-orange-500', barColor: '#f97316' },
-    { zone: 'Peak', minutes: 5, color: 'bg-red-500', barColor: '#ef4444' },
+    { zone: 'Resting', minutes: 45, color: 'bg-primary', barColor: '#0E7A5C' },
+    { zone: 'Light', minutes: 30, color: 'bg-secondary', barColor: '#0E7770' },
+    { zone: 'Moderate', minutes: 25, color: 'bg-warning', barColor: '#935F0A' },
+    { zone: 'Vigorous', minutes: 15, color: 'bg-accent', barColor: '#8A6205' },
+    { zone: 'Peak', minutes: 5, color: 'bg-danger', barColor: '#B42318' },
   ]);
 
   // Alert configurations
@@ -913,19 +913,19 @@ export default function Wearable() {
       {/* Section header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-100 flex items-center gap-2">
-            <Watch className="size-6 text-cyan-400" />
+          <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
+            <Watch className="size-6 text-secondary" />
             Smart Wearable Integration
           </h2>
-          <p className="text-sm text-slate-400 mt-1">
+          <p className="text-sm text-foreground-muted mt-1">
             Real-time health monitoring from your connected devices
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant="outline" className="border-emerald-500/30 text-emerald-400 bg-emerald-500/10">
+          <Badge variant="outline" className="border-primary/30 text-primary bg-primary-soft">
             <span className="relative flex size-2 mr-1.5">
-              <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
+              <span className="absolute inline-flex size-full motion-safe:animate-ping rounded-full bg-primary opacity-75" />
+              <span className="relative inline-flex size-2 rounded-full bg-primary" />
             </span>
             {devices.filter(d => d.connected).length} Device{devices.filter(d => d.connected).length !== 1 ? 's' : ''} Connected
           </Badge>
@@ -933,8 +933,8 @@ export default function Wearable() {
       </div>
 
       {/* Illustration */}
-      <div className="relative rounded-xl overflow-hidden border border-slate-700/50 bg-slate-900/80">
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-900/95 to-transparent z-10" />
+      <div className="glass-panel relative overflow-hidden">
+        <div className="absolute inset-0 z-10 bg-gradient-to-r from-background via-background/95 to-transparent" />
         <img
           src="/images/wearable.png"
           alt="Wearable device integration illustration"
@@ -942,21 +942,21 @@ export default function Wearable() {
         />
         <div className="absolute inset-0 z-20 flex items-center px-6">
           <div>
-            <h3 className="text-lg font-semibold text-slate-100">Connected Health Monitoring</h3>
-            <p className="text-sm text-slate-400 mt-1 max-w-md">
+            <h3 className="text-lg font-semibold text-foreground">Connected Health Monitoring</h3>
+            <p className="text-sm text-foreground-muted mt-1 max-w-md">
               Sync your smartwatch or fitness tracker to get real-time heart rate, blood oxygen, and blood pressure data during workouts.
             </p>
             <div className="flex items-center gap-3 mt-3">
-              <div className="flex items-center gap-1.5 text-xs text-slate-400">
-                <Bluetooth className="size-3.5 text-cyan-400" />
+              <div className="flex items-center gap-1.5 text-xs text-foreground-muted">
+                <Bluetooth className="size-3.5 text-secondary" />
                 BLE Connected
               </div>
-              <div className="flex items-center gap-1.5 text-xs text-slate-400">
-                <Zap className="size-3.5 text-amber-400" />
+              <div className="flex items-center gap-1.5 text-xs text-foreground-muted">
+                <Zap className="size-3.5 text-warning" />
                 Real-time Sync
               </div>
-              <div className="flex items-center gap-1.5 text-xs text-slate-400">
-                <Shield className="size-3.5 text-emerald-400" />
+              <div className="flex items-center gap-1.5 text-xs text-foreground-muted">
+                <Shield className="size-3.5 text-primary" />
                 HIPAA Compliant
               </div>
             </div>
@@ -966,20 +966,20 @@ export default function Wearable() {
 
       {/* Tabs for organizing content */}
       <Tabs defaultValue="monitor" className="w-full">
-        <TabsList className="bg-slate-800/50 border border-slate-700/50">
-          <TabsTrigger value="monitor" className="data-[state=active]:bg-slate-700 data-[state=active]:text-slate-100">
+        <TabsList className="bg-surface-raised border border-border/60">
+          <TabsTrigger value="monitor" className="data-[state=active]:bg-primary-soft data-[state=active]:text-primary">
             <Activity className="size-4 mr-1" />
             Live Monitor
           </TabsTrigger>
-          <TabsTrigger value="devices" className="data-[state=active]:bg-slate-700 data-[state=active]:text-slate-100">
+          <TabsTrigger value="devices" className="data-[state=active]:bg-primary-soft data-[state=active]:text-primary">
             <Watch className="size-4 mr-1" />
             Devices
           </TabsTrigger>
-          <TabsTrigger value="analytics" className="data-[state=active]:bg-slate-700 data-[state=active]:text-slate-100">
+          <TabsTrigger value="analytics" className="data-[state=active]:bg-primary-soft data-[state=active]:text-primary">
             <TrendingUp className="size-4 mr-1" />
             Analytics
           </TabsTrigger>
-          <TabsTrigger value="alerts" className="data-[state=active]:bg-slate-700 data-[state=active]:text-slate-100">
+          <TabsTrigger value="alerts" className="data-[state=active]:bg-primary-soft data-[state=active]:text-primary">
             <AlertTriangle className="size-4 mr-1" />
             Alerts
           </TabsTrigger>

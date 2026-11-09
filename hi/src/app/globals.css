@@ -3,123 +3,512 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ==========================================================================
+   Clinical Aurora — token system (design.md §4–§8)
+   Tailwind v4 CSS-first theme. Semantic tokens live in :root / .dark;
+   @theme inline maps them to utilities without emitting duplicates.
+   ========================================================================== */
+
 @theme inline {
+  /* Core surfaces & text */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-overlay: var(--surface-overlay);
+  --color-foreground-muted: var(--foreground-muted);
+  --color-foreground-subtle: var(--foreground-subtle);
   --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
+  --color-border-strong: var(--border-strong);
+
+  /* Brand & semantic */
   --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
-  --color-card: var(--card);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --color-primary-strong: var(--primary-strong);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-danger-foreground: var(--danger-foreground);
+  --color-info: var(--info);
+  --color-focus-ring: var(--focus-ring);
+
+  /* Soft status surfaces */
+  --color-primary-soft: var(--primary-soft);
+  --color-secondary-soft: var(--secondary-soft);
+  --color-accent-soft: var(--accent-soft);
+  --color-success-soft: var(--success-soft);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger-soft: var(--danger-soft);
+  --color-info-soft: var(--info-soft);
+
+  /* shadcn/ui aliases → Clinical Aurora tokens */
+  --color-card: var(--surface);
+  --color-card-foreground: var(--foreground);
+  --color-popover: var(--surface-overlay);
+  --color-popover-foreground: var(--foreground);
+  --color-muted: var(--surface-raised);
+  --color-muted-foreground: var(--foreground-muted);
+  --color-input: var(--border);
+  --color-ring: var(--focus-ring);
+  --color-destructive: var(--danger);
+  --color-sidebar: var(--surface);
+  --color-sidebar-foreground: var(--foreground);
+  --color-sidebar-primary: var(--primary);
+  --color-sidebar-primary-foreground: var(--primary-foreground);
+  --color-sidebar-accent: var(--surface-raised);
+  --color-sidebar-accent-foreground: var(--foreground);
+  --color-sidebar-border: var(--border);
+  --color-sidebar-ring: var(--focus-ring);
+
+  /* Charts (design.md §10.9) */
+  --color-chart-1: var(--primary);
+  --color-chart-2: var(--secondary);
+  --color-chart-3: var(--accent);
+  --color-chart-4: var(--warning);
+  --color-chart-5: var(--danger);
+
+  /* Typography (design.md §6.1) */
+  --font-sans: var(--font-body);
+  --font-display: var(--font-display);
+  --font-a11y: var(--font-a11y);
+  --font-mono: var(--font-mono);
+
+  /* Elevation (design.md §8.1) */
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-glow-primary: var(--shadow-glow-primary);
+  --shadow-glow-accent: var(--shadow-glow-accent);
 }
 
+@theme {
+  /* Radius scale (design.md §7.3) */
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+  --radius-2xl: 32px;
+
+  /* Type scale — 1.25 modular, larger defaults (design.md §6.2) */
+  --text-xs: 12px;
+  --text-xs--line-height: 18px;
+  --text-sm: 14px;
+  --text-sm--line-height: 22px;
+  --text-base: 16px;
+  --text-base--line-height: 26px;
+  --text-lg: 18px;
+  --text-lg--line-height: 30px;
+  --text-xl: 20px;
+  --text-xl--line-height: 30px;
+  --text-2xl: 24px;
+  --text-2xl--line-height: 34px;
+  --text-3xl: 30px;
+  --text-3xl--line-height: 38px;
+  --text-4xl: 38px;
+  --text-4xl--line-height: 44px;
+  --text-5xl: 48px;
+  --text-5xl--line-height: 54px;
+  --text-display-hero: clamp(44px, 6.4vw, 84px);
+  --text-display-hero--line-height: 0.98;
+  --text-numeric-xl: clamp(40px, 5vw, 72px);
+  --text-numeric-xl--line-height: 1;
+
+  /* Easing (design.md §9.2) */
+  --ease-care-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-emphasis: cubic-bezier(0.83, 0, 0.17, 1);
+}
+
+/* ---- Light theme: Day Clinic (design.md §5 token contract) ---- */
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --radius: 14px;
+
+  --background: #F4F8F5;
+  --surface: #FFFFFF;
+  --surface-raised: #EAF3EE;
+  --surface-overlay: #FFFFFF;
+  --foreground: #10231E;
+  --foreground-muted: #435D55;
+  --foreground-subtle: #5D746D;
+  --border: #C9D9D2;
+  --border-strong: #8FAFA4;
+  --primary: #0E7A5C;
+  --primary-strong: #075F49;
+  --primary-foreground: #FFFFFF;
+  --secondary: #0E7770;
+  --secondary-foreground: #FFFFFF;
+  --accent: #8A6205;
+  --accent-foreground: #FFFFFF;
+  --success: #147647;
+  --warning: #935F0A;
+  --danger: #B42318;
+  --danger-foreground: #FFFFFF;
+  --info: #116E6B;
+  --focus-ring: #0A6B51;
+
+  --primary-soft: #DDF3EA;
+  --secondary-soft: #DDF1F0;
+  --accent-soft: #F8EBC9;
+  --success-soft: #E4F6EA;
+  --warning-soft: #FFF4D6;
+  --danger-soft: #FDECEA;
+  --info-soft: #E2F5F4;
+
+  /* Fonts (design.md §6.1) — next/font variables set on <body> */
+  --font-display: var(--font-sora), var(--font-inter), system-ui, sans-serif;
+  --font-body: var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-a11y: var(--font-atkinson), var(--font-inter), system-ui, sans-serif;
+  --font-mono: var(--font-plex), ui-monospace, SFMono-Regular, monospace;
+
+  /* Shadows (design.md §8.1 light) */
+  --shadow-sm: 0 1px 2px rgba(16, 35, 30, 0.08), 0 0 0 1px rgba(16, 35, 30, 0.04);
+  --shadow-md: 0 12px 30px rgba(16, 35, 30, 0.1), 0 0 0 1px rgba(16, 35, 30, 0.04);
+  --shadow-lg: 0 24px 60px rgba(16, 35, 30, 0.14), 0 0 0 1px rgba(16, 35, 30, 0.05);
+  --shadow-glow-primary: 0 0 0 1px rgba(14, 122, 92, 0.14), 0 12px 32px rgba(14, 122, 92, 0.14);
+  --shadow-glow-accent: 0 0 0 1px rgba(138, 98, 5, 0.14), 0 10px 30px rgba(138, 98, 5, 0.12);
 }
 
+/* ---- Dark theme: Clinical Night (default) ---- */
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --background: #07110F;
+  --surface: #0C1B18;
+  --surface-raised: #12241F;
+  --surface-overlay: #162B26;
+  --foreground: #F3FBF7;
+  --foreground-muted: #B5C9C1;
+  --foreground-subtle: #8FA7A0;
+  --border: #26463D;
+  --border-strong: #3D685C;
+  --primary: #59E3A9;
+  --primary-strong: #18B884;
+  --primary-foreground: #032019;
+  --secondary: #63D6C5;
+  --secondary-foreground: #032019;
+  --accent: #F0C66B;
+  --accent-foreground: #241701;
+  --success: #4ADE80;
+  --warning: #EAB85C;
+  --danger: #F08B82;
+  --danger-foreground: #2B0B09;
+  --info: #6ED5D0;
+  --focus-ring: #80E6C0;
+
+  --primary-soft: #123A2D;
+  --secondary-soft: #123A36;
+  --accent-soft: #3B2F12;
+  --success-soft: #123427;
+  --warning-soft: #372A0E;
+  --danger-soft: #3A1618;
+  --info-soft: #102F31;
+
+  /* Shadows (design.md §8.1 dark) */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.24), 0 0 0 1px rgba(255, 255, 255, 0.03);
+  --shadow-md: 0 12px 32px rgba(0, 0, 0, 0.26), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  --shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.38), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  --shadow-glow-primary: 0 0 0 1px rgba(89, 227, 169, 0.24), 0 12px 40px rgba(24, 184, 132, 0.24);
+  --shadow-glow-accent: 0 0 0 1px rgba(240, 198, 107, 0.2), 0 10px 34px rgba(240, 198, 107, 0.18);
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
+  }
+  html {
+    scroll-behavior: smooth;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
+    font-feature-settings: "cv11", "ss01", "tnum";
+    text-rendering: optimizeLegibility;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+  }
+  /* Focus treatment (design.md §8.3) */
+  :focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 3px;
+  }
+  /* Theme transition: colors only, never layout (shell.md §8) */
+  body, header, aside, main, footer, .glass-panel, .glass-overlay {
+    transition-property: background-color, border-color, color;
+    transition-duration: 180ms;
+  }
+  /* Tamil & non-Latin scripts (design.md §6.2) */
+  :lang(ta) h1, :lang(ta) h2, :lang(ta) h3, :lang(ta) h4 {
+    line-height: 1.65;
+  }
+  :lang(ta) p, :lang(ta) li {
+    line-height: 1.75;
   }
 }
+
+/* ==========================================================================
+   Clinical Aurora — ambient layer, glass recipe, shell utilities
+   ========================================================================== */
+
+/* Ambient aurora behind everything (shell.md §1.1, design.md §4.6) */
+.app-ambient {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(720px 420px at 10% 0%, rgba(14, 122, 92, 0.08), transparent 62%),
+    radial-gradient(680px 460px at 90% 20%, rgba(14, 119, 112, 0.06), transparent 64%),
+    radial-gradient(520px 380px at 72% 90%, rgba(240, 198, 107, 0.08), transparent 68%),
+    var(--background);
+}
+.dark .app-ambient {
+  background:
+    radial-gradient(720px 420px at 12% 8%, rgba(89, 227, 169, 0.14), transparent 62%),
+    radial-gradient(680px 460px at 86% 18%, rgba(99, 214, 197, 0.1), transparent 64%),
+    radial-gradient(520px 380px at 70% 88%, rgba(240, 198, 107, 0.07), transparent 68%),
+    var(--background);
+}
+/* Fine-grain noise at 3% opacity (design.md §4.6) */
+.app-ambient::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  background-size: 256px 256px;
+}
+
+/* Standard glass card (design.md §8.2) */
+.glass-panel {
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+/* Heavy overlay glass — dialogs, sheets, chat (design.md §8.2) */
+.glass-overlay {
+  background: color-mix(in srgb, var(--surface-overlay) 90%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border-strong) 74%, transparent);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+/* Fallback when backdrop-filter is unsupported (design.md §8.2) */
+@supports not (backdrop-filter: blur(1px)) {
+  .glass-panel,
+  .glass-overlay {
+    background: var(--surface-overlay);
+  }
+}
+
+/* Primary action button (design.md §10.1) */
+.btn-aurora-primary {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  color: var(--primary-foreground);
+  box-shadow: var(--shadow-glow-primary);
+  transition: transform 160ms var(--ease-standard), filter 160ms var(--ease-standard), box-shadow 160ms var(--ease-standard);
+}
+.btn-aurora-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  filter: brightness(1.03);
+}
+.btn-aurora-primary:active:not(:disabled) {
+  transform: translateY(0) scale(0.985);
+}
+.btn-aurora-primary:disabled {
+  opacity: 0.48;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+/* Secondary action button (design.md §10.1) */
+.btn-aurora-secondary {
+  background: color-mix(in srgb, var(--surface) 72%, transparent);
+  border: 1px solid var(--border);
+  color: var(--foreground);
+  transition: transform 160ms var(--ease-standard), background-color 160ms var(--ease-standard), border-color 160ms var(--ease-standard);
+}
+.btn-aurora-secondary:hover:not(:disabled) {
+  background: var(--surface-raised);
+  border-color: var(--border-strong);
+  transform: translateY(-1px);
+}
+
+/* Milestone gradient (design.md §4.6) */
+.bg-milestone-gradient {
+  background: linear-gradient(135deg, #F0C66B 0%, #D99B3F 100%);
+}
+
+/* Active nav item (design.md §10.4, shell.md §3.4) */
+.nav-item-active {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--primary) 18%, transparent),
+    color-mix(in srgb, var(--secondary) 9%, transparent)
+  );
+  border: 1px solid color-mix(in srgb, var(--primary) 35%, transparent);
+}
+
+/* Header shell (shell.md §2.1) */
+.header-shell {
+  background: color-mix(in srgb, var(--background) 78%, transparent);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition: background-color 180ms var(--ease-standard), box-shadow 180ms var(--ease-standard);
+}
+.header-shell[data-scrolled="true"] {
+  background: color-mix(in srgb, var(--background) 88%, transparent);
+  box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+/* Skip links (shell.md §1.1) — pill styling applies only on focus so the
+   sr-only 1px box never paints a background artifact */
+.skip-link {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 100;
+}
+.skip-link:focus-visible {
+  height: 48px;
+  width: auto;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 20px;
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  clip-path: none;
+  white-space: nowrap;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  color: var(--primary-foreground);
+  font-size: 15px;
+  font-weight: 600;
+  box-shadow: var(--shadow-glow-primary);
+}
+.skip-link--secondary:focus-visible {
+  top: 72px;
+}
+
+/* Hero headline underline glow (shell.md §5.3) */
+.hero-underline {
+  position: relative;
+  white-space: nowrap;
+}
+.hero-underline::after {
+  content: "";
+  position: absolute;
+  left: 0.02em;
+  right: 0.02em;
+  bottom: -0.06em;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--primary);
+  box-shadow: 0 0 28px rgba(89, 227, 169, 0.26);
+}
+
+/* Typing cursor (shell.md §5.3) */
+.typing-cursor-bar {
+  display: inline-block;
+  width: 2px;
+  height: 22px;
+  margin-left: 4px;
+  vertical-align: middle;
+  background: var(--primary);
+  animation: aurora-cursor-blink 0.8s step-end infinite;
+}
+@keyframes aurora-cursor-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* Body Halo orbit rings (shell.md §5.5) — continuous, gentle */
+.orbit-ring-outer {
+  animation: aurora-orbit 48s linear infinite;
+  transform-origin: center;
+}
+.orbit-ring-inner {
+  animation: aurora-orbit-rev 64s linear infinite;
+  transform-origin: center;
+}
+@keyframes aurora-orbit {
+  to { transform: rotate(360deg); }
+}
+@keyframes aurora-orbit-rev {
+  to { transform: rotate(-360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orbit-ring-outer,
+  .orbit-ring-inner,
+  .typing-cursor-bar {
+    animation: none;
+  }
+}
+.a11y-reduced-motion .orbit-ring-outer,
+.a11y-reduced-motion .orbit-ring-inner,
+.a11y-reduced-motion .typing-cursor-bar {
+  animation: none !important;
+}
+
+/* Footer link underline — grows from center (shell.md §7.3) */
+.footer-link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--foreground-muted);
+  transition: color 160ms var(--ease-standard);
+}
+.footer-link::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 6px;
+  width: 0;
+  height: 1.5px;
+  border-radius: 1px;
+  background: var(--primary);
+  transition: width 160ms var(--ease-standard), left 160ms var(--ease-standard);
+}
+.footer-link:hover {
+  color: var(--foreground);
+}
+.footer-link:hover::after {
+  left: 0;
+  width: 100%;
+}
+@media (prefers-reduced-motion: reduce) {
+  .footer-link, .footer-link::after { transition: none; }
+}
+
+/* High-contrast mode: strip decorative layers (design.md §4.5) */
+.a11y-high-contrast .app-ambient {
+  display: none;
+}
+.a11y-high-contrast .glass-panel,
+.a11y-high-contrast .glass-overlay {
+  background: var(--surface-overlay);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.a11y-high-contrast .hero-underline::after {
+  box-shadow: none;
+}
+
+/* ==========================================================================
+   Legacy utility classes (kept for feature surfaces — surface agents restyle)
+   ========================================================================== */
 
 /* ===== Custom Scrollbar Styling ===== */
 ::-webkit-scrollbar {
@@ -225,17 +614,6 @@
 ::selection {
   background: oklch(0.646 0.222 41.116 / 30%);
   color: inherit;
-}
-
-/* ===== Smooth Focus Styles — one consistent, on-brand emerald ring ===== */
-:focus-visible {
-  outline: 2px solid #10b981;
-  outline-offset: 2px;
-  border-radius: 4px;
-}
-
-.dark :focus-visible {
-  outline-color: #34d399;
 }
 
 /* ===== Badge Shimmer Effect ===== */
@@ -1101,42 +1479,44 @@
 
 /* --- Font Size Overrides --- */
 .a11y-font-small {
-  font-size: 14px !important;
+  font-size: 93.75% !important; /* 15px base — design.md §6.3 */
 }
 .a11y-font-medium {
-  font-size: 16px !important;
+  font-size: 100% !important; /* 16px base */
 }
 .a11y-font-large {
-  font-size: 18px !important;
+  font-size: 112.5% !important; /* 18px base */
 }
 
 /* --- High Contrast Mode --- */
+/* Clinical Aurora high-contrast overrides (design.md §4.5) */
 .a11y-high-contrast {
-  --foreground: oklch(0 0 0) !important;
-  --background: oklch(1 0 0) !important;
-  --card: oklch(1 0 0) !important;
-  --card-foreground: oklch(0 0 0) !important;
-  --popover: oklch(1 0 0) !important;
-  --popover-foreground: oklch(0 0 0) !important;
-  --border: oklch(0 0 0) !important;
-  --input: oklch(0 0 0) !important;
-  --muted-foreground: oklch(0.3 0 0) !important;
-  --ring: oklch(0 0 0) !important;
+  --background: #FFFFFF !important;
+  --surface: #F4FFFB !important;
+  --surface-raised: #FFFFFF !important;
+  --surface-overlay: #FFFFFF !important;
+  --foreground: #001A14 !important;
+  --foreground-muted: #001A14 !important;
+  --foreground-subtle: #145B48 !important;
+  --border: #145B48 !important;
+  --border-strong: #145B48 !important;
+  --primary: #00563F !important;
+  --primary-strong: #00563F !important;
+  --focus-ring: #00563F !important;
 }
 .a11y-high-contrast.dark {
-  --foreground: oklch(1 0 0) !important;
-  --background: oklch(0 0 0) !important;
-  --card: oklch(0.05 0 0) !important;
-  --card-foreground: oklch(1 0 0) !important;
-  --popover: oklch(0.05 0 0) !important;
-  --popover-foreground: oklch(1 0 0) !important;
-  --border: oklch(1 0 0) !important;
-  --input: oklch(1 0 0) !important;
-  --muted-foreground: oklch(0.85 0 0) !important;
-  --ring: oklch(1 0 0) !important;
-}
-.a11y-high-contrast * {
-  border-color: var(--border) !important;
+  --background: #000F0D !important;
+  --surface: #001F1A !important;
+  --surface-raised: #001F1A !important;
+  --surface-overlay: #001F1A !important;
+  --foreground: #FFFFFF !important;
+  --foreground-muted: #FFFFFF !important;
+  --foreground-subtle: #B5C9C1 !important;
+  --border: #86E8C9 !important;
+  --border-strong: #86E8C9 !important;
+  --primary: #8FF0C7 !important;
+  --primary-strong: #8FF0C7 !important;
+  --focus-ring: #8FF0C7 !important;
 }
 .a11y-high-contrast button,
 .a11y-high-contrast a,
@@ -1155,30 +1535,26 @@
   scroll-behavior: auto !important;
 }
 
-/* --- Dyslexia-Friendly Font --- */
+/* --- Dyslexia-Friendly Font (design.md §6.1: Atkinson Hyperlegible) --- */
 .a11y-dyslexia-font {
-  font-family: 'OpenDyslexic', 'Comic Sans MS', 'Verdana', sans-serif !important;
-  letter-spacing: 0.05em !important;
-  word-spacing: 0.12em !important;
-  line-height: 1.6 !important;
+  --font-body: var(--font-atkinson), var(--font-inter), system-ui, sans-serif;
+  --font-display: var(--font-atkinson), var(--font-inter), system-ui, sans-serif;
 }
-.a11y-dyslexia-font * {
-  font-family: inherit !important;
-  letter-spacing: inherit !important;
-  word-spacing: inherit !important;
-  line-height: inherit !important;
+.a11y-dyslexia-font body,
+.a11y-dyslexia-font h1, .a11y-dyslexia-font h2, .a11y-dyslexia-font h3,
+.a11y-dyslexia-font h4, .a11y-dyslexia-font h5, .a11y-dyslexia-font h6 {
+  letter-spacing: 0.01em !important;
+}
+.a11y-dyslexia-font body,
+.a11y-dyslexia-font p, .a11y-dyslexia-font li {
+  line-height: 1.7 !important;
 }
 
-/* --- Focus Indicators (prominent) --- */
-.a11y-focus-indicators *:focus,
+/* --- Focus Indicators (prominent) — design.md §8.3 --- */
 .a11y-focus-indicators *:focus-visible {
-  outline: 3px solid #10b981 !important;
+  outline: 3px solid var(--focus-ring) !important;
   outline-offset: 3px !important;
-  border-radius: 4px !important;
-}
-.a11y-focus-indicators.dark *:focus,
-.a11y-focus-indicators.dark *:focus-visible {
-  outline-color: #34d399 !important;
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--focus-ring) 24%, transparent) !important;
 }
 
 /* --- Larger Touch Targets --- */
@@ -1705,4 +2081,99 @@
   -webkit-text-fill-color: transparent;
   background-clip: text;
   animation: gradient-text-shine-sweep 3s linear infinite;
+}
+
+/* ==========================================================================
+   Shell hero panel + command/search pill (shell.md §5.2, §2.2)
+   ========================================================================== */
+
+/* Hero panel: opaque surface with aurora mesh wash on the right */
+.hero-panel {
+  position: relative;
+  overflow: hidden;
+  border-radius: 32px;
+  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+  background:
+    radial-gradient(640px 420px at 88% 12%, rgba(14, 122, 92, 0.07), transparent 65%),
+    radial-gradient(420px 320px at 75% 85%, rgba(240, 198, 107, 0.07), transparent 70%),
+    color-mix(in srgb, var(--surface) 94%, transparent);
+}
+.dark .hero-panel {
+  background:
+    radial-gradient(640px 460px at 86% 10%, rgba(89, 227, 169, 0.12), transparent 62%),
+    radial-gradient(480px 360px at 78% 88%, rgba(99, 214, 197, 0.09), transparent 66%),
+    radial-gradient(360px 300px at 60% 60%, rgba(240, 198, 107, 0.05), transparent 70%),
+    color-mix(in srgb, var(--surface) 82%, transparent);
+  box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+/* Noise overlay at 3% */
+.hero-panel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.03;
+  border-radius: inherit;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  background-size: 256px 256px;
+}
+.hero-panel > * {
+  position: relative;
+  z-index: 1;
+}
+.a11y-high-contrast .hero-panel::after {
+  display: none;
+}
+
+/* Header search / command pill (shell.md §2.2) */
+.cmd-pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 560px;
+  height: 44px;
+  padding: 0 16px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  color: var(--foreground-subtle);
+  font-size: 14px;
+  transition: max-width 240ms var(--ease-standard), box-shadow 180ms var(--ease-standard), border-color 180ms var(--ease-standard);
+}
+.cmd-pill:hover {
+  border-color: var(--border-strong);
+}
+.cmd-pill:focus-visible {
+  max-width: 600px;
+  box-shadow: var(--shadow-glow-primary);
+}
+.cmd-pill .cmd-pill-placeholder {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 24ch;
+  text-align: left;
+  flex: 1;
+}
+
+/* Overlay backdrops (design.md §10.7, shell.md §4.1) */
+[data-slot="sheet-overlay"],
+[data-slot="dialog-overlay"],
+[data-slot="alert-dialog-overlay"] {
+  background: rgba(16, 35, 30, 0.32);
+}
+.dark [data-slot="sheet-overlay"],
+.dark [data-slot="dialog-overlay"],
+.dark [data-slot="alert-dialog-overlay"] {
+  background: rgba(0, 10, 8, 0.72);
+}
+
+/* Hero panel min-height on desktop (shell.md §5.2) */
+@media (min-width: 1024px) {
+  .hero-grid {
+    min-height: max(620px, min(760px, calc(100svh - 136px)));
+  }
 }

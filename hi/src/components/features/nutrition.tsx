@@ -17,6 +17,7 @@ import {
   Truck,
 } from 'lucide-react';
 import TTSSpeaker from '@/components/features/tts-speaker';
+import { SectionHeader } from '@/components/ui/aurora';
 import HealthSearch from '@/components/features/health-search';
 import {
   Card,
@@ -206,10 +207,10 @@ const detectedFoodData = {
 
 // ── Meal type config ──────────────────────────────────────────────────
 const mealTypeConfig = {
-  breakfast: { label: 'Breakfast', color: 'bg-amber-100 text-amber-800 border-amber-200' },
-  lunch: { label: 'Lunch', color: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
+  breakfast: { label: 'Breakfast', color: 'bg-warning-soft text-warning border-warning/30' },
+  lunch: { label: 'Lunch', color: 'bg-primary-soft text-primary border-primary/30' },
   dinner: { label: 'Dinner', color: 'bg-violet-100 text-violet-800 border-violet-200' },
-  snack: { label: 'Snack', color: 'bg-rose-100 text-rose-800 border-rose-200' },
+  snack: { label: 'Snack', color: 'bg-danger-soft text-danger border-danger/30' },
 };
 
 // ── Sub-components ─────────────────────────────────────────────────────
@@ -269,8 +270,8 @@ function CircularCalorieTracker({ consumed, target }: { consumed: number; target
         </div>
       </div>
       <div className="flex items-center gap-1 text-sm">
-        <Flame className="h-4 w-4 text-orange-500" />
-        <span className="font-medium text-orange-600">
+        <Flame className="h-4 w-4 text-warning" />
+        <span className="font-medium text-warning">
           {target - consumed > 0 ? target - consumed : 0} kcal remaining
         </span>
       </div>
@@ -310,7 +311,7 @@ function WaterTracker() {
               <AnimatePresence>
                 {i < glasses && (
                   <motion.div
-                    className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-sky-500 to-sky-300"
+                    className="absolute bottom-0 left-0 right-0 bg-secondary/80"
                     initial={{ height: 0 }}
                     animate={{ height: '100%' }}
                     exit={{ height: 0 }}
@@ -364,7 +365,7 @@ function AIFoodScanner() {
     <Card className="overflow-hidden">
       <CardHeader className="pb-3">
         <div className="flex items-center gap-2">
-          <Camera className="h-5 w-5 text-orange-500" />
+          <Camera className="h-5 w-5 text-warning" />
           <CardTitle className="text-base">AI Food Scanner</CardTitle>
         </div>
         <CardDescription className="text-xs">
@@ -376,7 +377,7 @@ function AIFoodScanner() {
           <Button
             onClick={handleScan}
             disabled={scanning}
-            className="flex-1 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white"
+            className="btn-aurora-primary flex-1 rounded-[14px]"
           >
             {scanning ? (
               <motion.div
@@ -404,10 +405,10 @@ function AIFoodScanner() {
               exit={{ opacity: 0, y: -10, height: 0 }}
               transition={{ duration: 0.4 }}
             >
-              <div className="rounded-lg border bg-gradient-to-br from-orange-50 to-amber-50 p-4 space-y-3 dark:from-orange-950/30 dark:to-amber-950/30">
+              <div className="rounded-[18px] border border-warning/30 bg-warning-soft p-4 space-y-3">
                 <div className="flex items-center gap-3">
-                  <div className="h-12 w-12 rounded-lg bg-orange-200 dark:bg-orange-800 flex items-center justify-center">
-                    <Apple className="h-6 w-6 text-orange-700 dark:text-orange-300" />
+                  <div className="h-12 w-12 rounded-2xl bg-warning-soft flex items-center justify-center">
+                    <Apple className="h-6 w-6 text-warning" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
@@ -419,11 +420,11 @@ function AIFoodScanner() {
                       />
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      <Flame className="inline h-3 w-3 text-orange-500 mr-1" />
+                      <Flame className="inline h-3 w-3 text-warning mr-1" />
                       {detectedFoodData.calories} kcal
                     </p>
                   </div>
-                  <Badge className="ml-auto bg-emerald-100 text-emerald-700 border-emerald-200 text-xs">
+                  <Badge className="ml-auto bg-primary-soft text-primary border-primary/30 text-xs">
                     <Check className="h-3 w-3 mr-1" /> Detected
                   </Badge>
                 </div>
@@ -432,9 +433,9 @@ function AIFoodScanner() {
 
                 <div className="grid grid-cols-4 gap-2 text-center">
                   {[
-                    { label: 'Protein', value: detectedFoodData.protein, unit: 'g', color: 'text-emerald-600' },
-                    { label: 'Carbs', value: detectedFoodData.carbs, unit: 'g', color: 'text-amber-600' },
-                    { label: 'Fat', value: detectedFoodData.fat, unit: 'g', color: 'text-rose-600' },
+                    { label: 'Protein', value: detectedFoodData.protein, unit: 'g', color: 'text-primary' },
+                    { label: 'Carbs', value: detectedFoodData.carbs, unit: 'g', color: 'text-warning' },
+                    { label: 'Fat', value: detectedFoodData.fat, unit: 'g', color: 'text-danger' },
                     { label: 'Fiber', value: detectedFoodData.fiber, unit: 'g', color: 'text-violet-600' },
                   ].map((macro) => (
                     <div key={macro.label}>
@@ -480,7 +481,7 @@ function MealLog({ meals }: { meals: FoodItem[] }) {
     <Card>
       <CardHeader className="pb-3">
         <div className="flex items-center gap-2">
-          <Utensils className="h-5 w-5 text-amber-600" />
+          <Utensils className="h-5 w-5 text-warning" />
           <CardTitle className="text-base">Today's Meal Log</CardTitle>
         </div>
         <CardDescription className="text-xs">
@@ -505,8 +506,8 @@ function MealLog({ meals }: { meals: FoodItem[] }) {
                     animate={{ opacity: 1, x: 0 }}
                     className="flex items-center gap-3 rounded-lg border p-3 hover:bg-muted/50 transition-colors"
                   >
-                    <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-orange-100 to-amber-100 dark:from-orange-900/30 dark:to-amber-900/30 flex items-center justify-center shrink-0">
-                      <Apple className="h-5 w-5 text-orange-600" />
+                    <div className="h-10 w-10 rounded-2xl bg-warning-soft flex items-center justify-center shrink-0">
+                      <Apple className="h-5 w-5 text-warning" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{item.name}</p>
@@ -532,7 +533,7 @@ function DietPlan() {
     <Card>
       <CardHeader className="pb-3">
         <div className="flex items-center gap-2">
-          <Leaf className="h-5 w-5 text-emerald-600" />
+          <Leaf className="h-5 w-5 text-primary" />
           <CardTitle className="text-base">Personalized Diet Plan</CardTitle>
         </div>
         <CardDescription className="text-xs">
@@ -560,7 +561,7 @@ function DietPlan() {
                     <p className="text-xs text-muted-foreground">{meal.description}</p>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-lg font-bold text-orange-600">{meal.calories}</p>
+                    <p className="text-lg font-bold text-warning">{meal.calories}</p>
                     <p className="text-[10px] text-muted-foreground">kcal</p>
                   </div>
                 </div>
@@ -602,7 +603,7 @@ function DietPlan() {
                 <div className="flex gap-2">
                   <Button
                     size="sm"
-                    className="flex-1 text-[11px] h-8 bg-orange-500 hover:bg-orange-600 text-white"
+                    className="btn-aurora-primary flex-1 h-10 rounded-[14px] text-xs"
                   >
                     <Truck className="h-3 w-3 mr-1" />
                     Order on Swiggy
@@ -610,7 +611,7 @@ function DietPlan() {
                   <Button
                     size="sm"
                     variant="outline"
-                    className="flex-1 text-[11px] h-8 border-yellow-400 text-yellow-700 hover:bg-yellow-50"
+                    className="h-10 flex-1 rounded-[14px] text-xs border-warning/50 text-warning hover:bg-warning-soft"
                   >
                     <ShoppingCart className="h-3 w-3 mr-1" />
                     Order on Blinkit
@@ -716,35 +717,21 @@ export default function Nutrition() {
   const totalFiber = mealLog.reduce((s, m) => s + m.fiber, 0);
 
   const macroData = [
-    { name: 'Protein', value: totalProtein, color: '#10b981' },
-    { name: 'Carbs', value: totalCarbs, color: '#f59e0b' },
-    { name: 'Fat', value: totalFat, color: '#ef4444' },
-    { name: 'Fiber', value: totalFiber, color: '#8b5cf6' },
+    { name: 'Protein', value: totalProtein, color: '#0E7A5C' },
+    { name: 'Carbs', value: totalCarbs, color: '#935F0A' },
+    { name: 'Fat', value: totalFat, color: '#B42318' },
+    { name: 'Fiber', value: totalFiber, color: '#116E6B' },
   ];
 
   return (
     <section className="w-full space-y-6">
       {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
-      >
-        <div className="flex items-center gap-3">
-          <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center shadow-lg">
-            <Apple className="h-6 w-6 text-white" />
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">
-              AI Nutrition Hub
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              Smart food logging, calorie tracking &amp; diet planning
-            </p>
-          </div>
-        </div>
-        <AllergyDietSettings />
-      </motion.div>
+      <SectionHeader
+        eyebrow="NUTRITION"
+        title="Fuel your recovery."
+        description="Smart food logging, calorie tracking and gentle diet guidance — no shame, just data."
+        actions={<AllergyDietSettings />}
+      />
 
       {/* Two-column layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -793,7 +780,7 @@ export default function Nutrition() {
                         formatter={(value: number, name: string) => [`${value}g`, name]}
                         contentStyle={{
                           borderRadius: '8px',
-                          border: '1px solid #e5e7eb',
+                          border: '1px solid var(--border)',
                           fontSize: '12px',
                         }}
                       />
@@ -830,7 +817,7 @@ export default function Nutrition() {
           <Card>
             <CardHeader className="pb-2">
               <div className="flex items-center gap-2">
-                <Flame className="h-5 w-5 text-orange-500" />
+                <Flame className="h-5 w-5 text-warning" />
                 <CardTitle className="text-base">Weekly Calorie Trend</CardTitle>
               </div>
               <CardDescription className="text-xs">
@@ -844,7 +831,7 @@ export default function Nutrition() {
                     <Tooltip
                       contentStyle={{
                         borderRadius: '8px',
-                        border: '1px solid #e5e7eb',
+                        border: '1px solid var(--border)',
                         fontSize: '12px',
                       }}
                     />
@@ -899,9 +886,9 @@ export default function Nutrition() {
             <CardContent>
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { label: 'Protein', value: `${totalProtein}g`, target: '150g', color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-950/30' },
-                  { label: 'Carbs', value: `${totalCarbs}g`, target: '250g', color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-950/30' },
-                  { label: 'Fat', value: `${totalFat}g`, target: '65g', color: 'text-rose-600', bg: 'bg-rose-50 dark:bg-rose-950/30' },
+                  { label: 'Protein', value: `${totalProtein}g`, target: '150g', color: 'text-primary', bg: 'bg-primary-soft' },
+                  { label: 'Carbs', value: `${totalCarbs}g`, target: '250g', color: 'text-warning', bg: 'bg-warning-soft' },
+                  { label: 'Fat', value: `${totalFat}g`, target: '65g', color: 'text-danger', bg: 'bg-danger-soft' },
                   { label: 'Fiber', value: `${totalFiber}g`, target: '30g', color: 'text-violet-600', bg: 'bg-violet-50 dark:bg-violet-950/30' },
                 ].map((stat) => (
                   <motion.div

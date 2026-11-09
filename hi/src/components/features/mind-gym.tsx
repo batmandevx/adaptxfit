@@ -1,21 +1,21 @@
 'use client';
 
 /**
- * Mind Gym — a cognitive training hub merged from the "MindGym" project.
+ * Mind Gym — a calm cognitive arcade (mind-gym.md).
  *
- * Brings MindGym's brain-training exercises into the unified AdaptiFit app:
+ * Four gentle brain-training exercises, all local to the browser:
  *  - Focus Timer (ADHD / focus): a gentle Pomodoro with body-doubling encouragement.
  *  - Attention Game (Go / No-Go): trains sustained attention & impulse control.
  *  - Memory Match: a working-memory pairs game.
  *  - Daily Check-In (brain fog): adapts a gentle recommendation to how today feels.
  *
- * Everything runs locally in the browser — nothing is uploaded.
+ * Visual system: Clinical Aurora — soft token capsules, glass surfaces,
+ * pressure-free copy ("play", never "fail"), reduced-motion aware.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Brain,
   Timer,
   Target,
   Grid3x3,
@@ -27,18 +27,24 @@ import {
   Sparkles,
   CheckCircle2,
   Trophy,
+  Clock3,
+  Signal,
+  Leaf,
 } from 'lucide-react';
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  CardDescription,
-} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Slider } from '@/components/ui/slider';
+import {
+  GlassPanel,
+  SectionHeader,
+  useReduced,
+  EASE,
+  DURATION,
+  staggerContainer,
+  staggerItem,
+} from '@/components/ui/aurora';
+import { cn } from '@/lib/utils';
 import { useToastStore } from './toast-provider';
 import { useT, type TranslationKey } from '@/lib/i18n';
 
@@ -50,71 +56,197 @@ interface GameMeta {
   areaKey: TranslationKey;
   descriptionKey: TranslationKey;
   icon: React.ReactNode;
-  gradient: string;
+  /** Token tone for the icon capsule + accents (no gradients) */
+  tone: 'primary' | 'secondary' | 'accent' | 'info';
+  /** Session length hint, e.g. "2 min" */
+  duration: string;
+  /** Pressure-free difficulty label */
+  difficultyKey: 'Gentle' | 'Steady' | 'Focused';
 }
 
+const TONE_CAPSULE: Record<GameMeta['tone'], string> = {
+  primary: 'bg-primary-soft text-primary',
+  secondary: 'bg-secondary-soft text-secondary',
+  accent: 'bg-accent-soft text-accent',
+  info: 'bg-info-soft text-info',
+};
+
 const GAMES: GameMeta[] = [
-  { id: 'focus', nameKey: 'mindgym.games.focus.name', areaKey: 'mindgym.games.focus.area', descriptionKey: 'mindgym.games.focus.description', icon: <Timer className="w-6 h-6" />, gradient: 'from-amber-500 to-orange-600' },
-  { id: 'attention', nameKey: 'mindgym.games.attention.name', areaKey: 'mindgym.games.attention.area', descriptionKey: 'mindgym.games.attention.description', icon: <Target className="w-6 h-6" />, gradient: 'from-rose-500 to-pink-600' },
-  { id: 'memory', nameKey: 'mindgym.games.memory.name', areaKey: 'mindgym.games.memory.area', descriptionKey: 'mindgym.games.memory.description', icon: <Grid3x3 className="w-6 h-6" />, gradient: 'from-violet-500 to-purple-600' },
-  { id: 'checkin', nameKey: 'mindgym.games.checkin.name', areaKey: 'mindgym.games.checkin.area', descriptionKey: 'mindgym.games.checkin.description', icon: <HeartPulse className="w-6 h-6" />, gradient: 'from-cyan-500 to-teal-600' },
+  { id: 'focus', nameKey: 'mindgym.games.focus.name', areaKey: 'mindgym.games.focus.area', descriptionKey: 'mindgym.games.focus.description', icon: <Timer className="h-6 w-6" />, tone: 'primary', duration: '5–25 min', difficultyKey: 'Gentle' },
+  { id: 'attention', nameKey: 'mindgym.games.attention.name', areaKey: 'mindgym.games.attention.area', descriptionKey: 'mindgym.games.attention.description', icon: <Target className="h-6 w-6" />, tone: 'secondary', duration: '2 min', difficultyKey: 'Focused' },
+  { id: 'memory', nameKey: 'mindgym.games.memory.name', areaKey: 'mindgym.games.memory.area', descriptionKey: 'mindgym.games.memory.description', icon: <Grid3x3 className="h-6 w-6" />, tone: 'accent', duration: '3 min', difficultyKey: 'Gentle' },
+  { id: 'checkin', nameKey: 'mindgym.games.checkin.name', areaKey: 'mindgym.games.checkin.area', descriptionKey: 'mindgym.games.checkin.description', icon: <HeartPulse className="h-6 w-6" />, tone: 'info', duration: '1 min', difficultyKey: 'Gentle' },
 ];
+
+/** Small static focus-score ring for the hub header (mind-gym.md §3). */
+function FocusRing({ value }: { value: number }) {
+  const r = 46;
+  const c = 2 * Math.PI * r;
+  return (
+    <div className="relative h-[112px] w-[112px]">
+      <svg viewBox="0 0 112 112" className="h-full w-full -rotate-90">
+        <circle cx="56" cy="56" r={r} fill="none" strokeWidth="9" className="stroke-border/45" />
+        <circle
+          cx="56" cy="56" r={r} fill="none" strokeWidth="9" strokeLinecap="round"
+          className="stroke-primary"
+          strokeDasharray={c}
+          strokeDashoffset={c * (1 - value / 100)}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="font-mono text-2xl font-semibold tabular-nums text-foreground">{value}</span>
+        <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-foreground-subtle">Focus</span>
+      </div>
+    </div>
+  );
+}
 
 export default function MindGym() {
   const [game, setGame] = useState<GameId>('hub');
+  const [played, setPlayed] = useState<Partial<Record<Exclude<GameId, 'hub'>, boolean>>>({});
   const t = useT();
+  const reduced = useReduced();
+
+  const activeMeta = game === 'hub' ? null : GAMES.find((g) => g.id === game)!;
+  const playedCount = GAMES.filter((g) => played[g.id]).length;
+
+  const openGame = (id: Exclude<GameId, 'hub'>) => setGame(id);
+  const exitToHub = () => {
+    if (game !== 'hub') setPlayed((p) => ({ ...p, [game]: true }));
+    setGame('hub');
+  };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8 space-y-6">
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="text-center space-y-2">
-        <Badge variant="secondary" className="gap-1">
-          <Brain className="w-3.5 h-3.5" /> {t('mindgym.badge')}
-        </Badge>
-        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">{t('mindgym.title')}</h1>
-        <p className="text-muted-foreground max-w-2xl mx-auto">
-          {t('mindgym.subtitle')}
-        </p>
-      </motion.div>
+    <div className="mx-auto w-full max-w-[1080px] space-y-6">
+      <SectionHeader
+        eyebrow="MIND GYM"
+        title="Train focus gently."
+        description="Short, low-pressure games for attention, memory and mental clarity. Two minutes counts — there are no streaks to break here."
+        actions={
+          <div className="flex items-center gap-4 rounded-[18px] border border-border/60 bg-surface/60 px-4 py-2">
+            <FocusRing value={62 + playedCount * 8} />
+            <div className="space-y-0.5">
+              <p className="text-sm font-semibold text-foreground">Steady this week</p>
+              <p className="text-xs text-foreground-subtle">Focus score is a guide, not a grade.</p>
+            </div>
+          </div>
+        }
+      />
 
       <AnimatePresence mode="wait">
         {game === 'hub' ? (
-          <motion.div key="hub" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="grid sm:grid-cols-2 gap-4">
-            {GAMES.map((g, i) => (
-              <motion.button
-                key={g.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.06 }}
-                onClick={() => setGame(g.id)}
-                className="text-left"
-              >
-                <Card className="h-full hover:shadow-lg hover:-translate-y-1 transition-all">
-                  <CardContent className="p-5 flex items-start gap-4">
-                    <div className={`w-12 h-12 shrink-0 rounded-xl bg-gradient-to-br ${g.gradient} text-white grid place-items-center shadow`}>
-                      {g.icon}
+          <motion.div
+            key="hub"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: reduced ? 0.14 : DURATION.standard }}
+            className="space-y-5"
+          >
+            {/* Today's gentle session strip */}
+            <div className="flex flex-col gap-4 rounded-[24px] bg-primary-soft p-5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3">
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-surface/70 text-primary">
+                  <Leaf className="h-6 w-6" />
+                </span>
+                <div>
+                  <p className="font-display text-lg font-semibold text-foreground">Today&apos;s cognitive session</p>
+                  <p className="text-sm text-foreground-muted">
+                    3 short games · about 7 minutes · low pressure — stop whenever you like.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <Button
+                  onClick={() => openGame('attention')}
+                  className="btn-aurora-primary h-12 gap-2 rounded-[14px] px-5 text-[15px] font-semibold"
+                >
+                  <Play className="h-4 w-4" /> Continue
+                </Button>
+                <span className="hidden text-xs text-foreground-subtle sm:block">or pick any game below</span>
+              </div>
+            </div>
+
+            {/* Game cards */}
+            <motion.div
+              variants={staggerContainer}
+              initial="hidden"
+              animate="show"
+              className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+            >
+              {GAMES.map((g) => (
+                <motion.div key={g.id} variants={reduced ? undefined : staggerItem}>
+                  <GlassPanel interactive className="flex h-full flex-col gap-3 p-5">
+                    <div className="flex items-start justify-between">
+                      <span className={cn('flex h-14 w-14 items-center justify-center rounded-2xl', TONE_CAPSULE[g.tone])}>
+                        {g.icon}
+                      </span>
+                      {played[g.id] && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-success-soft px-2.5 py-1 text-xs font-semibold text-success">
+                          <CheckCircle2 className="h-3 w-3" /> Done
+                        </span>
+                      )}
                     </div>
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold">{t(g.nameKey)}</h3>
-                        <Badge variant="outline" className="text-[10px]">{t(g.areaKey)}</Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">{t(g.descriptionKey)}</p>
+                    <div>
+                      <h3 className="font-display text-lg font-semibold text-foreground">{t(g.nameKey)}</h3>
+                      <p className="mt-1 text-sm leading-6 text-foreground-muted">{t(g.descriptionKey)}</p>
                     </div>
-                  </CardContent>
-                </Card>
-              </motion.button>
-            ))}
+                    <div className="mt-auto flex flex-wrap items-center gap-1.5">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-surface-raised px-2.5 py-1 text-xs font-medium text-foreground-muted">
+                        <Signal className="h-3 w-3" /> {g.difficultyKey}
+                      </span>
+                      <span className="inline-flex items-center gap-1 rounded-full bg-surface-raised px-2.5 py-1 text-xs font-medium text-foreground-muted">
+                        <Clock3 className="h-3 w-3" /> {g.duration}
+                      </span>
+                      <span className={cn('inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium', TONE_CAPSULE[g.tone])}>
+                        {t(g.areaKey)}
+                      </span>
+                    </div>
+                    <Button
+                      onClick={() => openGame(g.id)}
+                      variant="outline"
+                      className="mt-1 h-11 w-full gap-2 rounded-[14px] border-primary/40 text-primary hover:bg-primary-soft"
+                    >
+                      <Play className="h-4 w-4" /> Play
+                    </Button>
+                  </GlassPanel>
+                </motion.div>
+              ))}
+            </motion.div>
+
+            <p className="text-center text-xs text-foreground-subtle">
+              Everything runs on this device. Scores are a personal guide — never a judgement.
+            </p>
           </motion.div>
         ) : (
-          <motion.div key={game} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-            <Button variant="ghost" onClick={() => setGame('hub')} className="mb-4 gap-2">
-              <ArrowLeft className="w-4 h-4" /> {t('mindgym.back')}
-            </Button>
-            {game === 'focus' && <FocusTimer />}
-            {game === 'attention' && <AttentionGame />}
-            {game === 'memory' && <MemoryMatch />}
-            {game === 'checkin' && <DailyCheckIn />}
+          <motion.div
+            key={game}
+            initial={reduced ? { opacity: 0 } : { opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: reduced ? 0.14 : DURATION.standard, ease: EASE.careOut }}
+          >
+            {/* Game chrome: calm header with a clear way out */}
+            <GlassPanel className="mx-auto max-w-2xl p-5 sm:p-6">
+              <div className="mb-5 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <span className={cn('flex h-11 w-11 items-center justify-center rounded-xl', TONE_CAPSULE[activeMeta.tone])}>
+                    {activeMeta.icon}
+                  </span>
+                  <div>
+                    <h2 className="font-display text-lg font-semibold text-foreground">{t(activeMeta.nameKey)}</h2>
+                    <p className="text-xs text-foreground-subtle">{t(activeMeta.areaKey)} · {activeMeta.duration} · pause anytime</p>
+                  </div>
+                </div>
+                <Button variant="ghost" onClick={exitToHub} className="h-11 gap-2 rounded-[14px]">
+                  <ArrowLeft className="h-4 w-4" /> {t('mindgym.back')}
+                </Button>
+              </div>
+              {game === 'focus' && <FocusTimer />}
+              {game === 'attention' && <AttentionGame />}
+              {game === 'memory' && <MemoryMatch />}
+              {game === 'checkin' && <DailyCheckIn />}
+            </GlassPanel>
           </motion.div>
         )}
       </AnimatePresence>
@@ -163,45 +295,54 @@ function FocusTimer() {
   const ss = String(secondsLeft % 60).padStart(2, '0');
 
   return (
-    <Card className="max-w-xl mx-auto">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2"><Timer className="w-5 h-5 text-amber-500" /> {t('mindgym.focusTimer.title')}</CardTitle>
-        <CardDescription>{t(onBreak ? 'mindgym.focusTimer.breakDescription' : 'mindgym.focusTimer.focusDescription')}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="relative grid place-items-center py-4">
-          <svg viewBox="0 0 120 120" className="w-48 h-48 -rotate-90">
-            <circle cx="60" cy="60" r="52" fill="none" strokeWidth="10" className="stroke-muted" />
-            <motion.circle
-              cx="60" cy="60" r="52" fill="none" strokeWidth="10" strokeLinecap="round"
-              className={onBreak ? 'stroke-teal-500' : 'stroke-amber-500'}
-              strokeDasharray={2 * Math.PI * 52}
-              strokeDashoffset={2 * Math.PI * 52 * (1 - pct / 100)}
-            />
-          </svg>
-          <div className="absolute text-center">
-            <div className="text-4xl font-bold tabular-nums">{mm}:{ss}</div>
-            <div className="text-xs uppercase tracking-wider text-muted-foreground mt-1">{t(onBreak ? 'mindgym.focusTimer.breakLabel' : 'mindgym.focusTimer.focusLabel')}</div>
+    <div className="space-y-6">
+      <p className="text-sm leading-6 text-foreground-muted">
+        {t(onBreak ? 'mindgym.focusTimer.breakDescription' : 'mindgym.focusTimer.focusDescription')}
+      </p>
+      <div className="relative grid place-items-center py-4">
+        <svg viewBox="0 0 120 120" className="h-48 w-48 -rotate-90">
+          <circle cx="60" cy="60" r="52" fill="none" strokeWidth="10" className="stroke-border/45" />
+          <motion.circle
+            cx="60" cy="60" r="52" fill="none" strokeWidth="10" strokeLinecap="round"
+            className={onBreak ? 'stroke-secondary' : 'stroke-primary'}
+            strokeDasharray={2 * Math.PI * 52}
+            strokeDashoffset={2 * Math.PI * 52 * (1 - pct / 100)}
+          />
+        </svg>
+        <div className="absolute text-center">
+          <div className="font-mono text-4xl font-semibold tabular-nums text-foreground">{mm}:{ss}</div>
+          <div className="mt-1 text-xs font-semibold uppercase tracking-[0.08em] text-foreground-subtle">
+            {t(onBreak ? 'mindgym.focusTimer.breakLabel' : 'mindgym.focusTimer.focusLabel')}
           </div>
         </div>
+      </div>
 
-        {!running && !onBreak && (
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm"><span className="text-muted-foreground">{t('mindgym.focusTimer.blockLength')}</span><span className="font-medium">{t('common.minutes', { count: minutes })}</span></div>
-            <Slider value={[minutes]} min={5} max={50} step={5} onValueChange={(v) => setMinutes(v[0])} />
+      {!running && !onBreak && (
+        <div className="space-y-2">
+          <div className="flex justify-between text-sm">
+            <span className="text-foreground-muted">{t('mindgym.focusTimer.blockLength')}</span>
+            <span className="font-medium text-foreground">{t('common.minutes', { count: minutes })}</span>
           </div>
-        )}
-
-        <div className="flex gap-2 justify-center">
-          <Button onClick={() => setRunning((r) => !r)} className="gap-2 min-w-32">
-            {running ? <><Pause className="w-4 h-4" /> {t('common.pause')}</> : <><Play className="w-4 h-4" /> {t('common.start')}</>}
-          </Button>
-          <Button variant="outline" className="gap-2" onClick={() => { setRunning(false); setOnBreak(false); setSecondsLeft(minutes * 60); }}>
-            <RotateCcw className="w-4 h-4" /> {t('common.reset')}
-          </Button>
+          <Slider value={[minutes]} min={5} max={50} step={5} onValueChange={(v) => setMinutes(v[0])} />
         </div>
-      </CardContent>
-    </Card>
+      )}
+
+      <div className="flex justify-center gap-2">
+        <Button
+          onClick={() => setRunning((r) => !r)}
+          className="btn-aurora-primary h-12 min-w-36 gap-2 rounded-[14px] text-[15px] font-semibold"
+        >
+          {running ? <><Pause className="h-4 w-4" /> {t('common.pause')}</> : <><Play className="h-4 w-4" /> {t('common.start')}</>}
+        </Button>
+        <Button
+          variant="outline"
+          className="h-12 gap-2 rounded-[14px]"
+          onClick={() => { setRunning(false); setOnBreak(false); setSecondsLeft(minutes * 60); }}
+        >
+          <RotateCcw className="h-4 w-4" /> {t('common.reset')}
+        </Button>
+      </div>
+    </div>
   );
 }
 
@@ -212,6 +353,7 @@ const STIM_MS = 850;
 function AttentionGame() {
   const addToast = useToastStore((s) => s.addToast);
   const t = useT();
+  const reduced = useReduced();
   const [phase, setPhase] = useState<'idle' | 'running' | 'done'>('idle');
   const [stim, setStim] = useState<'go' | 'nogo' | null>(null);
   const [trial, setTrial] = useState(0);
@@ -297,56 +439,60 @@ function AttentionGame() {
     if (gapTimer.current) clearTimeout(gapTimer.current);
   }, []);
 
+  const stimInitial = reduced ? { opacity: 0 } : { scale: 0.6, opacity: 0 };
+  const stimAnimate = { scale: 1, opacity: 1 };
+  const stimExit = reduced ? { opacity: 0 } : { scale: 0.6, opacity: 0 };
+
   return (
-    <Card className="max-w-xl mx-auto">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2"><Target className="w-5 h-5 text-rose-500" /> {t('mindgym.attention.title')}</CardTitle>
-        <CardDescription>{t('mindgym.attention.instructions')}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4 text-center">
-        {phase === 'idle' && (
-          <div className="py-10 space-y-4">
-            <p className="text-muted-foreground">{t('mindgym.attention.ready', { count: TOTAL_TRIALS })}</p>
-            <Button size="lg" onClick={begin}>{t('common.start')}</Button>
-          </div>
-        )}
+    <div className="space-y-4 text-center">
+      <p className="text-sm leading-6 text-foreground-muted">{t('mindgym.attention.instructions')}</p>
+      {phase === 'idle' && (
+        <div className="space-y-4 py-10">
+          <p className="text-foreground-muted">{t('mindgym.attention.ready', { count: TOTAL_TRIALS })}</p>
+          <Button size="lg" onClick={begin} className="btn-aurora-primary h-12 rounded-[14px] px-6 text-[15px] font-semibold">
+            {t('common.start')}
+          </Button>
+        </div>
+      )}
 
-        {phase === 'running' && (
-          <div className="space-y-3">
-            <div className="text-sm text-muted-foreground">{t('mindgym.attention.round', { current: trial + 1, total: TOTAL_TRIALS })}</div>
-            <button onClick={respond} aria-label="Respond" className="mx-auto w-56 h-56 grid place-items-center select-none">
-              <AnimatePresence mode="wait">
-                {stim === 'go' && (
-                  <motion.div key="go" initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.6, opacity: 0 }}
-                    className="w-40 h-40 rounded-full bg-emerald-700 text-white grid place-items-center text-3xl font-black shadow-lg">{t('mindgym.attention.go')}</motion.div>
-                )}
-                {stim === 'nogo' && (
-                  <motion.div key="nogo" initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.6, opacity: 0 }}
-                    className="w-36 h-36 rounded-2xl bg-rose-500 text-white grid place-items-center text-3xl font-black shadow-lg">{t('mindgym.attention.stop')}</motion.div>
-                )}
-                {!stim && <motion.div key="rest" className="text-4xl text-muted-foreground">＋</motion.div>}
-              </AnimatePresence>
-            </button>
-            <p className="text-xs text-muted-foreground">{t('mindgym.attention.hint')}</p>
-          </div>
-        )}
+      {phase === 'running' && (
+        <div className="space-y-3">
+          <div className="text-sm text-foreground-muted">{t('mindgym.attention.round', { current: trial + 1, total: TOTAL_TRIALS })}</div>
+          <button onClick={respond} aria-label="Respond" className="mx-auto grid h-56 w-56 select-none place-items-center">
+            <AnimatePresence mode="wait">
+              {stim === 'go' && (
+                <motion.div key="go" initial={stimInitial} animate={stimAnimate} exit={stimExit}
+                  className="grid h-40 w-40 place-items-center rounded-full bg-primary text-3xl font-bold text-primary-foreground shadow-[var(--shadow-glow-primary)]">{t('mindgym.attention.go')}</motion.div>
+              )}
+              {stim === 'nogo' && (
+                <motion.div key="nogo" initial={stimInitial} animate={stimAnimate} exit={stimExit}
+                  className="grid h-36 w-36 place-items-center rounded-[24px] bg-accent text-3xl font-bold text-accent-foreground shadow-lg">{t('mindgym.attention.stop')}</motion.div>
+              )}
+              {!stim && <motion.div key="rest" className="text-4xl text-foreground-subtle">＋</motion.div>}
+            </AnimatePresence>
+          </button>
+          <p className="text-xs text-foreground-subtle">{t('mindgym.attention.hint')}</p>
+        </div>
+      )}
 
-        {phase === 'done' && result && (
-          <div className="py-6 space-y-4">
-            <div className="text-5xl">{result.acc >= 0.8 ? '🌟' : result.acc >= 0.6 ? '👍' : '💪'}</div>
-            <h3 className="text-2xl font-bold">{t('mindgym.attention.accuracy', { accuracy: Math.round(result.acc * 100) })}</h3>
-            <p className="text-muted-foreground"><b>{t('mindgym.attention.averageReaction', { time: result.avgRt || '—' })}</b></p>
-            <div className="flex flex-wrap gap-2 justify-center">
-              <Badge variant="secondary">{t('mindgym.attention.goHits', { count: result.hits })}</Badge>
-              <Badge variant="secondary">{t('mindgym.attention.correctStops', { count: result.cr })}</Badge>
-              <Badge variant="outline">{t('mindgym.attention.missed', { count: result.misses })}</Badge>
-              <Badge variant="outline">{t('mindgym.attention.impulseSlips', { count: result.fa })}</Badge>
-            </div>
-            <Button size="lg" onClick={begin}>{t('mindgym.attention.playAgain')}</Button>
+      {phase === 'done' && result && (
+        <div className="space-y-4 py-6">
+          <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-success-soft">
+            <Trophy className="h-8 w-8 text-success" />
+          </span>
+          <h3 className="font-display text-2xl font-semibold text-foreground">{t('mindgym.attention.accuracy', { accuracy: Math.round(result.acc * 100) })}</h3>
+          <p className="text-foreground-muted"><b>{t('mindgym.attention.averageReaction', { time: result.avgRt || '—' })}</b></p>
+          <div className="flex flex-wrap justify-center gap-2">
+            <Badge variant="secondary">{t('mindgym.attention.goHits', { count: result.hits })}</Badge>
+            <Badge variant="secondary">{t('mindgym.attention.correctStops', { count: result.cr })}</Badge>
+            <Badge variant="outline">{t('mindgym.attention.missed', { count: result.misses })}</Badge>
+            <Badge variant="outline">{t('mindgym.attention.impulseSlips', { count: result.fa })}</Badge>
           </div>
-        )}
-      </CardContent>
-    </Card>
+          <p className="text-xs text-foreground-subtle">Every round trains attention — there is no failing here.</p>
+          <Button size="lg" onClick={begin} className="btn-aurora-primary h-12 rounded-[14px] px-6 text-[15px] font-semibold">{t('mindgym.attention.playAgain')}</Button>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -418,39 +564,40 @@ function MemoryMatch() {
   const restart = () => { setCards(makeDeck()); setMoves(0); setPicks([]); setLocked(false); };
 
   return (
-    <Card className="max-w-xl mx-auto">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2"><Grid3x3 className="w-5 h-5 text-violet-500" /> {t('mindgym.memory.title')}</CardTitle>
-        <CardDescription>{t('mindgym.memory.description', { moves })}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-4 gap-3">
-          {cards.map((c) => {
-            const show = c.flipped || c.matched;
-            return (
-              <button
-                key={c.id}
-                onClick={() => flip(c.id)}
-                className={`aspect-square rounded-xl text-3xl grid place-items-center transition-all border
-                  ${show ? 'bg-card border-violet-400' : 'bg-gradient-to-br from-violet-500 to-purple-600 border-transparent'}
-                  ${c.matched ? 'opacity-60 ring-2 ring-emerald-400' : ''}`}
-                aria-label={show ? c.emoji : t('mindgym.memory.hiddenCard')}
-              >
-                {show ? c.emoji : <Sparkles className="w-5 h-5 text-white/70" />}
-              </button>
-            );
-          })}
-        </div>
-        <div className="flex items-center justify-between">
-          {won ? (
-            <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
-              <Trophy className="w-4 h-4" /> {t('mindgym.memory.solved', { moves })}
-            </span>
-          ) : <span className="text-sm text-muted-foreground">{t('mindgym.memory.instruction')}</span>}
-          <Button variant="outline" className="gap-2" onClick={restart}><RotateCcw className="w-4 h-4" /> {t('mindgym.memory.newGame')}</Button>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="space-y-4">
+      <p className="text-sm text-foreground-muted">{t('mindgym.memory.description', { moves })}</p>
+      <div className="grid grid-cols-4 gap-3">
+        {cards.map((c) => {
+          const show = c.flipped || c.matched;
+          return (
+            <button
+              key={c.id}
+              onClick={() => flip(c.id)}
+              className={cn(
+                'grid aspect-square place-items-center rounded-[18px] border text-3xl transition-colors duration-150',
+                show
+                  ? 'border-primary/45 bg-surface-raised'
+                  : 'border-transparent bg-primary hover:bg-[color-mix(in_srgb,var(--primary)_88%,black)]',
+                c.matched && 'opacity-70 ring-2 ring-success',
+              )}
+              aria-label={show ? c.emoji : t('mindgym.memory.hiddenCard')}
+            >
+              {show ? c.emoji : <Sparkles className="h-5 w-5 text-primary-foreground/70" />}
+            </button>
+          );
+        })}
+      </div>
+      <div className="flex items-center justify-between">
+        {won ? (
+          <span className="flex items-center gap-1 font-medium text-success">
+            <Trophy className="h-4 w-4" /> {t('mindgym.memory.solved', { moves })}
+          </span>
+        ) : <span className="text-sm text-foreground-muted">{t('mindgym.memory.instruction')}</span>}
+        <Button variant="outline" className="h-11 gap-2 rounded-[14px]" onClick={restart}>
+          <RotateCcw className="h-4 w-4" /> {t('mindgym.memory.newGame')}
+        </Button>
+      </div>
+    </div>
   );
 }
 
@@ -466,6 +613,7 @@ const FIELDS: { key: string; labelKey: TranslationKey; lowKey: TranslationKey; h
 function DailyCheckIn() {
   const addToast = useToastStore((s) => s.addToast);
   const t = useT();
+  const reduced = useReduced();
   const [vals, setVals] = useState<Record<string, number>>(() => Object.fromEntries(FIELDS.map((f) => [f.key, 5])));
   const [submitted, setSubmitted] = useState(false);
 
@@ -491,39 +639,41 @@ function DailyCheckIn() {
   };
 
   return (
-    <Card className="max-w-xl mx-auto">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2"><HeartPulse className="w-5 h-5 text-cyan-500" /> {t('mindgym.checkin.title')}</CardTitle>
-        <CardDescription>{t('mindgym.checkin.description')}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-5">
-        {FIELDS.map((f) => (
-          <div key={f.key} className="space-y-1.5">
-            <div className="flex justify-between text-sm">
-              <span className="font-medium">{t(f.labelKey)}</span>
-              <span className="text-muted-foreground tabular-nums">{vals[f.key]}/10</span>
-            </div>
-            <Slider value={[vals[f.key]]} min={1} max={10} step={1} onValueChange={(v) => { setVals((s) => ({ ...s, [f.key]: v[0] })); setSubmitted(false); }} />
-            <div className="flex justify-between text-[10px] uppercase tracking-wider text-muted-foreground">
-              <span>{t(f.lowKey)}</span><span>{t(f.highKey)}</span>
-            </div>
+    <div className="space-y-5">
+      <p className="text-sm leading-6 text-foreground-muted">{t('mindgym.checkin.description')}</p>
+      {FIELDS.map((f) => (
+        <div key={f.key} className="space-y-1.5">
+          <div className="flex justify-between text-sm">
+            <span className="font-medium text-foreground">{t(f.labelKey)}</span>
+            <span className="font-mono tabular-nums text-foreground-muted">{vals[f.key]}/10</span>
           </div>
-        ))}
+          <Slider value={[vals[f.key]]} min={1} max={10} step={1} onValueChange={(v) => { setVals((s) => ({ ...s, [f.key]: v[0] })); setSubmitted(false); }} />
+          <div className="flex justify-between text-xs uppercase tracking-wider text-foreground-subtle">
+            <span>{t(f.lowKey)}</span><span>{t(f.highKey)}</span>
+          </div>
+        </div>
+      ))}
 
-        <Button className="w-full" onClick={submit}>{t('mindgym.checkin.save')}</Button>
+      <Button className="btn-aurora-primary h-12 w-full rounded-[14px] text-[15px] font-semibold" onClick={submit}>
+        {t('mindgym.checkin.save')}
+      </Button>
 
-        <AnimatePresence>
-          {submitted && (
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-              className="rounded-xl border bg-muted/50 p-4 space-y-1">
-              <div className="flex items-center gap-2 font-semibold">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500" /> {recommendation.title}
-              </div>
-              <p className="text-sm text-muted-foreground">{recommendation.text}</p>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </CardContent>
-    </Card>
+      <AnimatePresence>
+        {submitted && (
+          <motion.div
+            initial={reduced ? { opacity: 0 } : { opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: reduced ? 0.14 : DURATION.standard, ease: EASE.careOut }}
+            className="space-y-1 rounded-[18px] bg-secondary-soft p-4"
+          >
+            <div className="flex items-center gap-2 font-semibold text-foreground">
+              <CheckCircle2 className="h-4 w-4 text-secondary" /> {recommendation.title}
+            </div>
+            <p className="text-sm text-foreground-muted">{recommendation.text}</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }

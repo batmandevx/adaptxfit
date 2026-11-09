@@ -29,6 +29,7 @@ import {
   useT,
   type Locale,
 } from '@/lib/i18n';
+import { useReduced } from '@/components/ui/aurora';
 
 // ─── Panel Animation Variants ─────────────────────────────────────────────────
 
@@ -73,6 +74,20 @@ const triggerVariants = {
   tap: { scale: 0.95 },
 };
 
+// Reduced-motion equivalents: opacity-only, 120–160ms (design.md §9.5).
+const reducedPanelVariants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { duration: 0.14 } },
+  exit: { opacity: 0, transition: { duration: 0.12 } },
+};
+
+const reducedTriggerVariants = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1, transition: { duration: 0.14, delay: 0.2 } },
+  hover: {},
+  tap: {},
+};
+
 // ─── Settings Row Component ───────────────────────────────────────────────────
 
 interface SettingRowProps {
@@ -86,13 +101,13 @@ function SettingRow({ icon, label, description, children }: SettingRowProps) {
   return (
     <div className="flex items-center justify-between gap-3 py-2">
       <div className="flex items-center gap-2.5 min-w-0 flex-1">
-        <div className="w-7 h-7 rounded-lg bg-emerald-500/10 dark:bg-emerald-500/15 flex items-center justify-center shrink-0">
+        <div className="w-8 h-8 rounded-xl bg-primary-soft flex items-center justify-center shrink-0 [&>svg]:text-primary">
           {icon}
         </div>
         <div className="min-w-0">
           <p className="text-sm font-medium text-foreground leading-tight">{label}</p>
           {description && (
-            <p className="text-xs text-muted-foreground leading-tight mt-0.5 truncate">
+            <p className="text-xs text-foreground-subtle leading-tight mt-0.5 truncate">
               {description}
             </p>
           )}
@@ -103,13 +118,38 @@ function SettingRow({ icon, label, description, children }: SettingRowProps) {
   );
 }
 
+/** Switch with an explicit On/Off state label (features.md — accessibility-widget). */
+function ToggleSwitch({
+  checked,
+  onCheckedChange,
+  label,
+}: {
+  checked: boolean;
+  onCheckedChange: (v: boolean) => void;
+  label: string;
+}) {
+  return (
+    <span className="flex items-center gap-2">
+      <span className="w-7 text-right text-xs font-semibold text-foreground-subtle" aria-hidden="true">
+        {checked ? 'On' : 'Off'}
+      </span>
+      <Switch
+        checked={checked}
+        onCheckedChange={onCheckedChange}
+        aria-label={label}
+        className="data-[state=checked]:bg-primary"
+      />
+    </span>
+  );
+}
+
 // ─── Section Header Component ─────────────────────────────────────────────────
 
 function SectionHeader({ icon, title }: { icon: React.ReactNode; title: string }) {
   return (
     <div className="flex items-center gap-2 pt-3 pb-1">
-      <span className="text-emerald-600 dark:text-emerald-400">{icon}</span>
-      <h3 className="text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+      <span className="text-primary">{icon}</span>
+      <h3 className="text-xs font-semibold uppercase tracking-[0.08em] text-primary">
         {title}
       </h3>
     </div>
@@ -121,6 +161,7 @@ function SectionHeader({ icon, title }: { icon: React.ReactNode; title: string }
 export default function AccessibilityWidget() {
   const store = useAccessibilityStore();
   const t = useT();
+  const reduced = useReduced();
   const languageRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const [languageAnnouncement, setLanguageAnnouncement] = useState('');
 
@@ -251,30 +292,31 @@ export default function AccessibilityWidget() {
 
   // Font size button style helper
   const fontSizeBtnClass = (size: 'small' | 'medium' | 'large') =>
-    `min-h-11 min-w-11 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+    `min-h-11 min-w-11 px-3 py-1.5 rounded-[14px] text-xs font-medium transition-colors ${
       store.fontSize === size
-        ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/25'
-        : 'bg-muted text-muted-foreground hover:bg-emerald-500/10 hover:text-emerald-600 dark:hover:text-emerald-400'
+        ? 'bg-primary text-primary-foreground'
+        : 'bg-surface-raised text-foreground-muted hover:bg-primary-soft hover:text-primary'
     }`;
 
   return (
     <>
-      {/* Floating Trigger Button */}
+      {/* Floating Trigger Button — 56px FAB, right 24 / bottom 96 */}
       <motion.button
-        variants={triggerVariants}
+        variants={(reduced ? reducedTriggerVariants : triggerVariants) as typeof triggerVariants}
         initial="initial"
         animate="animate"
         whileHover="hover"
         whileTap="tap"
         onClick={handleToggleOpen}
-        className={`fixed bottom-20 right-6 z-50 w-12 h-12 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/30 flex items-center justify-center cursor-pointer focus-visible:outline-2 focus-visible:outline-emerald-500 focus-visible:outline-offset-2 ${
+        className={`fixed bottom-24 right-6 z-50 h-14 w-14 rounded-full bg-primary text-primary-foreground flex items-center justify-center cursor-pointer focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 ${
           !store.hasVisited ? 'a11y-pulse-attention' : ''
         }`}
+        style={{ boxShadow: 'var(--shadow-lg), var(--shadow-glow-primary)' }}
         aria-label={store.isOpen ? 'Close accessibility settings' : 'Open accessibility settings'}
         aria-expanded={store.isOpen}
         aria-haspopup="dialog"
       >
-        <Accessibility className="w-5 h-5" />
+        <Accessibility className="w-6 h-6" />
       </motion.button>
 
       {/* Panel Overlay */}
@@ -294,26 +336,26 @@ export default function AccessibilityWidget() {
 
             {/* Panel */}
             <motion.div
-              variants={panelVariants}
+              variants={(reduced ? reducedPanelVariants : panelVariants) as typeof panelVariants}
               initial="hidden"
               animate="visible"
               exit="exit"
               role="dialog"
               aria-label="Accessibility Settings"
               aria-modal="true"
-              className="fixed bottom-36 right-6 z-[60] w-[calc(100vw-3rem)] sm:w-80 a11y-panel-glass rounded-2xl overflow-hidden"
+              className="fixed bottom-[168px] right-6 z-[60] w-[calc(100vw-3rem)] sm:w-[360px] glass-overlay rounded-[24px] overflow-hidden"
             >
               {/* Header */}
-              <div className="flex items-center justify-between px-4 pt-4 pb-2 border-b border-emerald-500/10 dark:border-emerald-500/10">
+              <div className="flex items-center justify-between border-b border-border/60 px-4 pb-2 pt-4">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
-                    <Accessibility className="w-4 h-4 text-white" />
+                  <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-primary-soft">
+                    <Accessibility className="h-5 w-5 text-primary" />
                   </div>
                   <div>
                     <h2 className="text-sm font-semibold text-foreground">
                       Accessibility Settings
                     </h2>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-foreground-subtle">
                       Customize your experience
                     </p>
                   </div>
@@ -321,11 +363,11 @@ export default function AccessibilityWidget() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 rounded-full hover:bg-emerald-500/10"
+                  className="h-11 w-11 rounded-full hover:bg-primary-soft"
                   onClick={() => store.setOpen(false)}
                   aria-label="Close accessibility settings"
                 >
-                  <X className="w-3.5 h-3.5" />
+                  <X className="w-4 h-4" />
                 </Button>
               </div>
 
@@ -360,10 +402,10 @@ export default function AccessibilityWidget() {
                             aria-checked={selected}
                             tabIndex={selected ? 0 : -1}
                             onClick={() => selectLanguage(option.code)}
-                            className={`flex min-h-11 items-center gap-2.5 rounded-xl border px-3 py-2 text-left text-sm transition-colors focus-visible:outline-2 focus-visible:outline-emerald-500 focus-visible:outline-offset-2 ${
+                            className={`flex min-h-11 items-center gap-2.5 rounded-[14px] border px-3 py-2 text-left text-sm transition-colors focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 ${
                               selected
-                                ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
-                                : 'border-border/60 bg-muted/40 text-foreground hover:border-emerald-500/30 hover:bg-emerald-500/5'
+                                ? 'border-primary/50 bg-primary-soft text-primary'
+                                : 'border-border/60 bg-surface-raised/60 text-foreground hover:border-primary/30 hover:bg-primary-soft/60'
                             }`}
                           >
                             <span aria-hidden="true" className="text-base leading-none">
@@ -389,7 +431,7 @@ export default function AccessibilityWidget() {
                   />
 
                   <SettingRow
-                    icon={<Type className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />}
+                    icon={<Type className="w-3.5 h-3.5" />}
                     label="Font Size"
                     description="Adjust text size"
                   >
@@ -422,41 +464,38 @@ export default function AccessibilityWidget() {
                   </SettingRow>
 
                   <SettingRow
-                    icon={<Contrast className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />}
+                    icon={<Contrast className="w-3.5 h-3.5" />}
                     label="High Contrast"
                     description="Increase visual contrast"
                   >
-                    <Switch
+                    <ToggleSwitch
                       checked={store.highContrast}
                       onCheckedChange={store.toggleHighContrast}
-                      aria-label="Toggle high contrast mode"
-                      className="data-[state=checked]:bg-emerald-500"
+                      label="Toggle high contrast mode"
                     />
                   </SettingRow>
 
                   <SettingRow
-                    icon={<Move className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />}
+                    icon={<Move className="w-3.5 h-3.5" />}
                     label="Reduced Motion"
                     description="Disable animations"
                   >
-                    <Switch
+                    <ToggleSwitch
                       checked={store.reducedMotion}
                       onCheckedChange={store.toggleReducedMotion}
-                      aria-label="Toggle reduced motion"
-                      className="data-[state=checked]:bg-emerald-500"
+                      label="Toggle reduced motion"
                     />
                   </SettingRow>
 
                   <SettingRow
-                    icon={<BookOpen className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />}
+                    icon={<BookOpen className="w-3.5 h-3.5" />}
                     label="Dyslexia Font"
                     description="Readable font style"
                   >
-                    <Switch
+                    <ToggleSwitch
                       checked={store.dyslexiaFont}
                       onCheckedChange={store.toggleDyslexiaFont}
-                      aria-label="Toggle dyslexia-friendly font"
-                      className="data-[state=checked]:bg-emerald-500"
+                      label="Toggle dyslexia-friendly font"
                     />
                   </SettingRow>
 
@@ -467,41 +506,38 @@ export default function AccessibilityWidget() {
                   />
 
                   <SettingRow
-                    icon={<Focus className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />}
+                    icon={<Focus className="w-3.5 h-3.5" />}
                     label="Focus Indicators"
                     description="Prominent focus rings"
                   >
-                    <Switch
+                    <ToggleSwitch
                       checked={store.focusIndicators}
                       onCheckedChange={store.toggleFocusIndicators}
-                      aria-label="Toggle focus indicators"
-                      className="data-[state=checked]:bg-emerald-500"
+                      label="Toggle focus indicators"
                     />
                   </SettingRow>
 
                   <SettingRow
-                    icon={<Keyboard className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />}
+                    icon={<Keyboard className="w-3.5 h-3.5" />}
                     label="Keyboard Navigation"
                     description="Enhanced shortcuts"
                   >
-                    <Switch
+                    <ToggleSwitch
                       checked={store.keyboardNavigation}
                       onCheckedChange={store.toggleKeyboardNavigation}
-                      aria-label="Toggle keyboard navigation enhancements"
-                      className="data-[state=checked]:bg-emerald-500"
+                      label="Toggle keyboard navigation enhancements"
                     />
                   </SettingRow>
 
                   <SettingRow
-                    icon={<Pointer className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />}
+                    icon={<Pointer className="w-3.5 h-3.5" />}
                     label="Larger Touch Targets"
                     description="Bigger tap areas"
                   >
-                    <Switch
+                    <ToggleSwitch
                       checked={store.largerTouchTargets}
                       onCheckedChange={store.toggleLargerTouchTargets}
-                      aria-label="Toggle larger touch targets"
-                      className="data-[state=checked]:bg-emerald-500"
+                      label="Toggle larger touch targets"
                     />
                   </SettingRow>
 
@@ -512,15 +548,14 @@ export default function AccessibilityWidget() {
                   />
 
                   <SettingRow
-                    icon={<Volume2 className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />}
+                    icon={<Volume2 className="w-3.5 h-3.5" />}
                     label="TTS for Page Content"
                     description="Read section titles aloud"
                   >
-                    <Switch
+                    <ToggleSwitch
                       checked={store.ttsEnabled}
                       onCheckedChange={store.toggleTts}
-                      aria-label="Toggle text-to-speech"
-                      className="data-[state=checked]:bg-emerald-500"
+                      label="Toggle text-to-speech"
                     />
                   </SettingRow>
 
@@ -529,12 +564,12 @@ export default function AccessibilityWidget() {
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
                       exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.2 }}
+                      transition={{ duration: reduced ? 0.12 : 0.2 }}
                     >
                       <div className="flex items-center gap-3 py-2 pl-9">
-                        <Gauge className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400 shrink-0" />
+                        <Gauge className="w-3.5 h-3.5 text-secondary shrink-0" />
                         <div className="flex-1 flex items-center gap-2">
-                          <span className="text-xs text-muted-foreground shrink-0">0.5x</span>
+                          <span className="text-xs text-foreground-subtle shrink-0">0.5x</span>
                           <Slider
                             min={0.5}
                             max={2}
@@ -542,11 +577,11 @@ export default function AccessibilityWidget() {
                             value={[store.voiceSpeed]}
                             onValueChange={(v) => store.setVoiceSpeed(v[0])}
                             aria-label="Voice speed"
-                            className="flex-1 data-[state=checked]:bg-emerald-500"
+                            className="flex-1"
                           />
-                          <span className="text-xs text-muted-foreground shrink-0">2.0x</span>
+                          <span className="text-xs text-foreground-subtle shrink-0">2.0x</span>
                         </div>
-                        <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400 w-8 text-right">
+                        <span className="text-xs font-medium text-primary w-8 text-right">
                           {store.voiceSpeed.toFixed(1)}x
                         </span>
                       </div>
@@ -554,11 +589,11 @@ export default function AccessibilityWidget() {
                   )}
 
                   {/* ── Reset ── */}
-                  <div className="pt-3 border-t border-emerald-500/10 dark:border-emerald-500/10 mt-2">
+                  <div className="pt-3 border-t border-border/60 mt-2">
                     <Button
                       variant="outline"
                       size="sm"
-                      className="w-full text-xs hover:bg-rose-500/10 hover:text-rose-600 hover:border-rose-500/30 dark:hover:text-rose-400 transition-colors"
+                      className="w-full h-11 rounded-[14px] text-xs hover:bg-danger-soft hover:text-danger hover:border-danger/40 transition-colors"
                       onClick={store.resetAll}
                     >
                       <RotateCcw className="w-3 h-3 mr-1.5" />

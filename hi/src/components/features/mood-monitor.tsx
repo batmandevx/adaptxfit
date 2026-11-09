@@ -70,6 +70,25 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { GlassPanel, SectionHeader, useReduced } from '@/components/ui/aurora';
+import { useAppStore } from '@/stores/app-store';
+
+// Clinical Aurora token hexes for chart rendering (recharts needs raw colors)
+const CHART = {
+  primary: '#0E7A5C',
+  secondary: '#0E7770',
+  accent: '#8A6205',
+  warning: '#935F0A',
+  danger: '#B42318',
+  info: '#116E6B',
+  subtle: '#5D746D',
+  grid: 'rgba(128,128,128,0.18)',
+  axis: 'rgba(128,128,128,0.45)',
+};
+
+/** Crisis-language detector for the journal (features.md §6.5). */
+const CRISIS_PATTERN =
+  /(suicid|kill (myself|me)|end (my|it) (life|all)|self[- ]?harm|hurt (myself|me)|want to die|don'?t want to (live|be here)|no reason to live)/i;
 
 // --- Types ---
 type MoodType =
@@ -105,21 +124,21 @@ type RiskLevel = 'Low' | 'Medium' | 'High' | 'Critical';
 
 // --- Constants ---
 const MOOD_OPTIONS: MoodOption[] = [
-  { key: 'happy', emoji: '😊', label: 'Happy', score: 9, color: '#10b981' },
-  { key: 'calm', emoji: '😌', label: 'Calm', score: 8, color: '#14b8a6' },
-  { key: 'excited', emoji: '🤩', label: 'Excited', score: 9.5, color: '#f59e0b' },
-  { key: 'neutral', emoji: '😐', label: 'Neutral', score: 5, color: '#6b7280' },
-  { key: 'tired', emoji: '😴', label: 'Tired', score: 4, color: '#8b5cf6' },
-  { key: 'anxious', emoji: '😰', label: 'Anxious', score: 3, color: '#f97316' },
-  { key: 'sad', emoji: '😢', label: 'Sad', score: 2, color: '#3b82f6' },
-  { key: 'angry', emoji: '😠', label: 'Angry', score: 1, color: '#ef4444' },
+  { key: 'happy', emoji: '😊', label: 'Happy', score: 9, color: CHART.primary },
+  { key: 'calm', emoji: '😌', label: 'Calm', score: 8, color: CHART.secondary },
+  { key: 'excited', emoji: '🤩', label: 'Excited', score: 9.5, color: CHART.accent },
+  { key: 'neutral', emoji: '😐', label: 'Neutral', score: 5, color: CHART.subtle },
+  { key: 'tired', emoji: '😴', label: 'Tired', score: 4, color: CHART.info },
+  { key: 'anxious', emoji: '😰', label: 'Anxious', score: 3, color: CHART.warning },
+  { key: 'sad', emoji: '😢', label: 'Sad', score: 2, color: CHART.info },
+  { key: 'angry', emoji: '😠', label: 'Angry', score: 1, color: CHART.danger },
 ];
 
 const RISK_COLORS: Record<RiskLevel, { bg: string; text: string; border: string; glow: string }> = {
-  Low: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', glow: '' },
-  Medium: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', glow: '' },
-  High: { bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-300', glow: 'shadow-orange-200/50 shadow-lg' },
-  Critical: { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-300', glow: 'shadow-red-300/50 shadow-xl' },
+  Low: { bg: 'bg-success-soft', text: 'text-success', border: 'border-success/30', glow: '' },
+  Medium: { bg: 'bg-warning-soft', text: 'text-warning', border: 'border-warning/30', glow: '' },
+  High: { bg: 'bg-warning-soft', text: 'text-warning', border: 'border-warning/40', glow: 'shadow-lg' },
+  Critical: { bg: 'bg-danger-soft', text: 'text-danger', border: 'border-danger/40', glow: 'shadow-lg' },
 };
 
 // Simulated 30-day mood timeline data
@@ -142,14 +161,14 @@ const timelineData = generateTimelineData();
 
 // Mood distribution for pie chart
 const moodDistribution = [
-  { name: 'Happy', value: 35, color: '#10b981' },
-  { name: 'Calm', value: 25, color: '#14b8a6' },
-  { name: 'Neutral', value: 15, color: '#6b7280' },
-  { name: 'Excited', value: 10, color: '#f59e0b' },
-  { name: 'Tired', value: 8, color: '#8b5cf6' },
-  { name: 'Anxious', value: 4, color: '#f97316' },
-  { name: 'Sad', value: 2, color: '#3b82f6' },
-  { name: 'Angry', value: 1, color: '#ef4444' },
+  { name: 'Happy', value: 35, color: CHART.primary },
+  { name: 'Calm', value: 25, color: CHART.secondary },
+  { name: 'Neutral', value: 15, color: CHART.subtle },
+  { name: 'Excited', value: 10, color: CHART.accent },
+  { name: 'Tired', value: 8, color: CHART.info },
+  { name: 'Anxious', value: 4, color: CHART.warning },
+  { name: 'Sad', value: 2, color: CHART.info },
+  { name: 'Angry', value: 1, color: CHART.danger },
 ];
 
 // Weekly pattern data (4 weeks × 7 days)
@@ -180,48 +199,48 @@ const wellnessRecommendations = [
     title: 'Mindful Breathing',
     description: 'Try 5 minutes of deep breathing when anxiety peaks. Box breathing (4-4-4-4) is especially effective.',
     category: 'Anxiety Relief',
-    color: 'text-teal-600',
-    bgColor: 'bg-teal-50',
+    color: 'text-primary',
+    bgColor: 'bg-primary-soft',
   },
   {
     icon: Music,
     title: 'Mood Music Therapy',
     description: 'Listen to calming instrumental music for 15 minutes. Nature sounds can reduce stress by 25%.',
     category: 'Stress Relief',
-    color: 'text-purple-600',
-    bgColor: 'bg-purple-50',
+    color: 'text-secondary',
+    bgColor: 'bg-secondary-soft',
   },
   {
     icon: Footprints,
     title: 'Gentle Movement',
     description: 'A 10-minute walk can boost your mood significantly. Even seated stretching helps release tension.',
     category: 'Energy Boost',
-    color: 'text-amber-600',
-    bgColor: 'bg-amber-50',
+    color: 'text-warning',
+    bgColor: 'bg-warning-soft',
   },
   {
     icon: Bed,
     title: 'Sleep Hygiene Check',
     description: 'Your tiredness pattern suggests improving sleep. Try a consistent bedtime routine with no screens.',
     category: 'Rest',
-    color: 'text-indigo-600',
-    bgColor: 'bg-indigo-50',
+    color: 'text-info',
+    bgColor: 'bg-info-soft',
   },
   {
     icon: HandHeart,
     title: 'Self-Compassion Pause',
     description: 'Acknowledge your feelings without judgment. Write one kind thing about yourself today.',
     category: 'Emotional Care',
-    color: 'text-rose-600',
-    bgColor: 'bg-rose-50',
+    color: 'text-danger',
+    bgColor: 'bg-danger-soft',
   },
   {
     icon: BookOpen,
     title: 'Gratitude Journaling',
     description: 'List 3 things you are grateful for. Gratitude practice rewires the brain for positivity over time.',
     category: 'Positivity',
-    color: 'text-emerald-600',
-    bgColor: 'bg-emerald-50',
+    color: 'text-success',
+    bgColor: 'bg-success-soft',
   },
 ];
 
@@ -316,12 +335,15 @@ export default function MoodMonitor() {
 
   // Heatmap color based on score 1-10
   const getHeatColor = (value: number) => {
-    if (value >= 8) return 'bg-emerald-400';
-    if (value >= 6) return 'bg-teal-300';
-    if (value >= 4) return 'bg-amber-300';
-    if (value >= 2) return 'bg-orange-300';
-    return 'bg-red-400';
+    if (value >= 8) return 'bg-success';
+    if (value >= 6) return 'bg-primary';
+    if (value >= 4) return 'bg-warning';
+    if (value >= 2) return 'bg-warning/70';
+    return 'bg-danger';
   };
+  const reduced = useReduced();
+  const setActiveSection = useAppStore((s) => s.setActiveSection);
+  const journalCrisis = CRISIS_PATTERN.test(journalNote);
 
   // Line chart data with gradient
   const monthlyLineData = monthlyMoodData.map((d) => ({
@@ -333,35 +355,23 @@ export default function MoodMonitor() {
   }));
 
   return (
-    <div className="w-full max-w-7xl mx-auto space-y-6 p-4 sm:p-6">
+    <div className="mx-auto w-full max-w-7xl space-y-6">
       {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col sm:flex-row items-start sm:items-center gap-4"
-      >
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-gradient-to-br from-teal-500 to-purple-600 text-white">
-            <Brain className="w-6 h-6" />
+      <SectionHeader
+        eyebrow="MOOD"
+        title="How are you feeling today?"
+        description="Check in with yourself — a mood, a few sliders, and anything you want to write down. Everything stays on your device."
+        actions={
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="gap-1.5 border-primary/30 bg-primary-soft text-primary">
+              <Activity className="h-3 w-3" /> Tracking Active
+            </Badge>
+            <Badge variant="outline" className={`gap-1.5 ${riskColors.border} ${riskColors.bg} ${riskColors.text}`}>
+              <Shield className="h-3 w-3" /> Risk: {riskLevel}
+            </Badge>
           </div>
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-teal-600 to-purple-600 bg-clip-text text-transparent">
-              Mood & Emotion Monitor
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              AI-powered emotional wellness tracking &amp; support
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 sm:ml-auto">
-          <Badge variant="outline" className="gap-1.5 text-teal-600 border-teal-200 bg-teal-50">
-            <Activity className="w-3 h-3" /> Tracking Active
-          </Badge>
-          <Badge variant="outline" className="gap-1.5 text-purple-600 border-purple-200 bg-purple-50">
-            <Sparkles className="w-3 h-3" /> AI Enabled
-          </Badge>
-        </div>
-      </motion.div>
+        }
+      />
 
       {/* Anti-Suicide Prevention Alert - Show when risk is High or Critical */}
       <AnimatePresence>
@@ -370,22 +380,11 @@ export default function MoodMonitor() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: reduced ? 0.14 : 0.4 }}
           >
-            <Alert
-              className={`border-red-300 ${
-                riskLevel === 'Critical'
-                  ? 'bg-gradient-to-r from-red-50 via-red-100 to-rose-50'
-                  : 'bg-gradient-to-r from-orange-50 via-amber-50 to-orange-50'
-              }`}
-            >
-              <motion.div
-                animate={{ scale: [1, 1.1, 1] }}
-                transition={{ repeat: Infinity, duration: 2 }}
-              >
-                <Heart className="h-5 w-5 text-red-500" />
-              </motion.div>
-              <AlertTitle className="text-red-800 text-base font-semibold flex items-center gap-2">
+            <Alert className="border-danger/40 bg-danger-soft">
+              <Heart className="h-5 w-5 text-danger" />
+              <AlertTitle className="flex items-center gap-2 text-base font-semibold text-danger">
                 {riskLevel === 'Critical'
                   ? 'We care about you — You are not alone'
                   : 'We notice you may be going through a tough time'}
@@ -396,33 +395,43 @@ export default function MoodMonitor() {
                   size="sm"
                   voice="tongtong"
                   speed={0.85}
-                  className="text-red-600 hover:text-red-800"
+                  className="text-danger hover:text-danger/80"
                 />
               </AlertTitle>
-              <AlertDescription className="text-red-700 space-y-3">
+              <AlertDescription className="space-y-3 text-foreground">
                 <p className="text-sm">
                   {riskLevel === 'Critical'
                     ? 'Your recent mood patterns suggest you might be going through a very difficult period. Please know that help is always available, and people care about you deeply.'
                     : 'Your emotional data indicates some challenging moments. It\'s okay to reach out — speaking with someone can make a real difference.'}
                 </p>
-                <div className="flex flex-col sm:flex-row gap-3 mt-2">
-                  <div className="flex items-center gap-2 bg-white/80 rounded-lg px-3 py-2">
-                    <Phone className="w-4 h-4 text-red-600 shrink-0" />
+                <div className="mt-2 flex flex-col gap-3 sm:flex-row">
+                  <a
+                    href="tel:988"
+                    className="flex min-h-12 items-center gap-2 rounded-[14px] bg-danger px-4 py-2 text-danger-foreground"
+                  >
+                    <Phone className="h-4 w-4 shrink-0" />
                     <div>
-                      <p className="font-semibold text-sm">988 Suicide &amp; Crisis Lifeline</p>
-                      <p className="text-xs text-red-600">Call or text 988 — Available 24/7</p>
+                      <p className="text-sm font-semibold">988 Suicide &amp; Crisis Lifeline</p>
+                      <p className="text-xs opacity-90">Call or text 988 — Available 24/7</p>
+                    </div>
+                  </a>
+                  <div className="flex min-h-12 items-center gap-2 rounded-[14px] border border-danger/30 bg-surface px-4 py-2">
+                    <MessageCircle className="h-4 w-4 shrink-0 text-danger" />
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">Crisis Text Line</p>
+                      <p className="text-xs text-foreground-muted">Text HOME to 741741</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 bg-white/80 rounded-lg px-3 py-2">
-                    <MessageCircle className="w-4 h-4 text-red-600 shrink-0" />
-                    <div>
-                      <p className="font-semibold text-sm">Crisis Text Line</p>
-                      <p className="text-xs text-red-600">Text HOME to 741741</p>
-                    </div>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setActiveSection('crisis')}
+                    className="flex min-h-12 items-center justify-center gap-2 rounded-[14px] border-2 border-danger/50 px-4 py-2 text-sm font-semibold text-danger hover:bg-danger-soft"
+                  >
+                    Open Crisis Support
+                  </button>
                 </div>
-                <p className="text-xs text-red-600/80 mt-1">
-                  💙 You matter. Your feelings are valid. Reaching out is a sign of strength, not weakness.
+                <p className="mt-1 text-xs text-foreground-muted">
+                  You matter. Your feelings are valid. Reaching out is a sign of strength, not weakness.
                 </p>
               </AlertDescription>
             </Alert>
@@ -436,14 +445,14 @@ export default function MoodMonitor() {
         <div className="space-y-6">
           {/* Mood Logger */}
           <motion.div
-            initial={{ opacity: 0, x: -20 }}
+            initial={{ opacity: 0, x: reduced ? 0 : -20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.1 }}
+            transition={{ delay: reduced ? 0 : 0.1, duration: reduced ? 0.14 : 0.4 }}
           >
-            <Card className="border-teal-100">
+            <GlassPanel>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
-                  <Smile className="w-5 h-5 text-teal-500" />
+                  <Smile className="h-5 w-5 text-primary" />
                   How are you feeling?
                 </CardTitle>
                 <CardDescription>Select the mood that best describes your current state</CardDescription>
@@ -451,38 +460,37 @@ export default function MoodMonitor() {
               <CardContent>
                 <div className="grid grid-cols-4 gap-3">
                   {MOOD_OPTIONS.map((mood) => (
-                    <motion.button
+                    <button
                       key={mood.key}
-                      whileHover={{ scale: 1.15 }}
-                      whileTap={{ scale: 0.9 }}
                       onClick={() => setSelectedMood(mood.key)}
-                      className={`flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all cursor-pointer ${
+                      aria-pressed={selectedMood === mood.key}
+                      className={`flex min-h-[72px] cursor-pointer flex-col items-center gap-1 rounded-[18px] border-2 p-3 transition-colors duration-150 ${
                         selectedMood === mood.key
-                          ? 'border-teal-400 bg-teal-50 shadow-md shadow-teal-100'
-                          : 'border-transparent bg-muted/30 hover:bg-muted/60'
+                          ? 'border-primary/60 bg-primary-soft'
+                          : 'border-transparent bg-surface-raised/60 hover:border-primary/30'
                       }`}
                     >
                       <span className="text-3xl sm:text-4xl">{mood.emoji}</span>
-                      <span className="text-[10px] sm:text-xs font-medium text-muted-foreground">
+                      <span className="text-xs font-medium text-foreground-muted">
                         {mood.label}
                       </span>
-                    </motion.button>
+                    </button>
                   ))}
                 </div>
               </CardContent>
-            </Card>
+            </GlassPanel>
           </motion.div>
 
           {/* Productivity / Energy / Stress Sliders */}
           <motion.div
-            initial={{ opacity: 0, x: -20 }}
+            initial={{ opacity: 0, x: reduced ? 0 : -20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
+            transition={{ delay: reduced ? 0 : 0.2, duration: reduced ? 0.14 : 0.4 }}
           >
-            <Card className="border-purple-100">
+            <GlassPanel>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
-                  <Activity className="w-5 h-5 text-purple-500" />
+                  <Activity className="h-5 w-5 text-secondary" />
                   Daily Metrics
                 </CardTitle>
                 <CardDescription>Rate your productivity, energy, and stress levels</CardDescription>
@@ -492,9 +500,9 @@ export default function MoodMonitor() {
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
                     <label className="text-sm font-medium flex items-center gap-1.5">
-                      <TrendingUp className="w-4 h-4 text-emerald-500" /> Productivity
+                      <TrendingUp className="h-4 w-4 text-success" /> Productivity
                     </label>
-                    <Badge variant="outline" className="text-emerald-600 border-emerald-200">
+                    <Badge variant="outline" className="border-success/30 text-success">
                       {productivity[0]}/10
                     </Badge>
                   </div>
@@ -504,7 +512,7 @@ export default function MoodMonitor() {
                     min={1}
                     max={10}
                     step={1}
-                    className="[&_[data-slot=slider-range]]:bg-emerald-500 [&_[data-slot=slider-thumb]]:border-emerald-500"
+                    className="[&_[data-slot=slider-range]]:bg-success [&_[data-slot=slider-thumb]]:border-success"
                   />
                 </div>
 
@@ -512,9 +520,9 @@ export default function MoodMonitor() {
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
                     <label className="text-sm font-medium flex items-center gap-1.5">
-                      <Sun className="w-4 h-4 text-amber-500" /> Energy
+                      <Sun className="h-4 w-4 text-warning" /> Energy
                     </label>
-                    <Badge variant="outline" className="text-amber-600 border-amber-200">
+                    <Badge variant="outline" className="border-warning/30 text-warning">
                       {energy[0]}/10
                     </Badge>
                   </div>
@@ -524,7 +532,7 @@ export default function MoodMonitor() {
                     min={1}
                     max={10}
                     step={1}
-                    className="[&_[data-slot=slider-range]]:bg-amber-500 [&_[data-slot=slider-thumb]]:border-amber-500"
+                    className="[&_[data-slot=slider-range]]:bg-warning [&_[data-slot=slider-thumb]]:border-warning"
                   />
                 </div>
 
@@ -532,9 +540,9 @@ export default function MoodMonitor() {
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
                     <label className="text-sm font-medium flex items-center gap-1.5">
-                      <TrendingDown className="w-4 h-4 text-red-500" /> Stress
+                      <TrendingDown className="h-4 w-4 text-danger" /> Stress
                     </label>
-                    <Badge variant="outline" className="text-red-600 border-red-200">
+                    <Badge variant="outline" className="border-danger/30 text-danger">
                       {stress[0]}/10
                     </Badge>
                   </div>
@@ -544,23 +552,23 @@ export default function MoodMonitor() {
                     min={1}
                     max={10}
                     step={1}
-                    className="[&_[data-slot=slider-range]]:bg-red-400 [&_[data-slot=slider-thumb]]:border-red-400"
+                    className="[&_[data-slot=slider-range]]:bg-danger [&_[data-slot=slider-thumb]]:border-danger"
                   />
                 </div>
               </CardContent>
-            </Card>
+            </GlassPanel>
           </motion.div>
 
           {/* Mood Journal */}
           <motion.div
-            initial={{ opacity: 0, x: -20 }}
+            initial={{ opacity: 0, x: reduced ? 0 : -20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.3 }}
+            transition={{ delay: reduced ? 0 : 0.3, duration: reduced ? 0.14 : 0.4 }}
           >
-            <Card className="border-peach-100 bg-gradient-to-br from-white to-orange-50/30">
+            <GlassPanel>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
-                  <BookOpen className="w-5 h-5 text-orange-500" />
+                  <BookOpen className="h-5 w-5 text-accent" />
                   Mood Journal
                 </CardTitle>
                 <CardDescription>Write down what&apos;s on your mind — no judgment, just expression</CardDescription>
@@ -571,7 +579,7 @@ export default function MoodMonitor() {
                     placeholder="How was your day? What are you grateful for? What challenged you?"
                     value={journalNote}
                     onChange={(e) => setJournalNote(e.target.value)}
-                    className="min-h-[100px] resize-none border-orange-200 focus:border-orange-300 pr-10"
+                    className="min-h-[100px] resize-none border-border/70 pr-10 focus:border-primary"
                   />
                   <div className="absolute bottom-2 right-2">
                     <VoiceInput
@@ -580,21 +588,46 @@ export default function MoodMonitor() {
                     />
                   </div>
                 </div>
+
+                {/* Crisis-language inline notice (features.md §6.5) */}
+                {journalCrisis && (
+                  <div className="space-y-3 rounded-[14px] border border-danger/30 bg-danger-soft p-3" role="alert">
+                    <p className="text-sm font-medium text-foreground">
+                      It sounds like things are really heavy right now. You deserve support — reaching out is free and confidential.
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <a
+                        href="tel:988"
+                        className="flex min-h-11 items-center gap-1.5 rounded-[14px] bg-danger px-4 text-sm font-semibold text-danger-foreground"
+                      >
+                        <Phone className="h-4 w-4" /> Call 988
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => setActiveSection('crisis')}
+                        className="min-h-11 rounded-[14px] border-2 border-danger/50 px-4 text-sm font-semibold text-danger hover:bg-danger/10"
+                      >
+                        Open Crisis Support
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 <Button
                   onClick={handleLogMood}
                   disabled={!selectedMood}
-                  className="w-full bg-gradient-to-r from-teal-500 to-purple-500 hover:from-teal-600 hover:to-purple-600 text-white"
+                  className="btn-aurora-primary h-12 w-full gap-2 rounded-[14px] text-[15px] font-semibold"
                 >
-                  <Heart className="w-4 h-4 mr-2" />
-                  Log Mood Entry
+                  <Heart className="h-4 w-4" />
+                  Save check-in
                 </Button>
-                {!selectedMood && (
-                  <p className="text-xs text-muted-foreground text-center">
+                {!selectedMood && !journalCrisis && (
+                  <p className="text-center text-xs text-foreground-subtle">
                     Please select a mood above before logging
                   </p>
                 )}
               </CardContent>
-            </Card>
+            </GlassPanel>
           </motion.div>
         </div>
 
@@ -606,10 +639,10 @@ export default function MoodMonitor() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
           >
-            <Card className="border-teal-100">
+            <Card className="glass-panel">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
-                  <Activity className="w-5 h-5 text-teal-500" />
+                  <Activity className="w-5 h-5 text-primary" />
                   30-Day Mood Timeline
                 </CardTitle>
                 <CardDescription>Your emotional journey over the past month</CardDescription>
@@ -618,41 +651,29 @@ export default function MoodMonitor() {
                 <div className="h-[220px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={timelineData}>
-                      <defs>
-                        <linearGradient id="moodGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#14b8a6" stopOpacity={0.3} />
-                          <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.05} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                      <CartesianGrid strokeDasharray="3 3" stroke={CHART.grid} />
                       <XAxis
                         dataKey="day"
                         tick={{ fontSize: 10 }}
                         interval={4}
-                        stroke="#9ca3af"
+                        stroke={CHART.axis}
                       />
-                      <YAxis domain={[0, 10]} tick={{ fontSize: 10 }} stroke="#9ca3af" />
+                      <YAxis domain={[0, 10]} tick={{ fontSize: 10 }} stroke={CHART.axis} />
                       <Tooltip
                         contentStyle={{
                           borderRadius: '8px',
-                          border: '1px solid #e5e7eb',
+                          border: '1px solid var(--border)',
                           fontSize: '12px',
                         }}
                       />
                       <Line
                         type="monotone"
                         dataKey="score"
-                        stroke="url(#moodGradientLine)"
+                        stroke={CHART.secondary}
                         strokeWidth={2.5}
-                        dot={{ r: 2, fill: '#14b8a6' }}
-                        activeDot={{ r: 5, fill: '#14b8a6', stroke: '#fff', strokeWidth: 2 }}
+                        dot={{ r: 2, fill: CHART.secondary }}
+                        activeDot={{ r: 5, fill: CHART.secondary, stroke: '#fff', strokeWidth: 2 }}
                       />
-                      <defs>
-                        <linearGradient id="moodGradientLine" x1="0" y1="0" x2="1" y2="0">
-                          <stop offset="0%" stopColor="#14b8a6" />
-                          <stop offset="100%" stopColor="#8b5cf6" />
-                        </linearGradient>
-                      </defs>
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -666,10 +687,10 @@ export default function MoodMonitor() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.25 }}
           >
-            <Card className="border-purple-100">
+            <Card className="glass-panel">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
-                  <Moon className="w-5 h-5 text-purple-500" />
+                  <Moon className="w-5 h-5 text-accent" />
                   Monthly Mood Breakdown
                 </CardTitle>
                 <CardDescription>Mood categories over recent weeks</CardDescription>
@@ -678,29 +699,29 @@ export default function MoodMonitor() {
                 <div className="h-[200px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={monthlyLineData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                      <XAxis dataKey="week" tick={{ fontSize: 11 }} stroke="#9ca3af" />
-                      <YAxis tick={{ fontSize: 11 }} stroke="#9ca3af" />
+                      <CartesianGrid strokeDasharray="3 3" stroke={CHART.grid} />
+                      <XAxis dataKey="week" tick={{ fontSize: 11 }} stroke={CHART.axis} />
+                      <YAxis tick={{ fontSize: 11 }} stroke={CHART.axis} />
                       <Tooltip
                         contentStyle={{
                           borderRadius: '8px',
-                          border: '1px solid #e5e7eb',
+                          border: '1px solid var(--border)',
                           fontSize: '12px',
                         }}
                       />
-                      <Line type="monotone" dataKey="happy" stroke="#10b981" strokeWidth={2} dot={{ r: 3 }} />
-                      <Line type="monotone" dataKey="calm" stroke="#14b8a6" strokeWidth={2} dot={{ r: 3 }} />
-                      <Line type="monotone" dataKey="anxious" stroke="#f97316" strokeWidth={2} dot={{ r: 3 }} />
-                      <Line type="monotone" dataKey="sad" stroke="#3b82f6" strokeWidth={2} dot={{ r: 3 }} />
+                      <Line type="monotone" dataKey="happy" stroke={CHART.primary} strokeWidth={2} dot={{ r: 3 }} />
+                      <Line type="monotone" dataKey="calm" stroke={CHART.secondary} strokeWidth={2} dot={{ r: 3 }} />
+                      <Line type="monotone" dataKey="anxious" stroke={CHART.warning} strokeWidth={2} dot={{ r: 3 }} />
+                      <Line type="monotone" dataKey="sad" stroke={CHART.info} strokeWidth={2} dot={{ r: 3 }} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
                 <div className="flex flex-wrap gap-3 mt-3 justify-center">
                   {[
-                    { label: 'Happy', color: '#10b981' },
-                    { label: 'Calm', color: '#14b8a6' },
-                    { label: 'Anxious', color: '#f97316' },
-                    { label: 'Sad', color: '#3b82f6' },
+                    { label: 'Happy', color: CHART.primary },
+                    { label: 'Calm', color: CHART.secondary },
+                    { label: 'Anxious', color: CHART.warning },
+                    { label: 'Sad', color: CHART.info },
                   ].map((item) => (
                     <div key={item.label} className="flex items-center gap-1.5 text-xs">
                       <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
@@ -718,10 +739,10 @@ export default function MoodMonitor() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.35 }}
           >
-            <Card className="border-teal-100">
+            <Card className="glass-panel">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
-                  <Smile className="w-5 h-5 text-teal-500" />
+                  <Smile className="w-5 h-5 text-primary" />
                   Mood Distribution
                 </CardTitle>
                 <CardDescription>Overall mood pattern breakdown</CardDescription>
@@ -746,7 +767,7 @@ export default function MoodMonitor() {
                       <Tooltip
                         contentStyle={{
                           borderRadius: '8px',
-                          border: '1px solid #e5e7eb',
+                          border: '1px solid var(--border)',
                           fontSize: '12px',
                         }}
                         formatter={(value: number) => [`${value}%`, 'Share']}
@@ -756,7 +777,7 @@ export default function MoodMonitor() {
                 </div>
                 <div className="grid grid-cols-4 gap-2 mt-2">
                   {moodDistribution.map((item) => (
-                    <div key={item.name} className="flex items-center gap-1.5 text-[10px]">
+                    <div key={item.name} className="flex items-center gap-1.5 text-xs">
                       <div
                         className="w-2 h-2 rounded-full shrink-0"
                         style={{ backgroundColor: item.color }}
@@ -778,7 +799,7 @@ export default function MoodMonitor() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.1 }}
           >
-            <Card className={`border ${riskColors.border} ${riskColors.bg} ${riskColors.glow}`}>
+            <Card className={`glass-panel border ${riskColors.border} ${riskColors.bg} ${riskColors.glow}`}>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <Shield className={`w-5 h-5 ${riskColors.text}`} />
@@ -798,12 +819,12 @@ export default function MoodMonitor() {
                     <Badge
                       className={`text-sm px-3 py-1 ${
                         riskLevel === 'Low'
-                          ? 'bg-emerald-100 text-emerald-700 border-emerald-300'
+                          ? 'bg-success-soft text-success border-success/30'
                           : riskLevel === 'Medium'
-                            ? 'bg-amber-100 text-amber-700 border-amber-300'
+                            ? 'bg-warning-soft text-warning border-warning/30'
                             : riskLevel === 'High'
-                              ? 'bg-orange-100 text-orange-700 border-orange-300'
-                              : 'bg-red-100 text-red-700 border-red-300'
+                              ? 'bg-warning-soft text-warning border-warning/40'
+                              : 'bg-danger-soft text-danger border-danger/40'
                       }`}
                     >
                       {riskLevel === 'Critical' && (
@@ -818,11 +839,11 @@ export default function MoodMonitor() {
                 <div className="space-y-2">
                   <div className="h-3 w-full rounded-full bg-gray-100 overflow-hidden flex">
                     <div
-                      className="h-full bg-emerald-400 transition-all duration-700"
+                      className="h-full bg-success transition-all duration-700"
                       style={{ width: riskLevel === 'Low' ? '25%' : '0%' }}
                     />
                     <div
-                      className="h-full bg-amber-400 transition-all duration-700"
+                      className="h-full bg-warning transition-all duration-700"
                       style={{
                         width:
                           riskLevel === 'Medium'
@@ -835,7 +856,7 @@ export default function MoodMonitor() {
                       }}
                     />
                     <div
-                      className="h-full bg-orange-400 transition-all duration-700"
+                      className="h-full bg-warning/70 transition-all duration-700"
                       style={{
                         width:
                           riskLevel === 'High'
@@ -846,11 +867,11 @@ export default function MoodMonitor() {
                       }}
                     />
                     <div
-                      className="h-full bg-red-400 transition-all duration-700"
+                      className="h-full bg-danger transition-all duration-700"
                       style={{ width: riskLevel === 'Critical' ? '25%' : '0%' }}
                     />
                   </div>
-                  <div className="flex justify-between text-[10px] text-muted-foreground">
+                  <div className="flex justify-between text-xs text-muted-foreground">
                     <span>Low</span>
                     <span>Medium</span>
                     <span>High</span>
@@ -860,18 +881,18 @@ export default function MoodMonitor() {
 
                 <div className="grid grid-cols-2 gap-3 text-center">
                   <div className="bg-white/60 rounded-lg p-2">
-                    <p className="text-lg font-bold text-teal-600">{moodEntries.length}</p>
-                    <p className="text-[10px] text-muted-foreground">Entries Logged</p>
+                    <p className="text-lg font-bold text-primary">{moodEntries.length}</p>
+                    <p className="text-xs text-muted-foreground">Entries Logged</p>
                   </div>
                   <div className="bg-white/60 rounded-lg p-2">
-                    <p className="text-lg font-bold text-purple-600">
+                    <p className="text-lg font-bold text-accent">
                       {moodEntries.length > 0
                         ? (
                             moodEntries.reduce((s, e) => s + e.score, 0) / moodEntries.length
                           ).toFixed(1)
                         : '—'}
                     </p>
-                    <p className="text-[10px] text-muted-foreground">Avg Mood Score</p>
+                    <p className="text-xs text-muted-foreground">Avg Mood Score</p>
                   </div>
                 </div>
 
@@ -893,10 +914,10 @@ export default function MoodMonitor() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2 }}
           >
-            <Card className="border-purple-100">
+            <Card className="glass-panel">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
-                  <Camera className="w-5 h-5 text-purple-500" />
+                  <Camera className="w-5 h-5 text-accent" />
                   Face Expression Analysis
                 </CardTitle>
                 <CardDescription>AI-powered expression detection</CardDescription>
@@ -922,8 +943,8 @@ export default function MoodMonitor() {
                       transition={{ repeat: Infinity, duration: 1.5 }}
                       className="text-center"
                     >
-                      <div className="w-12 h-12 border-4 border-purple-400 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-                      <p className="text-sm text-purple-600">Analyzing expression...</p>
+                      <div className="w-12 h-12 border-4 border-accent border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                      <p className="text-sm text-accent">Analyzing expression...</p>
                     </motion.div>
                   ) : (
                     <motion.div
@@ -932,19 +953,19 @@ export default function MoodMonitor() {
                       className="w-full px-4"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-teal-200 to-purple-200 flex items-center justify-center">
+                        <div className="w-16 h-16 rounded-full bg-primary-soft flex items-center justify-center">
                           <span className="text-2xl">😐</span>
                         </div>
                         <div className="flex-1 space-y-2">
                           {faceExpressions.map((expr) => (
                             <div key={expr.expression} className="space-y-1">
-                              <div className="flex justify-between text-[10px]">
+                              <div className="flex justify-between text-xs">
                                 <span>{expr.expression}</span>
                                 <span className="font-medium">{expr.confidence}%</span>
                               </div>
                               <Progress
                                 value={expr.confidence}
-                                className="h-1.5 [&_[data-slot=progress-indicator]]:bg-gradient-to-r [&_[data-slot=progress-indicator]]:from-teal-400 [&_[data-slot=progress-indicator]]:to-purple-400"
+                                className="h-1.5 [&_[data-slot=progress-indicator]]:bg-primary"
                               />
                             </div>
                           ))}
@@ -984,10 +1005,10 @@ export default function MoodMonitor() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.3 }}
           >
-            <Card className="border-teal-100">
+            <Card className="glass-panel">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
-                  <Brain className="w-5 h-5 text-teal-500" />
+                  <Brain className="w-5 h-5 text-primary" />
                   Emotional Wellness Profile
                 </CardTitle>
               </CardHeader>
@@ -995,14 +1016,14 @@ export default function MoodMonitor() {
                 <div className="h-[220px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <RadarChart data={wellnessRadarData}>
-                      <PolarGrid stroke="#e5e7eb" />
-                      <PolarAngleAxis dataKey="dimension" tick={{ fontSize: 10 }} stroke="#9ca3af" />
+                      <PolarGrid stroke={CHART.grid} />
+                      <PolarAngleAxis dataKey="dimension" tick={{ fontSize: 10 }} stroke={CHART.axis} />
                       <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fontSize: 8 }} stroke="#d1d5db" />
                       <Radar
                         name="Wellness"
                         dataKey="score"
-                        stroke="#14b8a6"
-                        fill="#14b8a6"
+                        stroke={CHART.secondary}
+                        fill={CHART.secondary}
                         fillOpacity={0.25}
                         strokeWidth={2}
                       />
@@ -1021,10 +1042,10 @@ export default function MoodMonitor() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
       >
-        <Card className="border-purple-100">
+        <Card className="glass-panel">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
-              <Sun className="w-5 h-5 text-amber-500" />
+              <Sun className="w-5 h-5 text-warning" />
               Weekly Mood Pattern
             </CardTitle>
             <CardDescription>Heatmap of mood patterns across the week</CardDescription>
@@ -1065,13 +1086,13 @@ export default function MoodMonitor() {
                 {/* Legend */}
                 <div className="flex items-center justify-center gap-4 mt-4">
                   {[
-                    { label: 'Low (1-2)', color: 'bg-red-400' },
-                    { label: 'Below (3-4)', color: 'bg-orange-300' },
-                    { label: 'Moderate (5-6)', color: 'bg-amber-300' },
-                    { label: 'Good (7-8)', color: 'bg-teal-300' },
-                    { label: 'Great (9-10)', color: 'bg-emerald-400' },
+                    { label: 'Low (1-2)', color: 'bg-danger' },
+                    { label: 'Below (3-4)', color: 'bg-warning/70' },
+                    { label: 'Moderate (5-6)', color: 'bg-warning' },
+                    { label: 'Good (7-8)', color: 'bg-primary' },
+                    { label: 'Great (9-10)', color: 'bg-success' },
                   ].map((leg) => (
-                    <div key={leg.label} className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                    <div key={leg.label} className="flex items-center gap-1.5 text-xs text-muted-foreground">
                       <div className={`w-3 h-3 rounded ${leg.color}`} />
                       {leg.label}
                     </div>
@@ -1089,10 +1110,10 @@ export default function MoodMonitor() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5 }}
       >
-        <Card className="border-teal-100 bg-gradient-to-br from-white via-teal-50/20 to-purple-50/20">
+        <Card className="glass-panel">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
-              <Sparkles className="w-5 h-5 text-teal-500" />
+              <Sparkles className="w-5 h-5 text-primary" />
               AI Wellness Recommendations
             </CardTitle>
             <CardDescription>
@@ -1111,7 +1132,7 @@ export default function MoodMonitor() {
                   <Dialog>
                     <DialogTrigger asChild>
                       <div className="cursor-pointer group">
-                        <Card className="h-full border-transparent hover:border-teal-200 transition-all hover:shadow-md">
+                        <Card className="h-full border-border/60 bg-surface/70 hover:border-primary/40 transition-colors duration-150 hover:shadow-md">
                           <CardContent className="p-4 space-y-3">
                             <div className="flex items-start gap-3">
                               <div className={`p-2 rounded-lg ${rec.bgColor}`}>
@@ -1129,7 +1150,7 @@ export default function MoodMonitor() {
                                 </div>
                                 <Badge
                                   variant="outline"
-                                  className="mt-1 text-[10px] border-teal-200 text-teal-600"
+                                  className="mt-1 text-xs border-primary/30 text-primary"
                                 >
                                   {rec.category}
                                 </Badge>
@@ -1152,13 +1173,13 @@ export default function MoodMonitor() {
                         </DialogTitle>
                       </DialogHeader>
                       <div className="space-y-3">
-                        <Badge variant="outline" className="border-teal-200 text-teal-600">
+                        <Badge variant="outline" className="border-primary/30 text-primary">
                           {rec.category}
                         </Badge>
                         <p className="text-sm text-muted-foreground">{rec.description}</p>
-                        <div className="bg-teal-50 rounded-lg p-3 text-sm">
-                          <p className="font-medium text-teal-700 mb-1">How to start:</p>
-                          <ul className="list-disc list-inside text-teal-600 text-xs space-y-1">
+                        <div className="bg-primary-soft rounded-[14px] p-3 text-sm">
+                          <p className="font-medium text-primary mb-1">How to start:</p>
+                          <ul className="list-disc list-inside text-foreground-muted text-xs space-y-1">
                             <li>Set a reminder for the same time each day</li>
                             <li>Start with just 2-3 minutes and build up</li>
                             <li>Track your progress in the mood journal</li>
@@ -1181,12 +1202,12 @@ export default function MoodMonitor() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.6 }}
       >
-        <Card className="border-purple-100 overflow-hidden">
+        <Card className="glass-panel overflow-hidden">
           <CardContent className="p-0">
             <div className="flex flex-col md:flex-row">
               <div className="flex-1 p-6 space-y-4">
                 <h3 className="text-lg font-semibold flex items-center gap-2">
-                  <Heart className="w-5 h-5 text-rose-500" />
+                  <Heart className="w-5 h-5 text-danger" />
                   Recent Mood History
                 </h3>
                 <div className="max-h-64 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
@@ -1208,7 +1229,7 @@ export default function MoodMonitor() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
                               <span className="font-medium text-sm">{moodOpt?.label}</span>
-                              <Badge variant="outline" className="text-[10px]">
+                              <Badge variant="outline" className="text-xs">
                                 Score: {entry.score}
                               </Badge>
                             </div>
@@ -1217,13 +1238,13 @@ export default function MoodMonitor() {
                                 &ldquo;{entry.note}&rdquo;
                               </p>
                             )}
-                            <div className="flex gap-3 mt-1 text-[10px] text-muted-foreground">
+                            <div className="flex gap-3 mt-1 text-xs text-muted-foreground">
                               <span>⚡ Energy: {entry.energy}</span>
                               <span>📊 Prod: {entry.productivity}</span>
                               <span>😰 Stress: {entry.stress}</span>
                             </div>
                           </div>
-                          <span className="text-[10px] text-muted-foreground shrink-0">
+                          <span className="text-xs text-muted-foreground shrink-0">
                             {entry.timestamp.toLocaleTimeString([], {
                               hour: '2-digit',
                               minute: '2-digit',
@@ -1235,7 +1256,7 @@ export default function MoodMonitor() {
                   )}
                 </div>
               </div>
-              <div className="hidden md:flex items-center justify-center w-64 bg-gradient-to-br from-teal-50 to-purple-50 p-6">
+              <div className="hidden md:flex items-center justify-center w-64 bg-primary-soft/40 p-6">
                 <ImageWithFallback />
               </div>
             </div>
@@ -1249,10 +1270,10 @@ export default function MoodMonitor() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.65 }}
       >
-        <Card className="border-teal-100">
+        <Card className="glass-panel">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
-              <Frown className="w-5 h-5 text-teal-500" />
+              <Frown className="w-5 h-5 text-primary" />
               Mood Trend by Category
             </CardTitle>
             <CardDescription>Comparison of mood categories across weeks</CardDescription>
@@ -1261,29 +1282,29 @@ export default function MoodMonitor() {
             <div className="h-[250px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={monthlyMoodData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis dataKey="week" tick={{ fontSize: 11 }} stroke="#9ca3af" />
-                  <YAxis tick={{ fontSize: 11 }} stroke="#9ca3af" />
+                  <CartesianGrid strokeDasharray="3 3" stroke={CHART.grid} />
+                  <XAxis dataKey="week" tick={{ fontSize: 11 }} stroke={CHART.axis} />
+                  <YAxis tick={{ fontSize: 11 }} stroke={CHART.axis} />
                   <Tooltip
                     contentStyle={{
                       borderRadius: '8px',
-                      border: '1px solid #e5e7eb',
+                      border: '1px solid var(--border)',
                       fontSize: '12px',
                     }}
                   />
-                  <Bar dataKey="happy" fill="#10b981" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="calm" fill="#14b8a6" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="anxious" fill="#f97316" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="sad" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="happy" fill={CHART.primary} radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="calm" fill={CHART.secondary} radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="anxious" fill={CHART.warning} radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="sad" fill={CHART.info} radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
             <div className="flex flex-wrap gap-4 mt-3 justify-center">
               {[
-                { label: 'Happy', color: '#10b981' },
-                { label: 'Calm', color: '#14b8a6' },
-                { label: 'Anxious', color: '#f97316' },
-                { label: 'Sad', color: '#3b82f6' },
+                { label: 'Happy', color: CHART.primary },
+                { label: 'Calm', color: CHART.secondary },
+                { label: 'Anxious', color: CHART.warning },
+                { label: 'Sad', color: CHART.info },
               ].map((item) => (
                 <div key={item.label} className="flex items-center gap-1.5 text-xs text-muted-foreground">
                   <div className="w-3 h-3 rounded" style={{ backgroundColor: item.color }} />
@@ -1306,7 +1327,7 @@ function ImageWithFallback() {
     return (
       <div className="flex flex-col items-center justify-center gap-3 text-center">
         <div className="text-6xl">🧠</div>
-        <p className="text-sm text-teal-600 font-medium">Your mind matters</p>
+        <p className="text-sm text-primary font-medium">Your mind matters</p>
         <p className="text-xs text-muted-foreground">Track, understand, and nurture your emotional health</p>
       </div>
     );

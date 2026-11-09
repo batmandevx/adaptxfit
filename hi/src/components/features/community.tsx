@@ -172,21 +172,21 @@ const categoryConfig: Record<
 > = {
   support: {
     label: 'Support',
-    color: 'text-rose-700 dark:text-rose-400',
-    bgColor: 'bg-rose-50 dark:bg-rose-950/50',
-    borderColor: 'border-rose-200 dark:border-rose-800',
+    color: 'text-danger',
+    bgColor: 'bg-danger-soft',
+    borderColor: 'border-danger/30',
   },
   tips: {
     label: 'Tips',
-    color: 'text-emerald-700 dark:text-emerald-400',
-    bgColor: 'bg-emerald-50 dark:bg-emerald-950/50',
-    borderColor: 'border-emerald-200 dark:border-emerald-800',
+    color: 'text-success',
+    bgColor: 'bg-success-soft',
+    borderColor: 'border-success/30',
   },
   motivation: {
     label: 'Motivation',
-    color: 'text-amber-700 dark:text-amber-400',
-    bgColor: 'bg-amber-50 dark:bg-amber-950/50',
-    borderColor: 'border-amber-200 dark:border-amber-800',
+    color: 'text-warning',
+    bgColor: 'bg-warning-soft',
+    borderColor: 'border-warning/30',
   },
   coaching: {
     label: 'Expert Coaching',
@@ -269,11 +269,11 @@ function LikeButton({ initialCount, postId }: { initialCount: number; postId: st
       <motion.div whileTap={{ scale: 1.4 }} transition={{ type: 'spring', stiffness: 400, damping: 10 }}>
         <Heart
           className={`h-4 w-4 transition-colors ${
-            liked ? 'fill-rose-500 text-rose-500' : 'text-muted-foreground group-hover:text-rose-400'
+            liked ? 'fill-danger text-danger' : 'text-muted-foreground group-hover:text-danger'
           }`}
         />
       </motion.div>
-      <span className={`text-xs ${liked ? 'text-rose-500 font-medium' : 'text-muted-foreground'}`}>{count}</span>
+      <span className={`text-xs ${liked ? 'text-danger font-medium' : 'text-muted-foreground'}`}>{count}</span>
     </button>
   );
 }
@@ -307,7 +307,7 @@ function PostCard({
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-3">
-              <Avatar className={`h-10 w-10 ${post.isExpert ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-background' : ''}`}>
+              <Avatar className={`h-10 w-10 ${post.isExpert ? 'ring-2 ring-warning/60 ring-offset-2 ring-offset-background' : ''}`}>
                 <AvatarFallback className="text-lg bg-muted">{post.avatar}</AvatarFallback>
               </Avatar>
               <div>
@@ -316,7 +316,7 @@ function PostCard({
                   {post.isExpert && (
                     <Badge
                       variant="secondary"
-                      className="bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300 text-[10px] px-1.5 py-0 h-5 gap-0.5"
+                      className="bg-warning-soft text-warning text-xs px-1.5 py-0 h-5 gap-0.5"
                     >
                       <Award className="h-3 w-3" />
                       Expert
@@ -326,7 +326,7 @@ function PostCard({
                 <span className="text-xs text-muted-foreground">{post.timeAgo}</span>
               </div>
             </div>
-            <Badge variant="outline" className={`${catStyle.bgColor} ${catStyle.color} ${catStyle.borderColor} text-[10px] shrink-0`}>
+            <Badge variant="outline" className={`${catStyle.bgColor} ${catStyle.color} ${catStyle.borderColor} text-xs shrink-0`}>
               {catStyle.label}
             </Badge>
           </div>
@@ -374,18 +374,18 @@ function PostCard({
                           {reply.isExpert && (
                             <Badge
                               variant="secondary"
-                              className="bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300 text-[9px] px-1 py-0 h-4 gap-0.5"
+                              className="bg-warning-soft text-warning text-xs px-1.5 py-0 h-5 gap-0.5"
                             >
                               <Award className="h-2.5 w-2.5" />
                               Expert
                             </Badge>
                           )}
-                          <span className="text-[10px] text-muted-foreground ml-auto">{reply.timeAgo}</span>
+                          <span className="text-xs text-muted-foreground ml-auto">{reply.timeAgo}</span>
                         </div>
                         <p className="text-xs text-muted-foreground leading-relaxed">{reply.content}</p>
                         <div className="flex items-center gap-1 mt-1">
                           <ThumbsUp className="h-3 w-3 text-muted-foreground" />
-                          <span className="text-[10px] text-muted-foreground">{reply.likes}</span>
+                          <span className="text-xs text-muted-foreground">{reply.likes}</span>
                         </div>
                       </div>
                     ))}
@@ -453,7 +453,7 @@ export default function Community() {
         transition={{ duration: 0.5 }}
         className="relative overflow-hidden rounded-2xl"
       >
-        <div className="relative z-10 bg-gradient-to-br from-primary/90 to-primary/70 dark:from-primary/80 dark:to-primary/60 text-primary-foreground p-6 sm:p-8">
+        <div className="relative z-10 bg-primary text-primary-foreground p-6 sm:p-8">
           <div className="flex flex-col sm:flex-row items-center gap-6">
             <div className="flex-1 space-y-3">
               <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Community Forum</h2>
@@ -487,6 +487,14 @@ export default function Community() {
         </div>
       </motion.div>
 
+      {/* Safety strip (features.md — community) */}
+      <div className="flex items-center gap-2 rounded-[14px] bg-info-soft px-4 py-2.5">
+        <Shield className="h-4 w-4 shrink-0 text-info" />
+        <p className="text-xs text-foreground">
+          Be kind. No medical advice here — moderators review reports. For emergencies, use Crisis Support.
+        </p>
+      </div>
+
       {/* Community Stats */}
       <div className="grid grid-cols-3 gap-3 sm:gap-4">
         <StatCounter value={communityStats.members} label="Members" icon={Users} />
@@ -511,7 +519,7 @@ export default function Community() {
 
             <Dialog open={newPostOpen} onOpenChange={setNewPostOpen}>
               <DialogTrigger asChild>
-                <Button size="sm" className="shrink-0 gap-1.5">
+                <Button size="sm" className="btn-aurora-primary h-11 shrink-0 gap-1.5 rounded-[14px]">
                   <Plus className="h-4 w-4" />
                   New Post
                 </Button>
@@ -598,8 +606,8 @@ export default function Community() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            <Card className="bg-gradient-to-br from-violet-50 to-amber-50 dark:from-violet-950/40 dark:to-amber-950/40 border-violet-200/60 dark:border-violet-800/40 overflow-hidden relative">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-violet-200/40 to-transparent dark:from-violet-700/20 rounded-bl-full" />
+            <Card className="glass-panel overflow-hidden relative">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-primary-soft to-transparent rounded-bl-full" />
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm flex items-center gap-2">
                   <Shield className="h-4 w-4 text-violet-600 dark:text-violet-400" />
@@ -612,26 +620,26 @@ export default function Community() {
                     key={coach.id}
                     className="flex items-start gap-3 p-2 rounded-lg bg-white/60 dark:bg-white/5 backdrop-blur-sm"
                   >
-                    <Avatar className={`h-9 w-9 shrink-0 ${coach.available ? 'ring-2 ring-emerald-400 ring-offset-1 ring-offset-background' : 'ring-2 ring-muted ring-offset-1 ring-offset-background'}`}>
+                    <Avatar className={`h-9 w-9 shrink-0 ${coach.available ? 'ring-2 ring-success/60 ring-offset-1 ring-offset-background' : 'ring-2 ring-muted ring-offset-1 ring-offset-background'}`}>
                       <AvatarFallback className="text-sm bg-muted">{coach.avatar}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="text-sm font-medium truncate">{coach.name}</span>
                         {coach.available && (
-                          <span className="flex items-center gap-0.5 text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
-                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 inline-block" />
+                          <span className="flex items-center gap-0.5 text-xs text-success font-medium">
+                            <span className="h-1.5 w-1.5 rounded-full bg-success inline-block" />
                             Online
                           </span>
                         )}
                       </div>
                       <p className="text-[11px] text-muted-foreground truncate">{coach.specialty}</p>
                       <div className="flex items-center gap-2 mt-0.5">
-                        <span className="flex items-center gap-0.5 text-[10px] text-amber-600 dark:text-amber-400">
-                          <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                        <span className="flex items-center gap-0.5 text-xs text-warning">
+                          <Star className="h-3 w-3 fill-warning text-warning" />
                           {coach.rating}
                         </span>
-                        <span className="text-[10px] text-muted-foreground">{coach.sessions} sessions</span>
+                        <span className="text-xs text-muted-foreground">{coach.sessions} sessions</span>
                       </div>
                     </div>
                     <Button
@@ -658,10 +666,10 @@ export default function Community() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.35 }}
           >
-            <Card className="border-rose-200/60 dark:border-rose-800/40 bg-gradient-to-br from-rose-50/80 to-white dark:from-rose-950/30 dark:to-background overflow-hidden relative">
-              <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl from-rose-200/30 to-transparent dark:from-rose-700/15 rounded-bl-full" />
+            <Card className="border-danger/25 bg-danger-soft/60 overflow-hidden relative">
+              <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl from-danger-soft to-transparent rounded-bl-full" />
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center gap-2 text-rose-700 dark:text-rose-400">
+                <CardTitle className="text-sm flex items-center gap-2 text-danger">
                   <Phone className="h-4 w-4" />
                   Quick Support
                 </CardTitle>
@@ -675,13 +683,13 @@ export default function Community() {
                     key={resource.name}
                     className="flex items-start gap-3 p-2 rounded-lg bg-white/70 dark:bg-white/5"
                   >
-                    <div className="rounded-full bg-rose-100 dark:bg-rose-900/50 p-1.5 shrink-0">
-                      <HelpCircle className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400" />
+                    <div className="rounded-full bg-danger-soft p-1.5 shrink-0">
+                      <HelpCircle className="h-3.5 w-3.5 text-danger" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-rose-700 dark:text-rose-400">{resource.name}</p>
-                      <p className="text-[10px] text-muted-foreground">{resource.description}</p>
-                      <p className="text-xs font-mono font-semibold text-rose-600 dark:text-rose-300 mt-0.5">
+                      <p className="text-xs font-semibold text-danger">{resource.name}</p>
+                      <p className="text-xs text-muted-foreground">{resource.description}</p>
+                      <p className="text-xs font-mono font-semibold text-danger mt-0.5">
                         {resource.phone}
                       </p>
                     </div>
@@ -707,19 +715,19 @@ export default function Community() {
               <CardContent>
                 <ul className="space-y-2 text-xs text-muted-foreground">
                   <li className="flex items-start gap-2">
-                    <span className="text-emerald-500 mt-0.5">✓</span>
+                    <span className="text-success mt-0.5">✓</span>
                     Be respectful and supportive of all members
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-emerald-500 mt-0.5">✓</span>
+                    <span className="text-success mt-0.5">✓</span>
                     Share your experience — it may help someone
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-emerald-500 mt-0.5">✓</span>
+                    <span className="text-success mt-0.5">✓</span>
                     Report any harmful or discriminatory content
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-emerald-500 mt-0.5">✓</span>
+                    <span className="text-success mt-0.5">✓</span>
                     Consult professionals for medical advice
                   </li>
                 </ul>

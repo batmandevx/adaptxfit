@@ -1,11 +1,17 @@
 'use client';
 
+/**
+ * AdaptiFit AI chat — FAB + glass chat panel (features.md — ai-chat).
+ * Clinical Aurora treatment: solid primary FAB with glow, heavy-glass panel,
+ * token-colored bubbles, reduced-motion-aware typing, and a crisis-safety
+ * response path that offers direct, high-contrast emergency actions.
+ */
+
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAppStore, type AppSection } from '@/stores/app-store';
+import { useAppStore } from '@/stores/app-store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
@@ -20,9 +26,12 @@ import {
   Sparkles,
   Bot,
   User,
+  Phone,
+  LifeBuoy,
 } from 'lucide-react';
 import TTSSpeaker from '@/components/features/tts-speaker';
 import VoiceInput from '@/components/features/voice-input';
+import { useReduced, EASE } from '@/components/ui/aurora';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -32,6 +41,8 @@ interface ChatMessage {
   content: string;
   timestamp: Date;
   isTyping?: boolean;
+  /** Renders direct crisis actions under the bubble */
+  crisis?: boolean;
 }
 
 // ─── Contextual Quick Prompts ────────────────────────────────────────────────
@@ -78,6 +89,14 @@ const quickPrompts: Record<string, string[]> = {
     'Set up health alerts',
   ],
 };
+
+// ─── Crisis safety (features.md — ai-chat crisis behavior) ───────────────────
+
+const CRISIS_PATTERN =
+  /(suicid|kill (myself|me)|end (my|it) (life|all)|self[- ]?harm|hurt (myself|me)|want to die|don'?t want to (live|be here)|no reason to live)/i;
+
+const CRISIS_RESPONSE =
+  "I'm really glad you told me. You deserve support right now, and you don't have to handle this alone. Please consider reaching out to one of these options — trained counselors are available 24/7, free and confidential.";
 
 // ─── Simulated AI Responses ──────────────────────────────────────────────────
 
@@ -167,10 +186,15 @@ function useTypingEffect(text: string, speed: number = 20) {
 
 function TypingMessage({ content, onComplete }: { content: string; onComplete: () => void }) {
   const { displayedText, isComplete } = useTypingEffect(content, 18);
+  const reduced = useReduced();
 
   useEffect(() => {
-    if (isComplete) onComplete();
-  }, [isComplete, onComplete]);
+    // Reduced motion: show the full reply immediately, no typewriter.
+    if (reduced) onComplete();
+    else if (isComplete) onComplete();
+  }, [isComplete, onComplete, reduced]);
+
+  if (reduced) return <span>{content}</span>;
 
   return (
     <span>
@@ -179,10 +203,36 @@ function TypingMessage({ content, onComplete }: { content: string; onComplete: (
         <motion.span
           animate={{ opacity: [1, 0] }}
           transition={{ repeat: Infinity, duration: 0.6 }}
-          className="inline-block w-1.5 h-4 bg-emerald-500 ml-0.5 align-middle rounded-sm"
+          className="ml-0.5 inline-block h-4 w-1.5 rounded-sm bg-primary align-middle"
         />
       )}
     </span>
+  );
+}
+
+// ─── Crisis action card (direct, high-contrast) ──────────────────────────────
+
+function CrisisActions() {
+  const setActiveSection = useAppStore((s) => s.setActiveSection);
+  return (
+    <div className="mt-2 flex flex-col gap-2">
+      <a
+        href="tel:988"
+        className="flex min-h-12 items-center justify-center gap-2 rounded-[14px] bg-danger px-4 text-sm font-semibold text-danger-foreground focus-visible:outline-2 focus-visible:outline-danger focus-visible:outline-offset-2"
+      >
+        <Phone className="h-4 w-4" /> Call 988 — Suicide &amp; Crisis Lifeline
+      </a>
+      <button
+        type="button"
+        onClick={() => setActiveSection('crisis')}
+        className="flex min-h-12 items-center justify-center gap-2 rounded-[14px] border-2 border-danger/60 bg-danger-soft px-4 text-sm font-semibold text-danger focus-visible:outline-2 focus-visible:outline-danger focus-visible:outline-offset-2"
+      >
+        <LifeBuoy className="h-4 w-4" /> Open Crisis Support
+      </button>
+      <p className="text-xs text-foreground-subtle">
+        If you are in immediate danger, call your local emergency number now.
+      </p>
+    </div>
   );
 }
 
@@ -198,10 +248,11 @@ export default function AIChat() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const reduced = useReduced();
 
   const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, []);
+    messagesEndRef.current?.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth' });
+  }, [reduced]);
 
   useEffect(() => {
     scrollToBottom();
@@ -231,7 +282,7 @@ export default function AIChat() {
 
     const panel = panelRef.current;
     const focusableElements = panel.querySelectorAll<HTMLElement>(
-      'button, input, [tabindex]:not([tabindex="-1"])'
+      'button, input, [tabindex]:not([tabindex="-1"]), a[href]'
     );
     const firstEl = focusableElements[0];
     const lastEl = focusableElements[focusableElements.length - 1];
@@ -270,25 +321,28 @@ export default function AIChat() {
       setMessages((prev) => [...prev, userMessage]);
       setInputValue('');
 
+      const crisis = CRISIS_PATTERN.test(text);
+
       // Simulate AI response with delay
       const aiId = `ai-${Date.now()}`;
       setTimeout(() => {
-        const response = getSimulatedResponse(text);
+        const response = crisis ? CRISIS_RESPONSE : getSimulatedResponse(text);
         const aiMessage: ChatMessage = {
           id: aiId,
           role: 'ai',
           content: response,
           timestamp: new Date(),
-          isTyping: true,
+          isTyping: !crisis,
+          crisis,
         };
 
         setMessages((prev) => [...prev, aiMessage]);
-        setTypingMessageId(aiId);
+        if (!crisis) setTypingMessageId(aiId);
 
         if (!isOpen) {
           setUnreadCount((prev) => prev + 1);
         }
-      }, 800 + Math.random() * 700);
+      }, crisis ? 300 : 800 + Math.random() * 700);
     },
     [isOpen]
   );
@@ -318,51 +372,52 @@ export default function AIChat() {
 
   return (
     <>
-      {/* Floating Chat Button */}
+      {/* Floating Chat Button — 56px primary FAB */}
       <AnimatePresence>
         {!isOpen && (
           <motion.div
-            initial={{ scale: 0, opacity: 0 }}
+            initial={reduced ? { opacity: 0 } : { scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0, opacity: 0 }}
-            transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+            exit={reduced ? { opacity: 0 } : { scale: 0, opacity: 0 }}
+            transition={reduced ? { duration: 0.14 } : { type: 'spring', stiffness: 260, damping: 20 }}
             className="fixed bottom-6 right-6 z-50"
           >
             <Tooltip>
               <TooltipTrigger asChild>
                 <motion.button
                   onClick={() => { setIsOpen(true); setUnreadCount(0); }}
-                  className="relative w-14 h-14 rounded-full shadow-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center hover:shadow-2xl hover:shadow-emerald-500/30 transition-shadow focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2"
+                  className="relative flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground transition-shadow hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                  style={{ boxShadow: 'var(--shadow-lg), var(--shadow-glow-primary)' }}
                   aria-label="Open AdaptiFit AI Chat"
-                  whileHover={{ scale: 1.08 }}
-                  whileTap={{ scale: 0.95 }}
+                  whileHover={reduced ? undefined : { scale: 1.08 }}
+                  whileTap={reduced ? undefined : { scale: 0.95 }}
                 >
-                  {/* Pulse ring */}
-                  <motion.span
-                    className="absolute inset-0 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500"
-                    animate={{
-                      scale: [1, 1.4, 1],
-                      opacity: [0.5, 0, 0.5],
-                    }}
-                    transition={{
-                      repeat: Infinity,
-                      duration: 2,
-                      ease: 'easeInOut',
-                    }}
-                  />
+                  {/* Pulse ring (decorative; off under reduced motion) */}
+                  {!reduced && (
+                    <motion.span
+                      className="absolute inset-0 rounded-full bg-primary"
+                      animate={{
+                        scale: [1, 1.4, 1],
+                        opacity: [0.4, 0, 0.4],
+                      }}
+                      transition={{
+                        repeat: Infinity,
+                        duration: 2,
+                        ease: 'easeInOut',
+                      }}
+                    />
+                  )}
 
-                  <Sparkles className="w-6 h-6 relative z-10" />
+                  <Sparkles className="relative z-10 h-6 w-6" />
 
                   {/* Unread badge */}
                   {unreadCount > 0 && (
                     <motion.span
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      className="absolute -top-1 -right-1 z-20"
+                      initial={reduced ? { opacity: 0 } : { scale: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      className="absolute -right-1 -top-1 z-20 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-danger px-1.5 text-xs font-bold text-danger-foreground"
                     >
-                      <Badge className="bg-rose-500 text-white border-0 min-w-[20px] h-5 flex items-center justify-center px-1.5 text-[10px] font-bold">
-                        {unreadCount > 9 ? '9+' : unreadCount}
-                      </Badge>
+                      {unreadCount > 9 ? '9+' : unreadCount}
                     </motion.span>
                   )}
                 </motion.button>
@@ -375,7 +430,7 @@ export default function AIChat() {
         )}
       </AnimatePresence>
 
-      {/* Chat Panel */}
+      {/* Chat Panel — heavy glass overlay */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -383,25 +438,25 @@ export default function AIChat() {
             role="dialog"
             aria-label="AdaptiFit AI Chat"
             aria-modal="true"
-            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            initial={reduced ? { opacity: 0 } : { opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-            className="fixed bottom-6 right-6 z-50 w-[calc(100vw-3rem)] sm:w-96 max-h-[500px] rounded-2xl shadow-2xl border border-white/20 bg-white/80 backdrop-blur-xl flex flex-col overflow-hidden"
+            exit={reduced ? { opacity: 0 } : { opacity: 0, y: 20, scale: 0.95 }}
+            transition={reduced ? { duration: 0.14 } : { type: 'spring', stiffness: 300, damping: 25 }}
+            className="glass-overlay fixed bottom-6 right-6 z-50 flex max-h-[640px] w-[calc(100vw-3rem)] flex-col overflow-hidden rounded-[28px] sm:w-[400px]"
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-emerald-100 bg-gradient-to-r from-emerald-500/10 to-teal-500/10">
+            <div className="flex items-center justify-between border-b border-border/60 px-4 py-3">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center ring-2 ring-emerald-200">
-                  <Bot className="w-4 h-4 text-white" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-soft ring-2 ring-primary/25">
+                  <Bot className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-semibold text-foreground">
+                  <h3 className="font-display text-sm font-semibold text-foreground">
                     AdaptiFit AI
                   </h3>
                   <div className="flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    <span className="text-[10px] text-muted-foreground">
+                    <span className={`h-1.5 w-1.5 rounded-full bg-success ${reduced ? '' : 'animate-pulse'}`} />
+                    <span className="text-xs text-foreground-subtle">
                       Always here for you
                     </span>
                   </div>
@@ -410,30 +465,31 @@ export default function AIChat() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 rounded-full hover:bg-muted"
+                className="h-11 w-11 rounded-full hover:bg-surface-raised"
                 onClick={() => setIsOpen(false)}
                 aria-label="Close chat"
               >
-                <X className="w-4 h-4" />
+                <X className="h-4 w-4" />
               </Button>
             </div>
 
             {/* Messages Area */}
-            <ScrollArea className="flex-1 px-4 py-3 min-h-0">
+            <ScrollArea className="min-h-0 flex-1 px-4 py-3">
               <div className="space-y-3">
                 {messages.length === 0 && (
                   <motion.div
-                    initial={{ opacity: 0, y: 10 }}
+                    initial={{ opacity: 0, y: reduced ? 0 : 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="text-center py-6"
+                    transition={{ duration: reduced ? 0.14 : 0.3, ease: EASE.careOut }}
+                    className="py-6 text-center"
                   >
-                    <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-gradient-to-br from-emerald-100 to-teal-100 flex items-center justify-center">
-                      <MessageCircle className="w-6 h-6 text-emerald-600" />
+                    <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-primary-soft">
+                      <MessageCircle className="h-7 w-7 text-primary" />
                     </div>
-                    <p className="text-sm font-medium text-foreground mb-1">
+                    <p className="mb-1 text-sm font-medium text-foreground">
                       Hi! I&apos;m AdaptiFit AI
                     </p>
-                    <p className="text-xs text-muted-foreground max-w-[240px] mx-auto">
+                    <p className="mx-auto max-w-[260px] text-xs text-foreground-muted">
                       Your personal adaptive fitness assistant. Ask me about exercises, form, nutrition, or anything on your mind!
                     </p>
                   </motion.div>
@@ -442,9 +498,9 @@ export default function AIChat() {
                 {messages.map((message) => (
                   <motion.div
                     key={message.id}
-                    initial={{ opacity: 0, y: 10 }}
+                    initial={{ opacity: 0, y: reduced ? 0 : 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
+                    transition={{ duration: reduced ? 0.14 : 0.3 }}
                     className={`flex items-start gap-2 ${
                       message.role === 'user' ? 'flex-row-reverse' : 'flex-row'
                     }`}
@@ -452,42 +508,49 @@ export default function AIChat() {
                     {/* Avatar */}
                     {message.role === 'ai' ? (
                       <div className="flex-shrink-0">
-                        <Avatar className="w-7 h-7 ring-2 ring-emerald-300 ring-offset-1">
-                          <AvatarFallback className="bg-gradient-to-br from-emerald-500 to-teal-600 text-white text-[10px] font-bold">
+                        <Avatar className="h-8 w-8 ring-2 ring-primary/25 ring-offset-1">
+                          <AvatarFallback className="bg-primary text-[10px] font-bold text-primary-foreground">
                             AI
                           </AvatarFallback>
                         </Avatar>
                       </div>
                     ) : (
                       <div className="flex-shrink-0">
-                        <Avatar className="w-7 h-7 ring-2 ring-gray-200 ring-offset-1">
-                          <AvatarFallback className="bg-gray-100 text-gray-600 text-[10px]">
-                            <User className="w-3.5 h-3.5" />
+                        <Avatar className="h-8 w-8 ring-2 ring-border ring-offset-1">
+                          <AvatarFallback className="bg-surface-raised text-[10px] text-foreground-muted">
+                            <User className="h-3.5 w-3.5" />
                           </AvatarFallback>
                         </Avatar>
                       </div>
                     )}
 
                     {/* Message Bubble */}
-                    <div
-                      className={`max-w-[80%] px-3 py-2 text-sm leading-relaxed ${
-                        message.role === 'user'
-                          ? 'bg-gradient-to-br from-emerald-500 to-emerald-600 text-white rounded-2xl rounded-tr-md'
-                          : 'bg-gradient-to-br from-emerald-50 to-teal-50 text-foreground border border-emerald-200/60 rounded-2xl rounded-tl-md'
-                      }`}
-                    >
-                      {message.role === 'ai' && message.isTyping && typingMessageId === message.id ? (
-                        <TypingMessage
-                          content={message.content}
-                          onComplete={() => handleTypingComplete(message.id)}
-                        />
-                      ) : (
-                        <span>{message.content}</span>
-                      )}
+                    <div className={`max-w-[80%] ${message.role === 'user' ? 'text-right' : ''}`}>
+                      <div
+                        className={`px-3.5 py-2.5 text-sm leading-relaxed ${
+                          message.role === 'user'
+                            ? 'rounded-2xl rounded-tr-md bg-primary text-primary-foreground'
+                            : 'rounded-2xl rounded-tl-md border border-border/60 bg-surface-raised text-foreground'
+                        }`}
+                      >
+                        {message.role === 'ai' && message.isTyping && typingMessageId === message.id ? (
+                          <TypingMessage
+                            content={message.content}
+                            onComplete={() => handleTypingComplete(message.id)}
+                          />
+                        ) : (
+                          <span>{message.content}</span>
+                        )}
+                      </div>
+                      {message.crisis && <CrisisActions />}
+                      <p className="mt-1 px-1 text-[11px] text-foreground-subtle">
+                        {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </p>
                     </div>
+
                     {/* TTS Speaker for AI messages */}
                     {message.role === 'ai' && !message.isTyping && (
-                      <div className="flex-shrink-0 mt-1">
+                      <div className="mt-1 flex-shrink-0">
                         <TTSSpeaker
                           text={message.content}
                           size="sm"
@@ -507,28 +570,21 @@ export default function AIChat() {
                       animate={{ opacity: 1 }}
                       className="flex items-start gap-2"
                     >
-                      <Avatar className="w-7 h-7 ring-2 ring-emerald-300 ring-offset-1">
-                        <AvatarFallback className="bg-gradient-to-br from-emerald-500 to-teal-600 text-white text-[10px] font-bold">
+                      <Avatar className="h-8 w-8 ring-2 ring-primary/25 ring-offset-1">
+                        <AvatarFallback className="bg-primary text-[10px] font-bold text-primary-foreground">
                           AI
                         </AvatarFallback>
                       </Avatar>
-                      <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200/60 rounded-2xl rounded-tl-md px-3 py-2">
+                      <div className="rounded-2xl rounded-tl-md border border-border/60 bg-surface-raised px-3.5 py-3">
                         <div className="flex items-center gap-1">
-                          <motion.span
-                            animate={{ y: [0, -4, 0] }}
-                            transition={{ repeat: Infinity, duration: 0.6, delay: 0 }}
-                            className="w-1.5 h-1.5 rounded-full bg-emerald-400"
-                          />
-                          <motion.span
-                            animate={{ y: [0, -4, 0] }}
-                            transition={{ repeat: Infinity, duration: 0.6, delay: 0.15 }}
-                            className="w-1.5 h-1.5 rounded-full bg-emerald-400"
-                          />
-                          <motion.span
-                            animate={{ y: [0, -4, 0] }}
-                            transition={{ repeat: Infinity, duration: 0.6, delay: 0.3 }}
-                            className="w-1.5 h-1.5 rounded-full bg-emerald-400"
-                          />
+                          {[0, 0.15, 0.3].map((delay, i) => (
+                            <motion.span
+                              key={i}
+                              animate={reduced ? { opacity: 0.6 } : { y: [0, -4, 0] }}
+                              transition={reduced ? { duration: 0.14 } : { repeat: Infinity, duration: 0.6, delay }}
+                              className="h-1.5 w-1.5 rounded-full bg-primary"
+                            />
+                          ))}
                         </div>
                       </div>
                     </motion.div>
@@ -539,15 +595,15 @@ export default function AIChat() {
             </ScrollArea>
 
             {/* Quick Prompts */}
-            <div className="px-4 py-2 border-t border-emerald-100/60">
-              <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+            <div className="border-t border-border/60 px-4 py-2">
+              <div className="scrollbar-none flex gap-1.5 overflow-x-auto pb-1">
                 {currentPrompts.map((prompt) => (
                   <motion.button
                     key={prompt}
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.97 }}
+                    whileHover={reduced ? undefined : { scale: 1.03 }}
+                    whileTap={reduced ? undefined : { scale: 0.97 }}
                     onClick={() => handleQuickPrompt(prompt)}
-                    className="flex-shrink-0 px-2.5 py-1 text-[11px] font-medium rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/70 hover:bg-emerald-100 transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-400"
+                    className="flex-shrink-0 whitespace-nowrap rounded-full border border-primary/20 bg-primary-soft px-3 py-2 text-xs font-medium text-primary transition-colors hover:bg-primary/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                   >
                     {prompt}
                   </motion.button>
@@ -558,33 +614,33 @@ export default function AIChat() {
             {/* Input Area */}
             <form
               onSubmit={handleSubmit}
-              className="px-4 py-3 border-t border-emerald-100/60 bg-white/50 backdrop-blur-sm"
+              className="border-t border-border/60 px-4 py-3"
             >
               <div className="flex items-center gap-2">
-                <VoiceInput
-                  onTranscription={(text) => setInputValue(text)}
-                  size="sm"
-                  className="flex-shrink-0"
-                />
-                <div className="flex-1 relative">
+                <div className="relative flex-1">
                   <Input
                     ref={inputRef}
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     placeholder="Ask AdaptiFit AI..."
-                    className="rounded-full pr-10 h-9 text-sm bg-muted/50 border-emerald-200/50 focus-visible:border-emerald-400 focus-visible:ring-emerald-400/30"
+                    className="h-[52px] rounded-[16px] border-border/70 bg-surface-raised/70 pr-12 text-sm focus-visible:border-primary"
                     aria-label="Chat message input"
                   />
                   <Button
                     type="submit"
                     size="icon"
                     disabled={!inputValue.trim()}
-                    className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-sm disabled:opacity-40"
+                    className="absolute right-1.5 top-1/2 h-10 w-10 -translate-y-1/2 rounded-[12px] bg-primary text-primary-foreground hover:bg-primary-strong disabled:opacity-40"
                     aria-label="Send message"
                   >
-                    <Send className="w-3.5 h-3.5" />
+                    <Send className="h-4 w-4" />
                   </Button>
                 </div>
+                <VoiceInput
+                  onTranscription={(text) => setInputValue(text)}
+                  size="lg"
+                  className="h-12 w-12 flex-shrink-0 rounded-[14px] border border-border/70 bg-surface-raised/70"
+                />
               </div>
             </form>
           </motion.div>

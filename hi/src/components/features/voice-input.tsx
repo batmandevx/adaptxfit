@@ -12,6 +12,7 @@ import {
 import { useASR } from '@/hooks/use-asr';
 import { useAppStore, type AppSection } from '@/stores/app-store';
 import { useCommander } from '@/voice/use-commander';
+import { useReduced } from '@/components/ui/aurora';
 
 interface VoiceInputProps {
   /** Callback when transcription is ready */
@@ -52,6 +53,7 @@ function matchVoiceCommand(text: string): { section: AppSection; label: string }
 // ── Waveform bars component ────────────────────────────────────────────────────
 
 function WaveformAnimation({ audioLevel, isActive }: { audioLevel: number; isActive: boolean }) {
+  const reduced = useReduced();
   const barCount = 5;
   return (
     <div className="flex items-center justify-center gap-[3px] h-6">
@@ -63,12 +65,16 @@ function WaveformAnimation({ audioLevel, isActive }: { audioLevel: number; isAct
         return (
           <motion.div
             key={i}
-            className="w-[3px] rounded-full bg-rose-500"
-            animate={{
-              scaleY: Math.max(0.2, activeScale),
-              opacity: isActive ? 1 : 0.3,
-            }}
-            transition={{ duration: 0.1, ease: 'easeOut' }}
+            className="w-[3px] rounded-full bg-secondary"
+            animate={
+              reduced
+                ? { scaleY: 0.35, opacity: isActive ? 1 : 0.35 }
+                : {
+                    scaleY: Math.max(0.2, activeScale),
+                    opacity: isActive ? 1 : 0.3,
+                  }
+            }
+            transition={{ duration: reduced ? 0.14 : 0.1, ease: 'easeOut' }}
             style={{ height: '24px', originY: 0.5 }}
           />
         );
@@ -164,6 +170,8 @@ export default function VoiceInput({
 
   const sizeClasses = { sm: 'h-8 w-8', md: 'h-10 w-10', lg: 'h-12 w-12' };
   const iconSizes = { sm: 'w-4 h-4', md: 'w-5 h-5', lg: 'w-6 h-6' };
+  const reduced = useReduced();
+  const iconTransition = { duration: reduced ? 0.12 : 0.15 };
 
   return (
     <div className="flex items-center gap-2">
@@ -174,7 +182,7 @@ export default function VoiceInput({
             size="icon"
             onClick={handleClick}
             disabled={disabled || isTranscribing || permissionDenied}
-            className={`relative rounded-full ${sizeClasses[size]} ${className}`}
+            className={`relative rounded-full ${sizeClasses[size]} ${isRecording ? 'bg-secondary-soft hover:bg-secondary-soft' : ''} ${className}`}
             aria-label={
               permissionDenied
                 ? 'Microphone access denied'
@@ -192,9 +200,9 @@ export default function VoiceInput({
                   initial={{ scale: 0.5, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   exit={{ scale: 0.5, opacity: 0 }}
-                  transition={{ duration: 0.15 }}
+                  transition={iconTransition}
                 >
-                  <AlertCircle className={`${iconSizes[size]} text-rose-500`} />
+                  <AlertCircle className={`${iconSizes[size]} text-danger`} />
                 </motion.div>
               ) : isTranscribing ? (
                 <motion.div
@@ -202,9 +210,9 @@ export default function VoiceInput({
                   initial={{ scale: 0.5, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   exit={{ scale: 0.5, opacity: 0 }}
-                  transition={{ duration: 0.15 }}
+                  transition={iconTransition}
                 >
-                  <Loader2 className={`${iconSizes[size]} animate-spin text-emerald-500`} />
+                  <Loader2 className={`${iconSizes[size]} animate-spin text-primary`} />
                 </motion.div>
               ) : isRecording ? (
                 <motion.div
@@ -212,28 +220,32 @@ export default function VoiceInput({
                   initial={{ scale: 0.5, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   exit={{ scale: 0.5, opacity: 0 }}
-                  transition={{ duration: 0.15 }}
+                  transition={iconTransition}
                   className="relative flex items-center justify-center"
                 >
-                  <MicOff className={`${iconSizes[size]} text-rose-500 relative z-10`} />
+                  <MicOff className={`${iconSizes[size]} text-secondary relative z-10`} />
                   {/* Audio level ring */}
-                  <motion.div
-                    className="absolute inset-0 rounded-full bg-rose-400/30"
-                    animate={{
-                      scale: [1, 1 + audioLevel * 0.5, 1],
-                      opacity: [0.6, 0.3, 0.6],
-                    }}
-                    transition={{ duration: 0.3 }}
-                  />
+                  {!reduced && (
+                    <motion.div
+                      className="absolute inset-0 rounded-full bg-secondary/30"
+                      animate={{
+                        scale: [1, 1 + audioLevel * 0.5, 1],
+                        opacity: [0.6, 0.3, 0.6],
+                      }}
+                      transition={{ duration: 0.3 }}
+                    />
+                  )}
                   {/* Recording pulse ring */}
-                  <motion.div
-                    className="absolute inset-0 rounded-full border-2 border-rose-400"
-                    animate={{
-                      scale: [1, 1.5, 1],
-                      opacity: [0.8, 0, 0.8],
-                    }}
-                    transition={{ duration: 1.5, repeat: Infinity }}
-                  />
+                  {!reduced && (
+                    <motion.div
+                      className="absolute inset-0 rounded-full border-2 border-secondary"
+                      animate={{
+                        scale: [1, 1.5, 1],
+                        opacity: [0.8, 0, 0.8],
+                      }}
+                      transition={{ duration: 1.5, repeat: Infinity }}
+                    />
+                  )}
                 </motion.div>
               ) : (
                 <motion.div
@@ -241,11 +253,11 @@ export default function VoiceInput({
                   initial={{ scale: 0.5, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   exit={{ scale: 0.5, opacity: 0 }}
-                  transition={{ duration: 0.15 }}
-                  whileHover={{ scale: 1.15 }}
-                  whileTap={{ scale: 0.9 }}
+                  transition={iconTransition}
+                  whileHover={reduced ? undefined : { scale: 1.15 }}
+                  whileTap={reduced ? undefined : { scale: 0.9 }}
                 >
-                  <Mic className={`${iconSizes[size]} text-muted-foreground hover:text-emerald-500 transition-colors`} />
+                  <Mic className={`${iconSizes[size]} text-foreground-muted hover:text-primary transition-colors`} />
                 </motion.div>
               )}
             </AnimatePresence>
@@ -272,7 +284,7 @@ export default function VoiceInput({
             className="flex items-center gap-2 overflow-hidden"
           >
             <WaveformAnimation audioLevel={audioLevel} isActive={isRecording} />
-            <span className="text-xs text-rose-600 dark:text-rose-400 font-semibold whitespace-nowrap">Recording...</span>
+            <span className="text-xs text-secondary font-semibold whitespace-nowrap">Listening…</span>
           </motion.div>
         )}
       </AnimatePresence>
@@ -286,8 +298,8 @@ export default function VoiceInput({
             exit={{ opacity: 0, width: 0 }}
             className="flex items-center gap-1.5 overflow-hidden"
           >
-            <Loader2 className="h-3.5 w-3.5 animate-spin text-emerald-500" />
-            <span className="text-xs text-emerald-600 font-medium whitespace-nowrap">Transcribing...</span>
+            <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+            <span className="text-xs text-primary font-medium whitespace-nowrap">Transcribing...</span>
           </motion.div>
         )}
       </AnimatePresence>
@@ -301,10 +313,10 @@ export default function VoiceInput({
             initial={{ opacity: 0, scale: 0.8, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.8, y: -10 }}
-            className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 motion-reduce:transition-none"
+            className="flex items-center gap-1.5 rounded-full bg-primary-soft border border-primary/20 px-3 py-1 motion-reduce:transition-none"
           >
-            <Sparkles className="h-3.5 w-3.5 text-emerald-500" />
-            <span className="text-xs font-medium text-emerald-600">
+            <Sparkles className="h-3.5 w-3.5 text-primary" />
+            <span className="text-xs font-medium text-primary">
               {commandDetected}
             </span>
           </motion.div>
@@ -320,9 +332,11 @@ export default function VoiceInput({
             exit={{ opacity: 0, width: 0 }}
             className="flex items-center gap-1.5 overflow-hidden"
           >
-            <AlertCircle className="h-3.5 w-3.5 text-rose-500 shrink-0" />
-            <span className="text-xs text-rose-500 whitespace-nowrap">
-              Mic access denied
+            <span className="flex items-center gap-1.5 rounded-full bg-danger-soft px-3 py-1">
+              <AlertCircle className="h-3.5 w-3.5 text-danger shrink-0" />
+              <span className="text-xs font-medium text-danger whitespace-nowrap">
+                Mic access denied
+              </span>
             </span>
           </motion.div>
         )}

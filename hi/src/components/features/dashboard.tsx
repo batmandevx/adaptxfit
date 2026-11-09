@@ -1,376 +1,94 @@
 'use client';
 
-import { useState, useEffect, useCallback, type ReactNode } from 'react';
-import { motion } from 'framer-motion';
+/**
+ * Dashboard — Clinical Aurora redesign (design/dashboard.md).
+ *
+ * Daily command center: greeting + readiness, one next action, four KPI
+ * StatTiles, today's adaptive plan, weekly movement chart, recovery/balance
+ * cards, and a right rail (voice brief, quick actions, milestone, activity).
+ *
+ * Behavior preserved: i18n via t()/locale, app-store navigation contracts,
+ * profile-setup entry points, ChartFigure accessibility pattern (recharts
+ * SVG gets role="img" + sr-only caption + a data table alternative).
+ * Existing dashboard.* i18n keys are reused; new copy is English-only.
+ */
+
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Activity,
-  Flame,
-  Heart,
-  Target,
-  TrendingUp,
-  Award,
+  Armchair,
+  ArrowRight,
+  AudioLines,
+  Brain,
   Calendar,
-  Zap,
-  PlayCircle,
-  SmilePlus,
-  ScanLine,
+  ChartNoAxesColumn,
+  ChevronRight,
+  CircleCheck,
+  Clock,
+  Dumbbell,
+  Flame,
   HeartPulse,
-  CheckCircle2,
-  Circle,
-  Bell,
-  Quote,
-  ArrowUpRight,
-  ArrowDownRight,
+  Info,
+  ListChecks,
+  MessageCircleHeart,
+  Moon,
+  Pause,
+  Play,
+  Salad,
+  ScanSearch,
+  Sparkles,
+  Timer,
   Trophy,
+  UserRound,
+  Video,
+  Wind,
+  Zap,
 } from 'lucide-react';
-import TTSSpeaker from '@/components/features/tts-speaker';
-import AchievementShowcase from '@/components/features/achievement-showcase';
-import DailyChallenges from '@/components/features/daily-challenges';
-import WeeklyGoals from '@/components/features/weekly-goals';
-import HealthInsights from '@/components/features/health-insights';
-import SleepTracker from '@/components/features/sleep-tracker';
-import HydrationTracker from '@/components/features/hydration-tracker';
-import RehabTimeline from '@/components/features/rehab-timeline';
-import PainJournal from '@/components/features/pain-journal';
-import ProgressExport from './progress-export';
 import {
-  BarChart,
-  Bar,
-  AreaChart,
   Area,
+  AreaChart,
+  Bar,
+  CartesianGrid,
   ComposedChart,
-  LineChart,
   Line,
+  ReferenceDot,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  Cell,
-  ReferenceLine,
 } from 'recharts';
 
 import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  CardDescription,
-} from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+  GlassPanel,
+  StatTile,
+  useReduced,
+  EASE,
+  SPRING,
+  sectionEntrance,
+  staggerContainer,
+  staggerItem,
+  reducedItem,
+} from '@/components/ui/aurora';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import {
   ChartContainer,
   ChartTooltip,
-  ChartTooltipContent,
-  ChartLegend,
-  ChartLegendContent,
   type ChartConfig,
 } from '@/components/ui/chart';
-
-import {
-  weeklyExerciseData,
-  monthlyMoodData,
-  heartRateData,
-  progressData,
-  calorieTrackingData,
-  recentAchievements,
-} from '@/lib/mock-data';
+import { useToastStore } from '@/components/features/toast-provider';
+import { weeklyExerciseData } from '@/lib/mock-data';
 import { useAppStore } from '@/stores/app-store';
-import { speechLocale, useI18n, type Locale, type TranslateFn, type TranslationKey } from '@/lib/i18n';
+import { speechLocale, useI18n } from '@/lib/i18n';
+import { cn } from '@/lib/utils';
 
-// ── Animation variants ──────────────────────────────────────────────────────
+// ── Accessible chart wrapper (existing ChartFigure pattern, UX-14) ──────────
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.08 },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.5, ease: 'easeOut' },
-  },
-};
-
-// ── Chart configs ────────────────────────────────────────────────────────────
-
-const getWeeklyExerciseConfig = (t: TranslateFn): ChartConfig => ({
-  minutes: { label: t('dashboard.chart.minutes'), color: '#10b981' },
-  target: { label: t('dashboard.chart.target'), color: '#f59e0b' },
-});
-
-const getProgressConfig = (t: TranslateFn): ChartConfig => ({
-  strength: { label: t('dashboard.chart.strength'), color: '#10b981' },
-  flexibility: { label: t('dashboard.chart.flexibility'), color: '#f59e0b' },
-  endurance: { label: t('dashboard.chart.endurance'), color: '#f43f5e' },
-  balance: { label: t('dashboard.chart.balance'), color: '#06b6d4' },
-});
-
-const getCalorieConfig = (t: TranslateFn): ChartConfig => ({
-  intake: { label: t('dashboard.chart.intake'), color: '#f59e0b' },
-  burned: { label: t('dashboard.chart.burned'), color: '#f43f5e' },
-  target: { label: t('dashboard.chart.target'), color: '#10b981' },
-});
-
-const getHeartRateConfig = (t: TranslateFn): ChartConfig => ({
-  bpm: { label: t('dashboard.chart.bpm'), color: '#f43f5e' },
-});
-
-const getMoodConfig = (t: TranslateFn): ChartConfig => ({
-  happy: { label: t('dashboard.chart.happy'), color: '#10b981' },
-  calm: { label: t('dashboard.chart.calm'), color: '#06b6d4' },
-  anxious: { label: t('dashboard.chart.anxious'), color: '#f59e0b' },
-  sad: { label: t('dashboard.chart.sad'), color: '#f43f5e' },
-});
-
-// ── Heart rate zone colouring ───────────────────────────────────────────────
-
-const zoneColors: Record<string, string> = {
-  Resting: '#10b981',
-  Light: '#06b6d4',
-  Moderate: '#f59e0b',
-  Vigorous: '#f43f5e',
-};
-
-const zoneLabelKeys: Record<string, TranslationKey> = {
-  Resting: 'dashboard.zone.resting',
-  Light: 'dashboard.zone.light',
-  Moderate: 'dashboard.zone.moderate',
-  Vigorous: 'dashboard.zone.vigorous',
-};
-
-// ── Helper: today's date string ─────────────────────────────────────────────
-
-function getFormattedDate(locale: Locale): string {
-  return new Date().toLocaleDateString(speechLocale(locale), {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
-}
-
-// ── Stat card data ───────────────────────────────────────────────────────────
-
-const totalMinutesThisWeek = weeklyExerciseData.reduce(
-  (sum, d) => sum + d.minutes,
-  0
-);
-const totalTargetThisWeek = weeklyExerciseData.reduce(
-  (sum, d) => sum + d.target,
-  0
-);
-const caloriesBurnedToday = weeklyExerciseData[0]?.calories ?? 0;
-const moodScore = 7;
-const formAccuracy = 87;
-
-// ── Sparkline data (last 7 days) ────────────────────────────────────────────
-
-const exerciseSparkline = [25, 35, 20, 45, 30, 40, 15];
-const calorieSparkline = [150, 210, 120, 270, 180, 240, 90];
-const moodSparkline = [6, 7, 5, 8, 7, 9, 7];
-const formSparkline = [82, 85, 88, 84, 90, 87, 89];
-
-const statCards = [
-  {
-    titleKey: 'dashboard.stats.exerciseMinutes.title' as TranslationKey,
-    value: `${totalMinutesThisWeek}`,
-    subtitleKey: 'dashboard.stats.exerciseMinutes.subtitle' as TranslationKey,
-    progress: Math.round((totalMinutesThisWeek / totalTargetThisWeek) * 100),
-    icon: Activity,
-    gradient: 'from-emerald-500 to-emerald-600',
-    bgGlow: 'bg-emerald-500/10',
-    iconColor: 'text-emerald-500',
-    sparkline: exerciseSparkline,
-    sparkColor: '#10b981',
-    comparison: { value: 12, direction: 'up' as const },
-    cardGradient: 'from-emerald-500/5 via-emerald-500/10 to-emerald-500/5',
-  },
-  {
-    titleKey: 'dashboard.stats.caloriesBurned.title' as TranslationKey,
-    value: `${caloriesBurnedToday}`,
-    subtitleKey: 'dashboard.stats.caloriesBurned.subtitle' as TranslationKey,
-    progress: Math.round((caloriesBurnedToday / 300) * 100),
-    icon: Flame,
-    gradient: 'from-amber-500 to-amber-600',
-    bgGlow: 'bg-amber-500/10',
-    iconColor: 'text-amber-500',
-    sparkline: calorieSparkline,
-    sparkColor: '#f59e0b',
-    comparison: { value: 8, direction: 'up' as const },
-    cardGradient: 'from-amber-500/5 via-amber-500/10 to-amber-500/5',
-  },
-  {
-    titleKey: 'dashboard.stats.moodScore.title' as TranslationKey,
-    value: `${moodScore}`,
-    subtitleKey: 'dashboard.stats.moodScore.subtitle' as TranslationKey,
-    progress: moodScore * 10,
-    icon: Heart,
-    gradient: 'from-rose-500 to-rose-600',
-    bgGlow: 'bg-rose-500/10',
-    iconColor: 'text-rose-500',
-    sparkline: moodSparkline,
-    sparkColor: '#f43f5e',
-    comparison: { value: 5, direction: 'down' as const },
-    cardGradient: 'from-rose-500/5 via-rose-500/10 to-rose-500/5',
-  },
-  {
-    titleKey: 'dashboard.stats.formAccuracy.title' as TranslationKey,
-    value: `${formAccuracy}%`,
-    subtitleKey: 'dashboard.stats.formAccuracy.subtitle' as TranslationKey,
-    progress: formAccuracy,
-    icon: Target,
-    gradient: 'from-cyan-500 to-cyan-600',
-    bgGlow: 'bg-cyan-500/10',
-    iconColor: 'text-cyan-500',
-    sparkline: formSparkline,
-    sparkColor: '#06b6d4',
-    comparison: { value: 3, direction: 'up' as const },
-    cardGradient: 'from-cyan-500/5 via-cyan-500/10 to-cyan-500/5',
-  },
-];
-
-// ── Weekly streak calendar data ─────────────────────────────────────────────
-
-type DayStatus = 'completed' | 'partial' | 'missed' | 'today';
-
-const streakCalendar: { week: number; days: DayStatus[] }[] = [
-  { week: 1, days: ['completed', 'completed', 'partial', 'completed', 'completed', 'missed', 'completed'] },
-  { week: 2, days: ['completed', 'partial', 'completed', 'missed', 'completed', 'completed', 'completed'] },
-  { week: 3, days: ['completed', 'completed', 'completed', 'completed', 'partial', 'completed', 'missed'] },
-  { week: 4, days: ['completed', 'completed', 'partial', 'completed', 'today', 'missed', 'missed'] },
-];
-
-const dayLabelKeys: TranslationKey[] = [
-  'common.day.mon',
-  'common.day.tue',
-  'common.day.wed',
-  'common.day.thu',
-  'common.day.fri',
-  'common.day.sat',
-  'common.day.sun',
-];
-
-// ── Quick action buttons ────────────────────────────────────────────────────
-
-const quickActions: { labelKey: TranslationKey; icon: typeof PlayCircle; color: string; bgColor: string; section: 'body-scan' | 'mood' | 'nutrition' | 'wearable' }[] = [
-  { labelKey: 'dashboard.quick.startExercise', icon: PlayCircle, color: 'text-emerald-600', bgColor: 'bg-emerald-500/10 hover:bg-emerald-500/20 border-emerald-500/20', section: 'body-scan' },
-  { labelKey: 'dashboard.quick.logMood', icon: SmilePlus, color: 'text-rose-600', bgColor: 'bg-rose-500/10 hover:bg-rose-500/20 border-rose-500/20', section: 'mood' },
-  { labelKey: 'dashboard.quick.scanFood', icon: ScanLine, color: 'text-orange-600', bgColor: 'bg-orange-500/10 hover:bg-orange-500/20 border-orange-500/20', section: 'nutrition' },
-  { labelKey: 'dashboard.quick.checkHeart', icon: HeartPulse, color: 'text-teal-600', bgColor: 'bg-teal-500/10 hover:bg-teal-500/20 border-teal-500/20', section: 'wearable' },
-];
-
-// ── All achievements (including unearned) ───────────────────────────────────
-// Achievement records are English demo data here; localize the data layer post-merge.
-
-const allAchievements = [
-  ...recentAchievements,
-  { id: '5', title: 'Heart Champion', description: 'Maintain resting HR below 70 for 30 days', icon: '❤️‍🔥', date: '' },
-  { id: '6', title: 'Flexibility Guru', description: 'Complete 20 flexibility sessions', icon: '🤸', date: '' },
-  { id: '7', title: 'Community Star', description: 'Post 10 helpful forum replies', icon: '⭐', date: '' },
-];
-
-// ── Today's plan data ───────────────────────────────────────────────────────
-
-interface PlanExercise {
-  id: string;
-  nameKey: TranslationKey;
-  time: string;
-  duration: string;
-  completed: boolean;
-}
-
-const todaysExercises: PlanExercise[] = [
-  { id: '1', nameKey: 'dashboard.exercise.seatedShoulderPress', time: '9:00 AM', duration: '10 min', completed: true },
-  { id: '2', nameKey: 'dashboard.exercise.resistedLegExtensions', time: '10:00 AM', duration: '15 min', completed: true },
-  { id: '3', nameKey: 'dashboard.exercise.wheelchairYogaFlow', time: '2:00 PM', duration: '20 min', completed: false },
-  { id: '4', nameKey: 'dashboard.exercise.upperBodyCircuit', time: '4:00 PM', duration: '30 min', completed: false },
-];
-
-const upcomingReminders: { id: string; textKey: TranslationKey; time: string }[] = [
-  { id: '1', textKey: 'dashboard.reminder.medication', time: '1:00 PM' },
-  { id: '2', textKey: 'dashboard.reminder.stretching', time: '6:00 PM' },
-  { id: '3', textKey: 'dashboard.reminder.dinner', time: '7:30 PM' },
-];
-
-// Long-form motivational copy stays English in this reference integration; it is
-// marketing/demo prose rather than UI chrome or coaching instructions.
-const motivationalQuotes = [
-  '"Every step forward is progress, no matter how small."',
-  '"Your body can stand almost anything. It\'s your mind you have to convince."',
-  '"Rehabilitation is not a race — it\'s a journey of resilience."',
-  '"The only bad workout is the one that didn\'t happen."',
-];
-
-// ── Custom tooltip for heart rate ────────────────────────────────────────────
-
-interface HeartRatePayloadEntry {
-  value: number;
-  payload: { zone: string; time: string; bpm: number };
-}
-
-function HeartRateTooltip({
-  active,
-  payload,
-}: {
-  active?: boolean;
-  payload?: HeartRatePayloadEntry[];
-}) {
-  const { t } = useI18n();
-  if (!active || !payload?.length) return null;
-  const data = payload[0].payload;
-  const zone = t(zoneLabelKeys[data.zone] ?? 'dashboard.zone.resting');
-  return (
-    <div className="rounded-lg border border-border/50 bg-background px-3 py-2 text-xs shadow-xl">
-      <p className="font-medium">{data.time}</p>
-      <p style={{ color: zoneColors[data.zone] ?? '#f43f5e' }}>
-        {t('dashboard.chart.tooltip', { bpm: data.bpm, zone })}
-      </p>
-    </div>
-  );
-}
-
-// ── Sparkline mini chart component ──────────────────────────────────────────
-
-function MiniSparkline({ data, color }: { data: number[]; color: string }) {
-  const max = Math.max(...data);
-  const min = Math.min(...data);
-  const range = max - min || 1;
-  const width = 80;
-  const height = 28;
-  const padding = 2;
-
-  const points = data.map((v, i) => {
-    const x = padding + (i / (data.length - 1)) * (width - padding * 2);
-    const y = height - padding - ((v - min) / range) * (height - padding * 2);
-    return `${x},${y}`;
-  });
-
-  return (
-    <svg width={width} height={height} className="opacity-60">
-      <polyline
-        points={points.join(' ')}
-        fill="none"
-        stroke={color}
-        strokeWidth={1.5}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-// ── Accessible chart wrapper: gives the recharts SVG an accessible name and
-// an sr-only caption (UX-14). ────────────────────────────────────────────────
 function ChartFigure({ summary, children }: { summary: string; children: ReactNode }) {
   return (
     <figure role="img" aria-label={summary} className="m-0">
@@ -380,1151 +98,1117 @@ function ChartFigure({ summary, children }: { summary: string; children: ReactNo
   );
 }
 
-// ── Health Score circular gauge ─────────────────────────────────────────────
+// ── Derived data (from real stored mock data where available) ───────────────
 
-function HealthScoreGauge({ score }: { score: number }) {
-  const { t } = useI18n();
-  const [animatedScore, setAnimatedScore] = useState(0);
-  const radius = 72;
-  const strokeWidth = 12;
-  const normalizedRadius = radius - strokeWidth / 2;
-  const circumference = normalizedRadius * 2 * Math.PI;
-  const strokeDashoffset = circumference - (animatedScore / 100) * circumference;
+const totalMinutesThisWeek = weeklyExerciseData.reduce((s, d) => s + d.minutes, 0);
+const totalTargetThisWeek = weeklyExerciseData.reduce((s, d) => s + d.target, 0);
+const targetPct = Math.round((totalMinutesThisWeek / totalTargetThisWeek) * 100);
 
-  useEffect(() => {
-    let frame: number;
-    const start = animatedScore;
-    const duration = 1200;
-    const startTime = performance.now();
+/** Consecutive active days counting back from the most recent day. */
+const dayStreak = (() => {
+  let streak = 0;
+  for (let i = weeklyExerciseData.length - 1; i >= 0; i--) {
+    if (weeklyExerciseData[i].minutes > 0) streak++;
+    else break;
+  }
+  return streak;
+})();
 
-    function animate(currentTime: number) {
-      const elapsed = currentTime - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setAnimatedScore(Math.round(start + (score - start) * eased));
-      if (progress < 1) {
-        frame = requestAnimationFrame(animate);
-      }
-    }
+const avgCompletion = Math.min(
+  150,
+  Math.round(
+    weeklyExerciseData.reduce((s, d) => s + Math.min(100, (d.minutes / d.target) * 100), 0) /
+      weeklyExerciseData.length,
+  ),
+);
 
-    frame = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(frame);
-  }, [score]);
+// Weekly movement chart: minutes (bars), completion % (line), pain flare markers
+const weeklyMovement = weeklyExerciseData.map((d, i) => ({
+  day: d.day,
+  minutes: d.minutes,
+  completion: Math.min(100, Math.round((d.minutes / d.target) * 100)),
+  pain: [2, 3, 5, 2, 3, 4, 2][i] ?? 2, // pain check-ins (sample history)
+}));
 
-  const getScoreColor = (s: number) => {
-    if (s >= 75) return '#10b981';
-    if (s >= 50) return '#f59e0b';
-    return '#ef4444';
-  };
-
-  const color = getScoreColor(animatedScore);
-
-  return (
-    <div className="flex flex-col items-center">
-      <div className="relative">
-        <svg height={radius * 2} width={radius * 2} className="-rotate-90 health-ring-glow w-32 h-32 sm:w-full sm:h-full">
-          {/* Outer decorative ring */}
-          <circle
-            stroke="currentColor"
-            className="text-muted/10"
-            fill="transparent"
-            r={normalizedRadius + 8}
-            cx={radius}
-            cy={radius}
-            strokeWidth={2}
-            strokeDasharray="4 6"
-          />
-          {/* Background circle */}
-          <circle
-            stroke="currentColor"
-            className="text-muted/30"
-            fill="transparent"
-            r={normalizedRadius}
-            cx={radius}
-            cy={radius}
-            strokeWidth={strokeWidth}
-          />
-          {/* Animated arc with gradient */}
-          <defs>
-            <linearGradient id="healthArcGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#10b981" />
-              <stop offset="50%" stopColor="#14b8a6" />
-              <stop offset="100%" stopColor="#06b6d4" />
-            </linearGradient>
-          </defs>
-          <circle
-            stroke={animatedScore >= 75 ? 'url(#healthArcGradient)' : color}
-            fill="transparent"
-            r={normalizedRadius}
-            cx={radius}
-            cy={radius}
-            strokeWidth={strokeWidth}
-            strokeDasharray={`${circumference} ${circumference}`}
-            strokeDashoffset={strokeDashoffset}
-            strokeLinecap="round"
-            style={{ transition: 'stroke 0.5s ease' }}
-          />
-        </svg>
-        {/* Center text */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-3xl sm:text-4xl font-bold tabular-nums counter-roll" style={{ color }}>
-            <span>{animatedScore}</span>
-          </span>
-          <span className="text-muted-foreground text-xs font-medium">/ 100</span>
-        </div>
-      </div>
-      <div className="mt-3 text-center">
-        <div className="flex items-center justify-center gap-2">
-          <h3 className="text-base sm:text-lg font-bold">{t('dashboard.healthScore.title')}</h3>
-          <TTSSpeaker
-            text={t('dashboard.healthScore.tts', { score: Math.min(score, 100) })}
-            size="sm"
-            voice="tongtong"
-          />
-        </div>
-        <p className="text-muted-foreground text-xs mt-0.5">
-          {t('dashboard.healthScore.description')}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-// ── Weekly Streak Calendar component ────────────────────────────────────────
-
-function StreakCalendar() {
-  const { t } = useI18n();
-  const statusColors: Record<DayStatus, string> = {
-    completed: 'bg-emerald-500',
-    partial: 'bg-amber-400',
-    missed: 'bg-muted-foreground/25',
-    today: 'bg-emerald-500',
-  };
-
-  return (
-    <div className="space-y-2">
-      <div className="grid grid-cols-8 gap-1 text-center">
-        <div />
-        {dayLabelKeys.map((dayKey, i) => (
-          <span key={i} className="text-muted-foreground text-[10px] font-medium">
-            {t(dayKey)}
-          </span>
-        ))}
-      </div>
-      {streakCalendar.map((week) => (
-        <div key={week.week} className="grid grid-cols-8 gap-1">
-          <span className="text-muted-foreground flex items-center justify-center text-[10px] font-medium">
-            {t('dashboard.streak.week', { week: week.week })}
-          </span>
-          {week.days.map((status, dayIdx) => (
-            <motion.div
-              key={`${week.week}-${dayIdx}`}
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: (week.week * 7 + dayIdx) * 0.015, duration: 0.2 }}
-              className={`aspect-square rounded-sm ${statusColors[status]} relative ${
-                status === 'today' ? 'animate-pulse' : ''
-              }`}
-            >
-              {status === 'today' && (
-                <span className="absolute inset-0 rounded-sm ring-2 ring-emerald-400 ring-offset-1 ring-offset-background" />
-              )}
-            </motion.div>
-          ))}
-        </div>
-      ))}
-      <div className="flex items-center gap-3 pt-1 text-[10px]">
-        <span className="flex items-center gap-1">
-          <span className="inline-block h-2.5 w-2.5 rounded-sm bg-emerald-500" />
-          {t('dashboard.streak.completed')}
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="inline-block h-2.5 w-2.5 rounded-sm bg-amber-400" />
-          {t('dashboard.streak.partial')}
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="inline-block h-2.5 w-2.5 rounded-sm bg-muted-foreground/25" />
-          {t('dashboard.streak.missed')}
-        </span>
-      </div>
-    </div>
-  );
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
-// Dashboard component
-// ══════════════════════════════════════════════════════════════════════════════
-
-// ── Daily Inspiration Card ────────────────────────────────────────────────────
-
-// Quotation/author demo content intentionally remains English; only the card chrome
-// is localized in this bounded reference integration.
-const inspirationQuotes = [
-  { text: 'The only way to do great work is to love what you do.', author: 'Steve Jobs' },
-  { text: 'Recovery is not a race. You are brave for showing up every day.', author: 'AdaptiFit Community' },
-  { text: 'Your limitation—it\'s only your imagination.', author: 'Unknown' },
-  { text: 'The body achieves what the mind believes.', author: 'Napoleon Hill' },
-  { text: 'Every champion was once a contender that refused to give up.', author: 'Rocky Balboa' },
-  { text: 'Strength does not come from physical capacity. It comes from an indomitable will.', author: 'Mahatma Gandhi' },
-  { text: 'The pain you feel today will be the strength you feel tomorrow.', author: 'Arnold Schwarzenegger' },
+// Recovery trend (7-day readiness, sample history until wearable data exists)
+const recoveryTrend = [
+  { day: 'Mon', readiness: 72 },
+  { day: 'Tue', readiness: 75 },
+  { day: 'Wed', readiness: 68 },
+  { day: 'Thu', readiness: 77 },
+  { day: 'Fri', readiness: 80 },
+  { day: 'Sat', readiness: 78 },
+  { day: 'Sun', readiness: 82 },
 ];
 
-function DailyInspirationCard() {
-  const { t } = useI18n();
-  // Use day of year to pick a quote that changes daily
-  const now = new Date();
-  const dayOfYear = Math.floor(
-    (now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / (1000 * 60 * 60 * 24)
-  );
-  const quote = inspirationQuotes[dayOfYear % inspirationQuotes.length];
+const balanceBars = [
+  { label: 'Physical energy', value: 68, tone: 'var(--primary)' },
+  { label: 'Mood', value: 72, tone: 'var(--secondary)' },
+  { label: 'Pain comfort', value: 81, tone: 'var(--success)' },
+  { label: 'Sleep', value: 64, tone: 'var(--accent)' },
+];
+
+const movementChartConfig: ChartConfig = {
+  minutes: { label: 'Active minutes', color: 'var(--primary)' },
+  completion: { label: 'Completion %', color: 'var(--secondary)' },
+  pain: { label: 'Pain (flare day)', color: 'var(--warning)' },
+};
+
+const recoveryChartConfig: ChartConfig = {
+  readiness: { label: 'Readiness', color: 'var(--primary)' },
+};
+
+// ── Readiness helpers ───────────────────────────────────────────────────────
+
+function readinessBand(score: number): { label: string; stroke: string; chip: string } {
+  if (score >= 80)
+    return { label: 'Strong day', stroke: 'var(--primary)', chip: 'bg-primary-soft text-primary' };
+  if (score >= 60)
+    return { label: 'Steady day', stroke: 'var(--secondary)', chip: 'bg-secondary-soft text-secondary' };
+  if (score >= 40)
+    return { label: 'Gentle day', stroke: 'var(--warning)', chip: 'bg-warning-soft text-warning' };
+  return { label: 'Recovery first', stroke: 'var(--warning)', chip: 'bg-warning-soft text-warning' };
+}
+
+function ReadinessRing({ score }: { score: number }) {
+  const reduced = useReduced();
+  const band = readinessBand(score);
+  const size = 148;
+  const strokeWidth = 10;
+  const r = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * r;
 
   return (
-    <motion.div variants={itemVariants}>
-      <Card className="relative overflow-hidden rounded-2xl border-0">
-        {/* Animated gradient background */}
-        <div className="absolute inset-0 inspiration-bg opacity-90" />
-        {/* Overlay for readability */}
-        <div className="absolute inset-0 bg-black/10" />
-        {/* Decorative elements */}
-        <div className="absolute top-0 right-0 w-32 h-32 border border-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
-        <div className="absolute bottom-0 left-0 w-24 h-24 border border-white/10 rounded-full translate-y-1/2 -translate-x-1/2" />
-        <div className="absolute top-1/2 right-1/4 w-2 h-2 bg-white/20 rounded-full" />
-        <div className="absolute bottom-1/3 left-1/3 w-1.5 h-1.5 bg-white/15 rounded-full" />
-
-        <CardContent className="relative z-10 p-6 sm:p-8">
-          <div className="flex items-start gap-4">
-            <div className="shrink-0 w-10 h-10 rounded-full bg-white/20 flex items-center justify-center mt-1">
-              <Quote className="w-5 h-5 text-white" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-white/90 text-xs font-semibold uppercase tracking-wider mb-2">
-                {t('dashboard.inspiration.daily')}
-              </p>
-              <p className="text-white text-lg sm:text-xl font-medium leading-relaxed mb-3">
-                &ldquo;{quote.text}&rdquo;
-              </p>
-              <p className="text-white/70 text-sm">
-                — {quote.author}
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </motion.div>
+    <div className="flex flex-col items-center gap-3">
+      <div
+        className="relative"
+        role="img"
+        aria-label={`Readiness ${score} out of 100 — ${band.label}`}
+      >
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90">
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={r}
+            fill="none"
+            stroke="var(--border)"
+            strokeOpacity={0.45}
+            strokeWidth={strokeWidth}
+          />
+          <motion.circle
+            cx={size / 2}
+            cy={size / 2}
+            r={r}
+            fill="none"
+            stroke={band.stroke}
+            strokeWidth={strokeWidth}
+            strokeLinecap="round"
+            strokeDasharray={circumference}
+            initial={reduced ? false : { strokeDashoffset: circumference }}
+            animate={{ strokeDashoffset: circumference * (1 - score / 100) }}
+            transition={
+              reduced
+                ? { duration: 0 }
+                : { duration: 0.7, ease: EASE.careOut, delay: 0.18 }
+            }
+          />
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <span className="font-mono text-[42px] leading-none font-semibold tabular-nums text-foreground">
+            {score}
+          </span>
+          <span className="mt-1 text-sm text-foreground-subtle">/100</span>
+        </div>
+      </div>
+      <div className="text-center">
+        <p className="text-sm font-semibold text-foreground">Readiness</p>
+        <span
+          className={cn(
+            'mt-1 inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold',
+            band.chip,
+          )}
+        >
+          {band.label}
+        </span>
+      </div>
+    </div>
   );
 }
+
+// ── Plan data ───────────────────────────────────────────────────────────────
+
+interface PlanRow {
+  id: string;
+  name: string;
+  meta: string;
+}
+
+const PLAN_STEADY: PlanRow[] = [
+  { id: '1', name: 'Seated Shoulder Press', meta: '2 sets • 8 reps • Low impact' },
+  { id: '2', name: 'Resisted Leg Extensions', meta: '2 sets • 10 reps • Low impact' },
+  { id: '3', name: 'Wheelchair Yoga Flow', meta: '1 set • 6 min • Mobility' },
+];
+
+const PLAN_GENTLE: PlanRow[] = [
+  { id: '1', name: 'Seated Shoulder Press', meta: '1 set • 6 reps • Seated' },
+  { id: '2', name: 'Gentle Neck Mobility', meta: '1 set • 5 min • Seated' },
+  { id: '3', name: 'Breathing Reset', meta: '1 set • 4 min • Restorative' },
+];
+
+// ── Dashboard ───────────────────────────────────────────────────────────────
 
 export default function Dashboard() {
   const setActiveSection = useAppStore((s) => s.setActiveSection);
   const profileSetupComplete = useAppStore((s) => s.profileSetupComplete);
+  const setProfileSetupOpen = useAppStore((s) => s.setProfileSetupOpen);
+  const userName = useAppStore((s) => s.userName);
   const { locale, t } = useI18n();
-  const weeklyExerciseConfig = getWeeklyExerciseConfig(t);
-  const progressConfig = getProgressConfig(t);
-  const calorieConfig = getCalorieConfig(t);
-  const heartRateConfig = getHeartRateConfig(t);
-  const moodConfig = getMoodConfig(t);
-  const [mounted, setMounted] = useState(false);
-  const [checkedExercises, setCheckedExercises] = useState<Set<string>>(
-    new Set(todaysExercises.filter((e) => e.completed).map((e) => e.id))
-  );
-  const [dailyQuote] = useState(
-    motivationalQuotes[new Date().getDay() % motivationalQuotes.length]
-  );
+  const addToast = useToastStore((s) => s.addToast);
+  const reduced = useReduced();
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect -- standard mounted pattern for hydration safety
+  const [mounted, setMounted] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [explainOpen, setExplainOpen] = useState(false);
+  const [gentle, setGentle] = useState(false);
+  const [briefPlaying, setBriefPlaying] = useState(false);
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- hydration-safe mount flag
   useEffect(() => { setMounted(true); }, []);
 
-  const toggleExercise = useCallback((id: string) => {
-    setCheckedExercises((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
+  // Simulated initial data load → skeleton state (dashboard.md §8.2)
+  useEffect(() => {
+    const id = setTimeout(() => setLoading(false), 700);
+    return () => clearTimeout(id);
   }, []);
 
-  // Health score calculation
-  const exerciseAdherence = Math.round((totalMinutesThisWeek / totalTargetThisWeek) * 100);
-  const moodPercent = moodScore * 10;
-  const nutritionBalance = 72; // simulated
-  const heartHealth = 85; // simulated
-  const healthScore = Math.round(
-    exerciseAdherence * 0.3 + moodPercent * 0.25 + nutritionBalance * 0.25 + heartHealth * 0.2
-  );
+  // Readiness score: same blended formula as the previous health score
+  const readiness = useMemo(() => {
+    const exerciseAdherence = Math.min(100, targetPct);
+    const moodPercent = 70;
+    const nutritionBalance = 72;
+    const heartHealth = 85;
+    return Math.min(
+      100,
+      Math.round(
+        exerciseAdherence * 0.3 + moodPercent * 0.25 + nutritionBalance * 0.25 + heartHealth * 0.2,
+      ),
+    );
+  }, []);
 
-  const completedGoals = todaysExercises.filter((e) => checkedExercises.has(e.id)).length;
-  const totalGoals = todaysExercises.length;
-  const goalsPercent = Math.round((completedGoals / totalGoals) * 100);
+  const band = readinessBand(readiness);
+  const dateStr = mounted
+    ? new Date().toLocaleDateString(speechLocale(locale), {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+      })
+    : '\u00A0';
+
+  const greeting = (() => {
+    if (!mounted) return '\u00A0';
+    const h = new Date().getHours();
+    const dayPart = h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+    return userName ? `${dayPart}, ${userName}.` : t('dashboard.welcomeBack');
+  })();
+
+  const planRows = gentle ? PLAN_GENTLE : PLAN_STEADY;
+
+  const handleGentlerPlan = () => {
+    setGentle(true);
+    addToast({
+      type: 'success',
+      title: 'Plan adjusted',
+      description: 'Plan adjusted to gentler intensity.',
+    });
+  };
+
+  const openAIChat = () => {
+    document
+      .querySelector<HTMLButtonElement>('button[aria-label="Open AdaptiFit AI Chat"]')
+      ?.click();
+  };
+
+  if (loading) {
+    return <DashboardSkeleton reduced={reduced} />;
+  }
 
   return (
-    <motion.div
-      className="mx-auto max-w-7xl space-y-6 p-4 md:p-6"
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-    >
-      {/* ── Welcome Header ───────────────────────────────────────────────── */}
-      <motion.div variants={itemVariants}>
-        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
-              {t('dashboard.welcomeBack')} <span className="text-emerald-500">Alex</span>
-            </h1>
-            <p className="text-muted-foreground flex items-center gap-1.5 text-sm">
-              <Calendar className="h-4 w-4" />
-              {mounted ? getFormattedDate(locale) : '\u00A0'}
-            </p>
-          </div>
-          <Badge
-            variant="secondary"
-            className="mt-2 w-fit gap-1.5 sm:mt-0"
-          >
-            <span className="status-dot status-dot-online mr-1" />
-            <Zap className="h-3.5 w-3.5" />
-            {t('dashboard.aiMonitoring')}
-          </Badge>
-        </div>
-      </motion.div>
+    <div className="w-full space-y-6">
+      {/* Screen-reader section announcement (dashboard.md §9) */}
+      <div aria-live="polite" className="sr-only">
+        {`Dashboard. Readiness ${readiness}. Your next action is Continue Today's Session.`}
+      </div>
 
-      {/* ── First-run honesty banner: this is sample data until the user sets
-          up a profile (UX-14). ─────────────────────────────────────────── */}
-      {!profileSetupComplete && (
-        <motion.div variants={itemVariants}>
-          <Card role="status" className="rounded-xl border-emerald-500/30 bg-emerald-500/5">
-            <CardContent className="flex flex-col items-start gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-sm">
-                <span className="font-semibold">This is sample data.</span>{' '}
-                Set up your profile to see your own plan.
+      {/* ── 1. Greeting / readiness panel ─────────────────────────────────── */}
+      <motion.div
+        {...(reduced
+          ? { initial: { opacity: 0 }, animate: { opacity: 1 }, transition: { duration: 0.14 } }
+          : {
+              initial: { opacity: 0, y: 24, filter: 'blur(8px)' },
+              animate: { opacity: 1, y: 0, filter: 'blur(0px)' },
+              transition: { duration: 0.42, ease: EASE.careOut },
+            })}
+      >
+        <GlassPanel radius="2xl" className="p-5 md:p-7">
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+            <div className="min-w-0">
+              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-primary">
+                <Calendar className="h-3.5 w-3.5" aria-hidden="true" />
+                {dateStr}
               </p>
-              <Button
-                size="sm"
-                className="bg-gradient-to-r from-emerald-700 to-teal-700 hover:from-emerald-600 hover:to-teal-600 text-white"
-                onClick={() => useAppStore.getState().setProfileSetupOpen(true)}
-              >
-                Set up my profile
-              </Button>
-            </CardContent>
-          </Card>
-        </motion.div>
-      )}
-
-      {/* ── Quick Action Buttons ─────────────────────────────────────────── */}
-      <motion.div variants={itemVariants}>
-        <div className="flex flex-wrap gap-3">
-          {quickActions.map((action) => (
-            <Button
-              key={action.labelKey}
-              variant="outline"
-              size="sm"
-              className={`gap-2 border ${action.bgColor} transition-all`}
-              onClick={() => setActiveSection(action.section)}
-            >
-              <action.icon className={`h-4 w-4 ${action.color}`} />
-              <span className={action.color}>{t(action.labelKey)}</span>
-            </Button>
-          ))}
-          <ProgressExport />
-        </div>
-      </motion.div>
-
-      {/* ── Daily Inspiration Card ─────────────────────────────────────────── */}
-      <DailyInspirationCard />
-
-      {/* ── Health Score + Streak Calendar ────────────────────────────────── */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <motion.div variants={itemVariants}>
-          <Card className="rounded-xl p-6 border-emerald-500/10 glass-card-depth">
-            <HealthScoreGauge score={Math.min(healthScore, 100)} />
-            <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
-              {[
-                { label: t('dashboard.metrics.exercise'), value: exerciseAdherence, color: 'text-emerald-500' },
-                { label: t('dashboard.metrics.mood'), value: moodPercent, color: 'text-rose-500' },
-                { label: t('dashboard.metrics.nutrition'), value: nutritionBalance, color: 'text-amber-500' },
-                { label: t('dashboard.metrics.heart'), value: heartHealth, color: 'text-cyan-500' },
-              ].map((m) => (
-                <div key={m.label}>
-                  <p className={`text-sm font-bold ${m.color}`}>{m.value}%</p>
-                  <p className="text-muted-foreground text-[10px]">{m.label}</p>
-                </div>
-              ))}
-            </div>
-          </Card>
-        </motion.div>
-
-        <motion.div variants={itemVariants}>
-          <Card className="rounded-xl">
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Calendar className="h-5 w-5 text-emerald-500" />
-                {t('dashboard.streak.title')}
-              </CardTitle>
-              <CardDescription>{t('dashboard.streak.description')}</CardDescription>
-            </CardHeader>
-            <CardContent className="p-4 pt-0">
-              <StreakCalendar />
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        <motion.div variants={itemVariants} className="md:col-span-2 lg:col-span-1">
-          <Card className="rounded-xl">
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Trophy className="h-5 w-5 text-amber-500" />
-                {t('dashboard.nextGoal.title')}
-              </CardTitle>
-              <CardDescription>{t('dashboard.nextGoal.description')}</CardDescription>
-            </CardHeader>
-            <CardContent className="p-4 pt-0">
-              <div className="flex items-center gap-3 rounded-lg border border-amber-500/20 bg-gradient-to-r from-amber-500/5 to-amber-500/10 p-4">
-                <span className="text-3xl">❤️‍🔥</span>
-                <div className="min-w-0 flex-1">
-                  <p className="font-semibold">{t('dashboard.nextGoal.heartChampion')}</p>
-                  <p className="text-muted-foreground text-xs">
-                    {t('dashboard.nextGoal.heartChampionDescription')}
-                  </p>
-                  <div className="mt-2">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-muted-foreground">{t('dashboard.nextGoal.daysProgress', { current: 22, total: 30 })}</span>
-                      <span className="font-medium text-amber-600">73%</span>
-                    </div>
-                    <Progress value={73} className="mt-1 h-2" />
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      </div>
-
-      {/* ── Quick Stats Row ──────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        {statCards.map((card) => (
-          <motion.div key={card.titleKey} variants={itemVariants}>
-            <Card className={`relative overflow-hidden rounded-xl bg-gradient-to-br ${card.cardGradient} py-0 dash-stat-glass skeleton-shimmer`}>
-              {/* Gradient accent bar */}
-              <div
-                className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${card.gradient}`}
-              />
-              <CardHeader className="flex flex-row items-center justify-between pb-2 pt-5">
-                <CardDescription className="text-sm font-medium">
-                  {t(card.titleKey)}
-                </CardDescription>
-                <div className={`rounded-lg p-2 ${card.bgGlow}`}>
-                  <card.icon className={`h-5 w-5 ${card.iconColor}`} />
-                </div>
-              </CardHeader>
-              <CardContent className="pb-4">
-                <div className="flex items-end justify-between">
-                  <div>
-                    <div className="flex items-end gap-2">
-                      <span className="text-3xl font-bold tracking-tight">
-                        {card.value}
-                      </span>
-                      <span className="text-muted-foreground mb-1 text-xs">
-                        {t(
-                          card.subtitleKey,
-                          card.subtitleKey === 'dashboard.stats.exerciseMinutes.subtitle'
-                            ? { target: totalTargetThisWeek }
-                            : undefined
-                        )}
-                      </span>
-                    </div>
-                    {/* Comparison text */}
-                    <div className="mt-1 flex items-center gap-1">
-                      {card.comparison.direction === 'up' ? (
-                        <ArrowUpRight className="h-3.5 w-3.5 text-emerald-500" />
-                      ) : (
-                        <ArrowDownRight className="h-3.5 w-3.5 text-rose-500" />
-                      )}
-                      <span
-                        className={`text-xs font-medium ${
-                          card.comparison.direction === 'up'
-                            ? 'text-emerald-500'
-                            : 'text-rose-500'
-                        }`}
-                      >
-                        {card.comparison.direction === 'up' ? '↑' : '↓'}{' '}
-                        {card.comparison.value}% {t('dashboard.stats.fromLastWeek')}
-                      </span>
-                    </div>
-                  </div>
-                  {/* Sparkline + pulsing dot */}
-                  <div className="flex flex-col items-end gap-1">
-                    <MiniSparkline data={card.sparkline} color={card.sparkColor} />
-                    <span className="flex items-center gap-1">
-                      <span className="relative flex h-2 w-2">
-                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                        <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
-                      </span>
-                      <span className="text-muted-foreground text-[9px]">{t('dashboard.stats.live')}</span>
-                    </span>
-                  </div>
-                </div>
-                <Progress value={card.progress} className="mt-3 h-2" />
-                <p className="text-muted-foreground mt-1 text-xs">
-                  {t('dashboard.stats.ofGoal', { percent: card.progress })}
-                </p>
-              </CardContent>
-            </Card>
-          </motion.div>
-        ))}
-      </div>
-
-      {/* ── Today's Plan ─────────────────────────────────────────────────── */}
-      <motion.div variants={itemVariants}>
-        <Card className="rounded-xl">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <CheckCircle2 className="h-5 w-5 text-emerald-500" />
-              {t('dashboard.todayPlan.title')}
-              <TTSSpeaker
-                text={t('dashboard.todayPlan.tts')}
-                size="sm"
-                voice="tongtong"
-              />
-            </CardTitle>
-            <CardDescription>{t('dashboard.todayPlan.description')}</CardDescription>
-          </CardHeader>
-          <CardContent className="p-4 pt-0">
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-              {/* Exercises */}
-              <div className="space-y-3 md:col-span-1">
-                <h4 className="text-sm font-semibold flex items-center gap-1.5">
-                  <Activity className="h-4 w-4 text-emerald-500" />
-                  {t('dashboard.todayPlan.exercises')}
-                </h4>
-                <div className="space-y-2">
-                  {todaysExercises.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed p-6 text-center">
-                      <Activity className="h-6 w-6 text-muted-foreground" />
-                      <p className="text-sm font-medium">No plan yet</p>
-                      <Button size="sm" onClick={() => setActiveSection('adaptive-workout')}>
-                        Build my plan
-                      </Button>
-                    </div>
-                  ) : (
-                  todaysExercises.map((exercise) => (
-                    <div
-                      key={exercise.id}
-                      className="flex items-center gap-2 rounded-lg border p-2.5 transition-colors hover:bg-muted/50"
-                    >
-                      <Checkbox
-                        checked={checkedExercises.has(exercise.id)}
-                        onCheckedChange={() => toggleExercise(exercise.id)}
-                      />
-                      <div className="min-w-0 flex-1">
-                        <p className={`text-sm font-medium leading-tight ${
-                          checkedExercises.has(exercise.id)
-                            ? 'text-muted-foreground line-through'
-                            : ''
-                        }`}>
-                          {t(exercise.nameKey)}
-                        </p>
-                        <p className="text-muted-foreground text-xs">
-                          {exercise.time} · {exercise.duration}
-                        </p>
-                      </div>
-                      {checkedExercises.has(exercise.id) ? (
-                        <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                      ) : (
-                        <Circle className="text-muted-foreground/40 h-4 w-4 shrink-0" />
-                      )}
-                    </div>
-                  )))}
-                </div>
-              </div>
-
-              {/* Reminders */}
-              <div className="space-y-3 md:col-span-1">
-                <h4 className="text-sm font-semibold flex items-center gap-1.5">
-                  <Bell className="h-4 w-4 text-amber-500" />
-                  {t('dashboard.todayPlan.reminders')}
-                </h4>
-                <div className="space-y-2">
-                  {upcomingReminders.map((reminder) => (
-                    <div
-                      key={reminder.id}
-                      className="flex items-center gap-2 rounded-lg border p-2.5"
-                    >
-                      <Bell className="text-amber-500 h-3.5 w-3.5 shrink-0" />
-                      <span className="text-sm flex-1">{t(reminder.textKey)}</span>
-                      <Badge variant="outline" className="text-xs shrink-0">
-                        {reminder.time}
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Daily Goals + Quote */}
-              <div className="space-y-4 md:col-span-1">
-                <div>
-                  <h4 className="text-sm font-semibold flex items-center gap-1.5 mb-3">
-                    <Target className="h-4 w-4 text-cyan-500" />
-                    {t('dashboard.todayPlan.dailyGoals')}
-                  </h4>
-                  <div className="space-y-2">
-                    <div>
-                      <div className="flex items-center justify-between text-xs mb-1">
-                        <span>{t('dashboard.todayPlan.exercises')}</span>
-                        <span className="font-medium">{completedGoals}/{totalGoals}</span>
-                      </div>
-                      <Progress value={goalsPercent} className="h-2" />
-                    </div>
-                    <div>
-                      <div className="flex items-center justify-between text-xs mb-1">
-                        <span>{t('dashboard.todayPlan.calories')}</span>
-                        <span className="font-medium">150/300 kcal</span>
-                      </div>
-                      <Progress value={50} className="h-2" />
-                    </div>
-                    <div>
-                      <div className="flex items-center justify-between text-xs mb-1">
-                        <span>{t('dashboard.todayPlan.waterIntake')}</span>
-                        <span className="font-medium">5/8 glasses</span>
-                      </div>
-                      <Progress value={62} className="h-2" />
-                    </div>
-                  </div>
-                </div>
-                {/* Motivational Quote */}
-                <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3">
-                  <Quote className="h-4 w-4 text-emerald-500/60 mb-1" />
-                  <p className="text-muted-foreground text-xs italic leading-relaxed">
-                    {dailyQuote}
-                  </p>
-                </div>
+              <h1 className="mt-3 font-display text-3xl font-bold text-foreground sm:text-4xl">
+                {greeting}
+              </h1>
+              <p className="mt-2 max-w-xl text-base text-foreground-muted sm:text-lg">
+                {gentle || readiness < 60
+                  ? 'Your plan is adjusted for a gentler day.'
+                  : 'Your plan is calibrated for steady recovery today.'}
+              </p>
+              <div className="mt-5 flex flex-wrap items-center gap-3">
+                <Button
+                  className="btn-aurora-primary h-12 rounded-[14px] px-5 text-sm font-semibold"
+                  onClick={() => setActiveSection('adaptive-workout')}
+                >
+                  <Play className="mr-2 h-4 w-4" aria-hidden="true" />
+                  Continue Today&apos;s Session
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-12 rounded-[14px] px-5 text-sm font-semibold"
+                  onClick={() => setActiveSection('live-coach')}
+                >
+                  <Video className="mr-2 h-4 w-4" aria-hidden="true" />
+                  Open Live Coach
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="h-11 gap-2 text-sm text-foreground-muted hover:text-foreground"
+                  onClick={() => setExplainOpen(true)}
+                >
+                  <Info className="h-4 w-4" aria-hidden="true" />
+                  How is this calculated?
+                </Button>
               </div>
             </div>
-          </CardContent>
-        </Card>
-      </motion.div>
 
-      {/* ── Achievements (Horizontal Scroll) ──────────────────────────────── */}
-      <motion.div variants={itemVariants}>
-        <Card className="rounded-xl">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Award className="h-5 w-5 text-amber-500" />
-              {t('dashboard.achievements.title')}
-            </CardTitle>
-            <CardDescription>{t('dashboard.achievements.description')}</CardDescription>
-          </CardHeader>
-          <CardContent className="p-4 pt-0">
-            <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-thin">
-              {allAchievements.map((ach, idx) => {
-                const isEarned = ach.date !== '';
-                return (
-                  <motion.div
-                    key={ach.id}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: idx * 0.08 }}
-                    className={`relative min-w-[180px] shrink-0 rounded-xl border-2 p-4 transition-all ${
-                      isEarned
-                        ? 'border-amber-500/30 bg-gradient-to-br from-amber-500/5 via-amber-500/10 to-amber-500/5 hover:shadow-[0_0_20px_rgba(245,158,11,0.15)]'
-                        : 'border-muted-foreground/10 bg-muted/30 opacity-60'
-                    }`}
-                  >
-                    {/* Gradient glow border effect for earned */}
-                    {isEarned && (
-                      <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-amber-500/20 via-transparent to-amber-500/20 opacity-0 hover:opacity-100 transition-opacity" />
+            <div className="flex flex-col items-center gap-5 sm:flex-row lg:flex-col xl:flex-row">
+              <ReadinessRing score={readiness} />
+              <div className="flex flex-row gap-2 sm:flex-col">
+                {[
+                  { icon: Moon, label: 'Sleep', value: '7h 20m', tone: 'bg-secondary-soft text-secondary' },
+                  { icon: HeartPulse, label: 'Pain', value: '3/10', tone: 'bg-warning-soft text-warning' },
+                  { icon: Zap, label: 'Energy', value: 'Steady', tone: 'bg-primary-soft text-primary' },
+                ].map((chip, i) => (
+                  <motion.span
+                    key={chip.label}
+                    initial={reduced ? { opacity: 0 } : { opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={
+                      reduced
+                        ? { duration: 0.14 }
+                        : { duration: 0.24, ease: EASE.careOut, delay: 0.18 + i * 0.05 }
+                    }
+                    className={cn(
+                      'inline-flex min-h-11 items-center gap-2 rounded-full px-3.5 py-2 text-sm font-medium',
+                      chip.tone,
                     )}
-                    <div className="relative text-center">
-                      <span className="text-3xl">{ach.icon}</span>
-                      <p className="mt-2 text-sm font-semibold">{ach.title}</p>
-                      <p className="text-muted-foreground mt-1 text-[11px] leading-tight">
-                        {ach.description}
-                      </p>
-                      {isEarned && (
-                        <Badge variant="secondary" className="mt-2 text-[10px]">
-                          {ach.date}
-                        </Badge>
-                      )}
-                      {!isEarned && (
-                        <Badge variant="outline" className="mt-2 text-[10px]">
-                          {t('dashboard.achievements.inProgress')}
-                        </Badge>
-                      )}
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
-
-      {/* ── Charts Section ───────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Chart overflow wrapper for mobile */}
-        {/* Weekly Exercise Chart */}
-        <motion.div variants={itemVariants}>
-          <Card className="rounded-xl chart-card-hover">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Activity className="h-5 w-5 text-emerald-500" />
-                {t('dashboard.charts.weeklyExercise.title')}
-              </CardTitle>
-              <CardDescription>
-                {t('dashboard.charts.weeklyExercise.description')}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-4 pt-0 overflow-x-auto">
-              <ChartFigure summary={`${t('dashboard.charts.weeklyExercise.title')}. ${t('dashboard.charts.weeklyExercise.description')}`}>
-              <ChartContainer
-                config={weeklyExerciseConfig}
-                className="h-[280px] w-full min-w-[300px]"
-              >
-                <BarChart
-                  data={weeklyExerciseData}
-                  margin={{ top: 5, right: 10, left: -10, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis
-                    dataKey="day"
-                    tickLine={false}
-                    axisLine={false}
-                    fontSize={12}
-                  />
-                  <YAxis
-                    tickLine={false}
-                    axisLine={false}
-                    fontSize={12}
-                    tickFormatter={(v: number) => `${v}m`}
-                  />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <ChartLegend content={<ChartLegendContent />} />
-                  <Bar
-                    dataKey="minutes"
-                    fill="var(--color-minutes)"
-                    radius={[4, 4, 0, 0]}
-                    maxBarSize={32}
-                  />
-                  <Bar
-                    dataKey="target"
-                    fill="var(--color-target)"
-                    radius={[4, 4, 0, 0]}
-                    maxBarSize={32}
-                    opacity={0.5}
-                  />
-                </BarChart>
-              </ChartContainer>
-              </ChartFigure>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Progress Over Time */}
-        <motion.div variants={itemVariants}>
-          <Card className="rounded-xl chart-card-hover">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <TrendingUp className="h-5 w-5 text-cyan-500" />
-                {t('dashboard.charts.progress.title')}
-              </CardTitle>
-              <CardDescription>
-                {t('dashboard.charts.progress.description')}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-4 pt-0 overflow-x-auto">
-              <ChartFigure summary={`${t('dashboard.charts.progress.title')}. ${t('dashboard.charts.progress.description')}`}>
-              <ChartContainer
-                config={progressConfig}
-                className="h-[280px] w-full min-w-[300px]"
-              >
-                <AreaChart
-                  data={progressData}
-                  margin={{ top: 5, right: 10, left: -10, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis
-                    dataKey="month"
-                    tickLine={false}
-                    axisLine={false}
-                    fontSize={12}
-                  />
-                  <YAxis
-                    tickLine={false}
-                    axisLine={false}
-                    fontSize={12}
-                    tickFormatter={(v: number) => `${v}%`}
-                  />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <ChartLegend content={<ChartLegendContent />} />
-                  <Area
-                    type="monotone"
-                    dataKey="strength"
-                    stackId="1"
-                    stroke="var(--color-strength)"
-                    fill="var(--color-strength)"
-                    fillOpacity={0.15}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="flexibility"
-                    stackId="2"
-                    stroke="var(--color-flexibility)"
-                    fill="var(--color-flexibility)"
-                    fillOpacity={0.15}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="endurance"
-                    stackId="3"
-                    stroke="var(--color-endurance)"
-                    fill="var(--color-endurance)"
-                    fillOpacity={0.15}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="balance"
-                    stackId="4"
-                    stroke="var(--color-balance)"
-                    fill="var(--color-balance)"
-                    fillOpacity={0.15}
-                  />
-                </AreaChart>
-              </ChartContainer>
-              </ChartFigure>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Calorie Tracking */}
-        <motion.div variants={itemVariants}>
-          <Card className="rounded-xl chart-card-hover">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Flame className="h-5 w-5 text-amber-500" />
-                {t('dashboard.charts.calories.title')}
-              </CardTitle>
-              <CardDescription>
-                {t('dashboard.charts.calories.description')}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-4 pt-0 overflow-x-auto">
-              <ChartFigure summary={`${t('dashboard.charts.calories.title')}. ${t('dashboard.charts.calories.description')}`}>
-              <ChartContainer
-                config={calorieConfig}
-                className="h-[280px] w-full min-w-[300px]"
-              >
-                <ComposedChart
-                  data={calorieTrackingData}
-                  margin={{ top: 5, right: 10, left: -10, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis
-                    dataKey="day"
-                    tickLine={false}
-                    axisLine={false}
-                    fontSize={12}
-                  />
-                  <YAxis
-                    tickLine={false}
-                    axisLine={false}
-                    fontSize={12}
-                    tickFormatter={(v: number) => `${v}`}
-                  />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <ChartLegend content={<ChartLegendContent />} />
-                  <Bar
-                    dataKey="intake"
-                    fill="var(--color-intake)"
-                    radius={[4, 4, 0, 0]}
-                    maxBarSize={24}
-                  />
-                  <Bar
-                    dataKey="burned"
-                    fill="var(--color-burned)"
-                    radius={[4, 4, 0, 0]}
-                    maxBarSize={24}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="target"
-                    stroke="var(--color-target)"
-                    strokeWidth={2}
-                    dot={false}
-                    strokeDasharray="5 5"
-                  />
-                </ComposedChart>
-              </ChartContainer>
-              </ChartFigure>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Heart Rate Timeline */}
-        <motion.div variants={itemVariants}>
-          <Card className="rounded-xl chart-card-hover">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Heart className="h-5 w-5 text-rose-500" />
-                {t('dashboard.charts.heartRate.title')}
-              </CardTitle>
-              <CardDescription>
-                {t('dashboard.charts.heartRate.description')}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-4 pt-0 overflow-x-auto">
-              <ChartFigure summary={`${t('dashboard.charts.heartRate.title')}. ${t('dashboard.charts.heartRate.description')}`}>
-              <ChartContainer
-                config={heartRateConfig}
-                className="h-[280px] w-full min-w-[300px]"
-              >
-                <LineChart
-                  data={heartRateData}
-                  margin={{ top: 5, right: 10, left: -10, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis
-                    dataKey="time"
-                    tickLine={false}
-                    axisLine={false}
-                    fontSize={12}
-                  />
-                  <YAxis
-                    tickLine={false}
-                    axisLine={false}
-                    fontSize={12}
-                    domain={[50, 170]}
-                    tickFormatter={(v: number) => `${v}`}
-                  />
-                  <Tooltip content={<HeartRateTooltip />} />
-                  {/* Zone reference lines */}
-                  <ReferenceLine
-                    y={60}
-                    stroke="#10b981"
-                    strokeDasharray="3 3"
-                    strokeWidth={1}
-                    label={false}
-                  />
-                  <ReferenceLine
-                    y={100}
-                    stroke="#06b6d4"
-                    strokeDasharray="3 3"
-                    strokeWidth={1}
-                    label={false}
-                  />
-                  <ReferenceLine
-                    y={130}
-                    stroke="#f59e0b"
-                    strokeDasharray="3 3"
-                    strokeWidth={1}
-                    label={false}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="bpm"
-                    stroke="var(--color-bpm)"
-                    strokeWidth={2.5}
-                    dot={({ cx, cy, payload }) => {
-                      const color =
-                        zoneColors[payload.zone] ?? '#f43f5e';
-                      return (
-                        <circle
-                          key={`dot-${payload.time}`}
-                          cx={cx}
-                          cy={cy}
-                          r={4}
-                          fill={color}
-                          stroke="#fff"
-                          strokeWidth={2}
-                        />
-                      );
-                    }}
-                    activeDot={{ r: 6 }}
-                  />
-                </LineChart>
-              </ChartContainer>
-              </ChartFigure>
-              {/* Zone legend */}
-              <div className="mt-2 flex flex-wrap items-center justify-center gap-3 text-xs">
-                {Object.entries(zoneColors).map(([zone, color]) => (
-                  <span key={zone} className="flex items-center gap-1">
-                    <span
-                      className="inline-block h-2.5 w-2.5 rounded-full"
-                      style={{ backgroundColor: color }}
-                    />
-                    {t(zoneLabelKeys[zone] ?? 'dashboard.zone.resting')}
-                  </span>
+                  >
+                    <chip.icon className="h-4 w-4" aria-hidden="true" />
+                    <span className="text-xs uppercase tracking-wide opacity-80">{chip.label}</span>
+                    <span className="font-semibold">{chip.value}</span>
+                  </motion.span>
                 ))}
               </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      </div>
+            </div>
+          </div>
+        </GlassPanel>
+      </motion.div>
 
-      {/* ── Bottom Section: Mood Trend ───────────────────────────────────── */}
-      <motion.div variants={itemVariants}>
-        <Card className="rounded-xl chart-card-hover">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Heart className="h-5 w-5 text-rose-500" />
-              {t('dashboard.charts.moodTrend.title')}
-            </CardTitle>
-            <CardDescription>
-              {t('dashboard.charts.moodTrend.description')}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-4 pt-0 overflow-x-auto">
-            <Tabs defaultValue="chart">
-              <TabsList className="mb-4">
-                <TabsTrigger value="chart">{t('common.chart')}</TabsTrigger>
-                <TabsTrigger value="details">{t('common.details')}</TabsTrigger>
-              </TabsList>
-              <TabsContent value="chart">
-                <ChartFigure summary={`${t('dashboard.charts.moodTrend.title')}. ${t('dashboard.charts.moodTrend.description')}`}>
-                <ChartContainer
-                  config={moodConfig}
-                  className="h-[250px] w-full min-w-[300px]"
-                >
-                  <BarChart
-                    data={monthlyMoodData}
-                    margin={{ top: 5, right: 10, left: -10, bottom: 5 }}
-                  >
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      vertical={false}
-                    />
-                    <XAxis
-                      dataKey="week"
-                      tickLine={false}
-                      axisLine={false}
-                      fontSize={12}
-                    />
-                    <YAxis
-                      tickLine={false}
-                      axisLine={false}
-                      fontSize={12}
-                    />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <ChartLegend content={<ChartLegendContent />} />
-                    <Bar
-                      dataKey="happy"
-                      stackId="mood"
-                      fill="var(--color-happy)"
-                      radius={[0, 0, 0, 0]}
-                      maxBarSize={40}
-                    />
-                    <Bar
-                      dataKey="calm"
-                      stackId="mood"
-                      fill="var(--color-calm)"
-                      radius={[0, 0, 0, 0]}
-                      maxBarSize={40}
-                    />
-                    <Bar
-                      dataKey="anxious"
-                      stackId="mood"
-                      fill="var(--color-anxious)"
-                      radius={[0, 0, 0, 0]}
-                      maxBarSize={40}
-                    />
-                    <Bar
-                      dataKey="sad"
-                      stackId="mood"
-                      fill="var(--color-sad)"
-                      radius={[4, 4, 0, 0]}
-                      maxBarSize={40}
-                    />
-                  </BarChart>
-                </ChartContainer>
-              </ChartFigure>
-              </TabsContent>
-              <TabsContent value="details">
-                <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                  {monthlyMoodData.map((week) => (
-                    <div
-                      key={week.week}
-                      className="rounded-lg border p-3 text-center"
+      {/* ── 2. KPI metric row ─────────────────────────────────────────────── */}
+      <motion.div
+        variants={reduced ? undefined : staggerContainer}
+        initial="hidden"
+        whileInView="show"
+        viewport={{ once: true, amount: 0.2 }}
+        className="grid grid-cols-1 gap-4 min-[420px]:grid-cols-2 lg:gap-6 xl:grid-cols-4"
+      >
+        {[
+          {
+            icon: <Flame className="h-5 w-5" aria-hidden="true" />,
+            label: 'Day streak',
+            value: dayStreak,
+            delta: weeklyExerciseData[weeklyExerciseData.length - 1].minutes > 0 ? '+1 today' : 'Keep it going',
+            deltaTone: 'accent' as const,
+            tone: 'accent' as const,
+            sr: `${dayStreak} day streak`,
+            section: 'adaptive-workout' as const,
+          },
+          {
+            icon: <Timer className="h-5 w-5" aria-hidden="true" />,
+            label: 'Active minutes',
+            value: totalMinutesThisWeek,
+            delta: `${targetPct}% of weekly target`,
+            deltaTone: 'primary' as const,
+            tone: 'primary' as const,
+            sr: `${totalMinutesThisWeek} active minutes this week, ${targetPct} percent of target`,
+            section: 'adaptive-workout' as const,
+          },
+          {
+            icon: <CircleCheck className="h-5 w-5" aria-hidden="true" />,
+            label: 'Plan completion',
+            value: `${avgCompletion}%`,
+            delta: avgCompletion >= 80 ? 'On target' : avgCompletion >= 50 ? 'Needs review' : 'Adjust plan',
+            deltaTone: 'secondary' as const,
+            tone: 'secondary' as const,
+            sr: `Plan completion ${avgCompletion} percent`,
+            section: 'adaptive-workout' as const,
+          },
+          {
+            icon: <HeartPulse className="h-5 w-5" aria-hidden="true" />,
+            label: 'Recovery signals',
+            value: 'Stable',
+            delta: 'Pain easing, mood steady',
+            deltaTone: 'success' as const,
+            tone: 'success' as const,
+            sr: 'Recovery signals stable — pain easing and mood steady',
+            section: 'body-scan' as const,
+          },
+        ].map((kpi) => (
+          <motion.div key={kpi.label} variants={reduced ? reducedItem : staggerItem}>
+            <button
+              type="button"
+              onClick={() => setActiveSection(kpi.section)}
+              aria-label={kpi.sr}
+              className="block w-full rounded-[24px] text-left"
+            >
+              <StatTile
+                className="min-h-[148px] transition-[border-color,transform] duration-300 hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--primary)_45%,transparent)]"
+                icon={kpi.icon}
+                label={kpi.label}
+                value={kpi.value}
+                delta={kpi.delta}
+                deltaTone={kpi.deltaTone}
+                tone={kpi.tone}
+              />
+            </button>
+          </motion.div>
+        ))}
+      </motion.div>
+
+      {/* ── 3. Main grid: main column (8) + right rail (4) ────────────────── */}
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-12">
+        <div className="space-y-6 xl:col-span-8">
+          {/* Today's Adaptive Plan / first-use personalize card */}
+          <motion.div {...(reduced ? { variants: undefined, ...fadeOnly() } : { ...entrance() })}>
+            {profileSetupComplete ? (
+              <GlassPanel className="p-5 md:p-6">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-primary">
+                      Today&apos;s plan
+                    </p>
+                    <h2 className="mt-2 font-display text-xl font-semibold text-foreground sm:text-2xl">
+                      Adaptive Strength &amp; Mobility
+                    </h2>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={cn(
+                        'inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold',
+                        gentle ? 'bg-info-soft text-info' : band.chip,
+                      )}
                     >
-                      <p className="text-sm font-semibold">{week.week}</p>
-                      <div className="mt-2 flex h-6 overflow-hidden rounded-full">
-                        <div
-                          className="bg-emerald-500"
-                          style={{
-                            width: `${(week.happy / (week.happy + week.calm + week.anxious + week.sad)) * 100}%`,
-                          }}
-                        />
-                        <div
-                          className="bg-cyan-500"
-                          style={{
-                            width: `${(week.calm / (week.happy + week.calm + week.anxious + week.sad)) * 100}%`,
-                          }}
-                        />
-                        <div
-                          className="bg-amber-500"
-                          style={{
-                            width: `${(week.anxious / (week.happy + week.calm + week.anxious + week.sad)) * 100}%`,
-                          }}
-                        />
-                        <div
-                          className="bg-rose-500"
-                          style={{
-                            width: `${(week.sad / (week.happy + week.calm + week.anxious + week.sad)) * 100}%`,
-                          }}
+                      <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+                      {gentle ? 'Gentle' : band.label.replace(' day', '')}
+                    </span>
+                    <Button variant="ghost" size="sm" className="h-11 text-sm text-foreground-muted">
+                      Edit plan
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Plan summary row */}
+                <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm text-foreground-muted">
+                  <span className="inline-flex items-center gap-2">
+                    <Clock className="h-5 w-5 text-primary" aria-hidden="true" />
+                    {gentle ? '12 min' : '18 min'}
+                  </span>
+                  <span className="inline-flex items-center gap-2">
+                    <ListChecks className="h-5 w-5 text-primary" aria-hidden="true" />
+                    {gentle ? '3 exercises' : '6 exercises'}
+                  </span>
+                  <span className="inline-flex items-center gap-2">
+                    <Armchair className="h-5 w-5 text-primary" aria-hidden="true" />
+                    Chair support included
+                  </span>
+                </div>
+
+                {/* Exercise rows (crossfade on plan change) */}
+                <AnimatePresence mode="wait">
+                  <motion.ul
+                    key={gentle ? 'gentle' : 'steady'}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1, transition: { duration: 0.24 } }}
+                    exit={{ opacity: 0, transition: { duration: 0.18 } }}
+                    className="mt-4 space-y-2"
+                  >
+                    {planRows.map((row, i) => (
+                      <motion.li
+                        key={row.id}
+                        initial={reduced ? { opacity: 0 } : { opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={
+                          reduced
+                            ? { duration: 0.14 }
+                            : { duration: 0.3, ease: EASE.careOut, delay: i * 0.06 }
+                        }
+                      >
+                        <button
+                          type="button"
+                          onClick={() => setActiveSection('adaptive-workout')}
+                          className="flex min-h-16 w-full items-center gap-3 rounded-[18px] px-3 py-2 text-left transition-colors hover:bg-surface-raised"
+                        >
+                          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-primary-soft font-mono text-sm font-semibold text-primary">
+                            {i + 1}
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-[15px] font-semibold text-foreground">
+                              {row.name}
+                            </span>
+                            <span className="block text-sm text-foreground-subtle">{row.meta}</span>
+                          </span>
+                          <ChevronRight className="h-5 w-5 shrink-0 text-foreground-subtle" aria-hidden="true" />
+                        </button>
+                      </motion.li>
+                    ))}
+                  </motion.ul>
+                </AnimatePresence>
+
+                {/* Adaptive note */}
+                <div className="mt-4 flex items-start gap-2.5 rounded-[14px] bg-info-soft p-3.5 text-sm text-info">
+                  <Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                  <p>
+                    Adapted for you: lower-impact tempo, seated alternatives, and longer rest
+                    periods.
+                  </p>
+                </div>
+
+                {/* Footer actions */}
+                <div className="mt-5 flex flex-wrap items-center gap-3">
+                  <Button
+                    className="btn-aurora-primary h-12 rounded-[14px] px-5 text-sm font-semibold"
+                    onClick={() => setActiveSection('adaptive-workout')}
+                  >
+                    <Play className="mr-2 h-4 w-4" aria-hidden="true" />
+                    Start Workout
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-12 rounded-[14px] px-5 text-sm font-semibold"
+                    onClick={() => setActiveSection('exercises')}
+                  >
+                    Swap Exercises
+                  </Button>
+                  {!gentle && (
+                    <Button
+                      variant="ghost"
+                      className="h-11 text-sm text-foreground-muted hover:text-foreground"
+                      onClick={handleGentlerPlan}
+                    >
+                      I need a gentler plan
+                    </Button>
+                  )}
+                </div>
+                <div aria-live="polite" className="sr-only">
+                  {gentle ? 'Plan adjusted to gentler intensity.' : ''}
+                </div>
+              </GlassPanel>
+            ) : (
+              /* First-use: personalize (dashboard.md §8.1) */
+              <GlassPanel className="p-5 md:p-6">
+                <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+                  <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary">
+                    <UserRound className="h-7 w-7" aria-hidden="true" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <h2 className="font-display text-xl font-semibold text-foreground">
+                      Personalize your plan
+                    </h2>
+                    <p className="mt-1.5 text-sm leading-relaxed text-foreground-muted">
+                      Tell AdaptiFit about your body, goals, and access needs so every
+                      recommendation starts in the right place.{' '}
+                      <span className="font-medium text-foreground">
+                        Until then, this dashboard shows sample data.
+                      </span>
+                    </p>
+                    <div className="mt-4 flex flex-wrap gap-3">
+                      <Button
+                        className="btn-aurora-primary h-12 rounded-[14px] px-5 text-sm font-semibold"
+                        onClick={() => setProfileSetupOpen(true)}
+                      >
+                        Complete profile
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="h-12 rounded-[14px] px-5 text-sm font-semibold"
+                        onClick={() => useAppStore.getState().setProfileSetupDismissed(true)}
+                      >
+                        Explore with defaults
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </GlassPanel>
+            )}
+          </motion.div>
+
+          {/* Weekly movement chart */}
+          <motion.div {...(reduced ? fadeOnly() : entrance())}>
+            <GlassPanel className="p-5 md:p-6">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h2 className="font-display text-xl font-semibold text-foreground">
+                    Weekly movement
+                  </h2>
+                  <p className="mt-1 text-sm text-foreground-muted">
+                    Minutes, completion, and recovery in one view.
+                  </p>
+                </div>
+              </div>
+
+              {weeklyMovement.length === 0 ? (
+                <div className="mt-6 flex flex-col items-center gap-3 py-10 text-center">
+                  <span className="flex h-[72px] w-[72px] items-center justify-center rounded-full bg-surface-raised text-foreground-subtle">
+                    <ChartNoAxesColumn className="h-7 w-7" aria-hidden="true" />
+                  </span>
+                  <h3 className="text-xl font-semibold text-foreground">No movement data yet</h3>
+                  <p className="max-w-sm text-sm text-foreground-muted">
+                    Complete one adaptive workout and your weekly rhythm will appear here.
+                  </p>
+                  <Button
+                    className="btn-aurora-primary mt-1 h-12 rounded-[14px] px-5 text-sm font-semibold"
+                    onClick={() => setActiveSection('adaptive-workout')}
+                  >
+                    Start first workout
+                  </Button>
+                </div>
+              ) : (
+                <ChartFigure summary="Weekly movement chart: daily active minutes as bars, plan completion as a line, and pain flare days marked. A data table follows.">
+                  <ChartContainer
+                    config={movementChartConfig}
+                    className="mt-4 h-[280px] w-full md:h-[320px]"
+                  >
+                    <ComposedChart
+                      data={weeklyMovement}
+                      margin={{ top: 8, right: 4, left: -12, bottom: 4 }}
+                      accessibilityLayer
+                    >
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        vertical={false}
+                        stroke="var(--border)"
+                        strokeOpacity={0.35}
+                      />
+                      <XAxis
+                        dataKey="day"
+                        tickLine={false}
+                        axisLine={false}
+                        fontSize={12}
+                        tick={{ fill: 'var(--foreground-subtle)' }}
+                      />
+                      <YAxis
+                        yAxisId="left"
+                        tickLine={false}
+                        axisLine={false}
+                        fontSize={12}
+                        tick={{ fill: 'var(--foreground-subtle)' }}
+                        tickFormatter={(v: number) => `${v}m`}
+                      />
+                      <YAxis
+                        yAxisId="right"
+                        orientation="right"
+                        domain={[0, 100]}
+                        tickLine={false}
+                        axisLine={false}
+                        fontSize={12}
+                        tick={{ fill: 'var(--foreground-subtle)' }}
+                        tickFormatter={(v: number) => `${v}%`}
+                      />
+                      <ChartTooltip
+                        content={({ active, payload, label }) => {
+                          if (!active || !payload?.length) return null;
+                          const d = payload[0].payload as (typeof weeklyMovement)[number];
+                          return (
+                            <div className="glass-overlay rounded-[14px] px-3.5 py-2.5 text-sm text-foreground">
+                              <p className="font-semibold">{label}</p>
+                              <p className="text-foreground-muted">
+                                {d.minutes} min • {d.completion}% complete • Pain {d.pain}/10
+                              </p>
+                            </div>
+                          );
+                        }}
+                      />
+                      <Bar
+                        yAxisId="left"
+                        dataKey="minutes"
+                        fill="var(--primary)"
+                        radius={[6, 6, 0, 0]}
+                        maxBarSize={36}
+                        isAnimationActive={!reduced}
+                        animationDuration={420}
+                        animationEasing="ease-out"
+                      />
+                      <Line
+                        yAxisId="right"
+                        type="monotone"
+                        dataKey="completion"
+                        stroke="var(--secondary)"
+                        strokeWidth={2}
+                        dot={{ r: 4, fill: 'var(--secondary)', strokeWidth: 0 }}
+                        activeDot={{ r: 8 }}
+                        isAnimationActive={!reduced}
+                        animationDuration={700}
+                      />
+                      <Line
+                        yAxisId="right"
+                        dataKey={(d: (typeof weeklyMovement)[number]) =>
+                          d.pain >= 4 ? d.completion : null
+                        }
+                        stroke="none"
+                        dot={{ r: 5, fill: 'var(--warning)', strokeWidth: 0 }}
+                        isAnimationActive={false}
+                        legendType="none"
+                        tooltipType="none"
+                        name="Pain flare"
+                        connectNulls={false}
+                      />
+                    </ComposedChart>
+                  </ChartContainer>
+                  {/* Screen-reader data table alternative (dashboard.md §9) */}
+                  <table className="sr-only">
+                    <caption>Daily movement values for the past week</caption>
+                    <thead>
+                      <tr>
+                        <th scope="col">Day</th>
+                        <th scope="col">Active minutes</th>
+                        <th scope="col">Completion</th>
+                        <th scope="col">Pain (0–10)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {weeklyMovement.map((d) => (
+                        <tr key={d.day}>
+                          <th scope="row">{d.day}</th>
+                          <td>{d.minutes}</td>
+                          <td>{d.completion}%</td>
+                          <td>{d.pain}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </ChartFigure>
+              )}
+            </GlassPanel>
+          </motion.div>
+
+          {/* Recovery trend + Body & mind balance */}
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <motion.div {...(reduced ? fadeOnly() : entrance())}>
+              <GlassPanel className="h-full p-5 md:p-6">
+                <h2 className="font-display text-xl font-semibold text-foreground">
+                  Recovery trend
+                </h2>
+                <p className="mt-1 text-sm text-foreground-muted">
+                  Seven-day readiness signal.
+                </p>
+                <ChartFigure summary="Recovery trend line chart showing readiness over the last seven days, ending today.">
+                  <ChartContainer config={recoveryChartConfig} className="mt-4 h-[220px] w-full">
+                    <AreaChart data={recoveryTrend} margin={{ top: 8, right: 8, left: -18, bottom: 4 }} accessibilityLayer>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" strokeOpacity={0.35} />
+                      <XAxis dataKey="day" tickLine={false} axisLine={false} fontSize={12} tick={{ fill: 'var(--foreground-subtle)' }} />
+                      <YAxis domain={[50, 100]} tickLine={false} axisLine={false} fontSize={12} tick={{ fill: 'var(--foreground-subtle)' }} />
+                      <ChartTooltip
+                        content={({ active, payload, label }) =>
+                          active && payload?.length ? (
+                            <div className="glass-overlay rounded-[14px] px-3.5 py-2.5 text-sm text-foreground">
+                              <p className="font-semibold">{label}</p>
+                              <p className="text-foreground-muted">Readiness {payload[0].value}</p>
+                            </div>
+                          ) : null
+                        }
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="readiness"
+                        stroke="var(--primary)"
+                        strokeWidth={2}
+                        fill="var(--primary)"
+                        fillOpacity={0.12}
+                        isAnimationActive={!reduced}
+                        animationDuration={700}
+                      />
+                      <ReferenceDot
+                        x={recoveryTrend[recoveryTrend.length - 1].day}
+                        y={recoveryTrend[recoveryTrend.length - 1].readiness}
+                        r={5}
+                        fill="var(--accent)"
+                        stroke="none"
+                        label={{ value: 'Today', position: 'top', fill: 'var(--foreground-subtle)', fontSize: 12 }}
+                      />
+                    </AreaChart>
+                  </ChartContainer>
+                </ChartFigure>
+              </GlassPanel>
+            </motion.div>
+
+            <motion.div {...(reduced ? fadeOnly() : entrance())}>
+              <GlassPanel className="h-full p-5 md:p-6">
+                <h2 className="font-display text-xl font-semibold text-foreground">
+                  Body &amp; mind balance
+                </h2>
+                <p className="mt-1 text-sm text-foreground-muted">
+                  Four signals, side by side.
+                </p>
+                <div className="mt-5 space-y-5">
+                  {balanceBars.map((bar, i) => (
+                    <div key={bar.label}>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="font-medium text-foreground">{bar.label}</span>
+                        <span className="font-mono font-semibold tabular-nums text-foreground-muted">
+                          {bar.value}%
+                        </span>
+                      </div>
+                      <div
+                        className="mt-2 h-2.5 overflow-hidden rounded-full bg-surface-raised"
+                        role="img"
+                        aria-label={`${bar.label} ${bar.value} percent`}
+                      >
+                        <motion.div
+                          className="h-full rounded-full"
+                          style={{ backgroundColor: bar.tone }}
+                          initial={reduced ? false : { width: 0 }}
+                          whileInView={{ width: `${bar.value}%` }}
+                          viewport={{ once: true, amount: 0.4 }}
+                          transition={
+                            reduced
+                              ? { duration: 0 }
+                              : { duration: 0.52, ease: EASE.careOut, delay: i * 0.07 }
+                          }
                         />
                       </div>
-                      <p className="text-muted-foreground mt-1 text-xs">
-                        {t('dashboard.chart.moodSummaryPositive', { happy: week.happy, calm: week.calm })}
-                      </p>
-                      <p className="text-muted-foreground text-xs">
-                        {t('dashboard.chart.moodSummaryNegative', { anxious: week.anxious, sad: week.sad })}
-                      </p>
                     </div>
                   ))}
                 </div>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
+              </GlassPanel>
+            </motion.div>
+          </div>
+        </div>
+
+        {/* ── Right rail ──────────────────────────────────────────────────── */}
+        <div className="space-y-6 xl:col-span-4">
+          {/* Voice brief */}
+          <motion.div {...(reduced ? fadeOnly() : entrance())}>
+            <GlassPanel className="p-5">
+              <div className="flex items-center gap-2">
+                <AudioLines className="h-5 w-5 text-secondary" aria-hidden="true" />
+                <h2 className="font-display text-lg font-semibold text-foreground">Voice brief</h2>
+              </div>
+              <p className="mt-3 text-sm leading-relaxed text-foreground-muted">
+                You are {Math.max(0, totalTargetThisWeek - totalMinutesThisWeek)} minutes away from
+                your weekly goal. Want a gentle session?
+              </p>
+              {/* Waveform strip: 5 bars, 24px, secondary */}
+              <div className="mt-4 flex h-6 items-center gap-[3px]" aria-hidden="true">
+                {[0, 1, 2, 3, 4].map((i) => (
+                  <motion.span
+                    key={i}
+                    className="h-6 w-[3px] origin-center rounded-full bg-secondary"
+                    animate={
+                      briefPlaying && !reduced
+                        ? { scaleY: [0.35, 1, 0.35] }
+                        : { scaleY: 0.35 }
+                    }
+                    transition={
+                      briefPlaying && !reduced
+                        ? { duration: 0.9, repeat: Infinity, delay: i * 0.08, ease: 'easeInOut' }
+                        : { duration: 0.16 }
+                    }
+                  />
+                ))}
+              </div>
+              <div className="mt-4 flex items-center gap-3">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-11 w-11 rounded-full"
+                  aria-label={briefPlaying ? 'Pause daily brief' : 'Play daily brief'}
+                  onClick={() => setBriefPlaying((p) => !p)}
+                >
+                  {briefPlaying ? (
+                    <Pause className="h-4 w-4" aria-hidden="true" />
+                  ) : (
+                    <Play className="h-4 w-4" aria-hidden="true" />
+                  )}
+                </Button>
+                <button
+                  type="button"
+                  onClick={openAIChat}
+                  className="text-sm font-medium text-primary underline-offset-4 hover:underline"
+                >
+                  Open voice commands
+                </button>
+              </div>
+            </GlassPanel>
+          </motion.div>
+
+          {/* Quick actions */}
+          <motion.div {...(reduced ? fadeOnly() : entrance())}>
+            <GlassPanel className="p-5">
+              <h2 className="font-display text-lg font-semibold text-foreground">Quick actions</h2>
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                {[
+                  { label: 'Scan body', icon: ScanSearch, action: () => setActiveSection('body-scan') },
+                  { label: 'Log mood', icon: HeartPulse, action: () => setActiveSection('mood') },
+                  { label: 'Breathe', icon: Wind, action: () => setActiveSection('breathing') },
+                  { label: 'Ask AI', icon: Sparkles, action: openAIChat },
+                ].map((qa) => (
+                  <button
+                    key={qa.label}
+                    type="button"
+                    onClick={qa.action}
+                    className="flex min-h-[72px] flex-col items-start justify-center gap-1.5 rounded-2xl bg-surface-raised p-3.5 text-left transition-colors hover:bg-surface-overlay"
+                  >
+                    <qa.icon className="h-5 w-5 text-primary" aria-hidden="true" />
+                    <span className="text-sm font-semibold text-foreground">{qa.label}</span>
+                  </button>
+                ))}
+              </div>
+            </GlassPanel>
+          </motion.div>
+
+          {/* Next milestone */}
+          <motion.div {...(reduced ? fadeOnly() : entrance())}>
+            <div className="rounded-[24px] border border-[color-mix(in_srgb,var(--accent)_30%,transparent)] bg-accent-soft p-5">
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--accent)_18%,transparent)] text-accent">
+                  <Trophy className="h-5 w-5" aria-hidden="true" />
+                </span>
+                <h2 className="font-display text-lg font-semibold text-foreground">
+                  Next milestone
+                </h2>
+              </div>
+              <div className="mt-4 flex items-center justify-between text-sm">
+                <span className="font-medium text-foreground">Recovery Rhythm badge</span>
+                <span className="font-mono font-semibold tabular-nums text-accent">8 of 10 sessions</span>
+              </div>
+              <div
+                className="mt-2 h-2.5 overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--accent)_16%,transparent)]"
+                role="progressbar"
+                aria-valuenow={8}
+                aria-valuemin={0}
+                aria-valuemax={10}
+                aria-label="Recovery Rhythm badge progress: 8 of 10 sessions"
+              >
+                <motion.div
+                  className="h-full rounded-full bg-accent"
+                  initial={reduced ? false : { width: 0 }}
+                  whileInView={{ width: '80%' }}
+                  viewport={{ once: true }}
+                  transition={reduced ? { duration: 0 } : { duration: 0.6, ease: EASE.careOut }}
+                />
+              </div>
+              <p className="mt-3 text-sm text-foreground-muted">
+                Two more sessions unlock your Recovery Rhythm badge.
+              </p>
+            </div>
+          </motion.div>
+
+          {/* Recent activity */}
+          <motion.div {...(reduced ? fadeOnly() : entrance())}>
+            <GlassPanel className="p-5">
+              <h2 className="font-display text-lg font-semibold text-foreground">Recent activity</h2>
+              <ul className="mt-4 space-y-3.5">
+                {[
+                  { icon: CircleCheck, title: 'Adaptive workout completed', meta: 'Yesterday • 18 min', chip: 'Completed', chipTone: 'bg-success-soft text-success' },
+                  { icon: MessageCircleHeart, title: 'Mood logged', meta: 'Yesterday', chip: 'Calm', chipTone: 'bg-secondary-soft text-secondary' },
+                  { icon: ScanSearch, title: 'Body scan updated', meta: '2 days ago', chip: 'Shoulder focus', chipTone: 'bg-warning-soft text-warning' },
+                ].map((row) => (
+                  <li key={row.title} className="flex items-center gap-3">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-surface-raised text-foreground-muted">
+                      <row.icon className="h-4 w-4" aria-hidden="true" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-foreground">{row.title}</p>
+                      <p className="text-xs text-foreground-subtle">{row.meta}</p>
+                    </div>
+                    <span className={cn('shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold', row.chipTone)}>
+                      {row.chip}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <button
+                type="button"
+                onClick={() =>
+                  addToast({
+                    type: 'info',
+                    title: 'Activity history',
+                    description: 'Your full activity history lives in Progress export.',
+                  })
+                }
+                className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-primary underline-offset-4 hover:underline"
+              >
+                View all activity
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </button>
+            </GlassPanel>
+          </motion.div>
+        </div>
+      </div>
+
+      {/* ── 4. Secondary wellness strip ───────────────────────────────────── */}
+      <motion.div
+        variants={reduced ? undefined : staggerContainer}
+        initial="hidden"
+        whileInView="show"
+        viewport={{ once: true, amount: 0.2 }}
+        className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:gap-6"
+      >
+        {[
+          {
+            icon: Salad,
+            title: 'Nutrition',
+            metric: '5 of 8 glasses',
+            copy: 'Hydration is on track — a protein-rich snack fits your recovery window.',
+            cta: 'Open nutrition',
+            section: 'nutrition' as const,
+          },
+          {
+            icon: Brain,
+            title: 'Mind Gym',
+            metric: 'Focus 82',
+            copy: 'Latest focus score 82. A 3-minute pattern game is recommended today.',
+            cta: 'Play a game',
+            section: 'mind-gym' as const,
+          },
+          {
+            icon: MessageCircleHeart,
+            title: 'Community',
+            metric: '3 cheers',
+            copy: 'Your streak inspired three members this week. Share one small win?',
+            cta: 'Visit community',
+            section: 'community' as const,
+          },
+        ].map((card) => (
+          <motion.div key={card.title} variants={reduced ? reducedItem : staggerItem}>
+            <GlassPanel interactive className="flex h-full flex-col gap-3 p-5">
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-soft text-primary">
+                  <card.icon className="h-5 w-5" aria-hidden="true" />
+                </span>
+                <h2 className="font-display text-lg font-semibold text-foreground">{card.title}</h2>
+                <span className="ml-auto rounded-full bg-surface-raised px-2.5 py-1 font-mono text-xs font-semibold text-foreground-muted">
+                  {card.metric}
+                </span>
+              </div>
+              <p className="text-sm leading-relaxed text-foreground-muted">{card.copy}</p>
+              <button
+                type="button"
+                onClick={() => setActiveSection(card.section)}
+                className="mt-auto inline-flex w-fit items-center gap-1 text-sm font-medium text-primary underline-offset-4 hover:underline"
+              >
+                {card.cta}
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </button>
+            </GlassPanel>
+          </motion.div>
+        ))}
       </motion.div>
 
-      {/* ── Weekly Goals ─────────────────────────────────────────────── */}
-      <motion.div variants={itemVariants}>
-        <WeeklyGoals />
-      </motion.div>
+      {/* ── Readiness explanation dialog (dashboard.md §3.4) ──────────────── */}
+      <Dialog open={explainOpen} onOpenChange={setExplainOpen}>
+        <DialogContent className="glass-overlay sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="font-display text-xl">How readiness works</DialogTitle>
+            <DialogDescription className="text-sm leading-relaxed text-foreground-muted">
+              Readiness combines your recent activity, pain check-ins, sleep or wearable data,
+              mood, and completed sessions. It is a guide, not a diagnosis. You can always choose
+              a gentler session.
+            </DialogDescription>
+          </DialogHeader>
+          <ul className="mt-2 space-y-2.5">
+            {[
+              { icon: Activity, label: 'Activity', weight: '30%' },
+              { icon: HeartPulse, label: 'Recovery', weight: '30%' },
+              { icon: ScanSearch, label: 'Pain & mobility', weight: '25%' },
+              { icon: MessageCircleHeart, label: 'Mood', weight: '15%' },
+            ].map((row) => (
+              <li
+                key={row.label}
+                className="flex items-center gap-3 rounded-[14px] bg-surface-raised px-4 py-3"
+              >
+                <row.icon className="h-5 w-5 text-primary" aria-hidden="true" />
+                <span className="flex-1 text-sm font-medium text-foreground">{row.label}</span>
+                <span className="font-mono text-sm font-semibold tabular-nums text-foreground-muted">
+                  {row.weight}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
 
-      {/* ── Health Insights ─────────────────────────────────────────────── */}
-      <motion.div variants={itemVariants}>
-        <HealthInsights />
-      </motion.div>
+// ── Motion prop helpers (section entrances) ─────────────────────────────────
 
-      {/* ── Sleep Quality Tracker ──────────────────────────────────────── */}
-      <motion.div variants={itemVariants}>
-        <SleepTracker />
-      </motion.div>
+function entrance() {
+  return {
+    initial: sectionEntrance.initial,
+    whileInView: sectionEntrance.whileInView,
+    viewport: sectionEntrance.viewport,
+    transition: sectionEntrance.transition,
+  } as const;
+}
 
-      {/* ── Hydration Tracker ──────────────────────────────────────────── */}
-      <motion.div variants={itemVariants}>
-        <HydrationTracker />
-      </motion.div>
+function fadeOnly() {
+  return {
+    initial: { opacity: 0 },
+    whileInView: { opacity: 1 },
+    viewport: { once: true, amount: 0.2 },
+    transition: { duration: 0.14, ease: 'linear' },
+  } as const;
+}
 
-      {/* ── Rehabilitation Progress Timeline ─────────────────────────────── */}
-      <motion.div variants={itemVariants}>
-        <RehabTimeline />
-      </motion.div>
+// ── Loading skeleton (dashboard.md §8.2) ────────────────────────────────────
 
-      {/* ── Pain & Symptom Journal ─────────────────────────────────────── */}
-      <motion.div variants={itemVariants}>
-        <PainJournal />
-      </motion.div>
-
-      {/* ── Daily Challenges ─────────────────────────────────────────────── */}
-      <motion.div variants={itemVariants}>
-        <DailyChallenges />
-      </motion.div>
-
-      {/* ── Achievement Showcase ─────────────────────────────────────────── */}
-      <motion.div variants={itemVariants}>
-        <AchievementShowcase />
-      </motion.div>
-    </motion.div>
+function DashboardSkeleton({ reduced }: { reduced: boolean }) {
+  const shimmer = reduced ? '' : 'skeleton-shimmer';
+  return (
+    <div className="w-full space-y-6" aria-busy="true">
+      <p role="status" className="sr-only">
+        Loading your progress…
+      </p>
+      <GlassPanel radius="2xl" className="p-5 md:p-7">
+        <div className={cn('h-[42px] w-2/3 max-w-md rounded-[14px] bg-surface-raised', shimmer)} />
+        <div className={cn('mt-4 h-[22px] w-1/2 max-w-sm rounded-[10px] bg-surface-raised', shimmer)} />
+        <div className="mt-6 flex gap-3">
+          <div className={cn('h-12 w-48 rounded-[14px] bg-surface-raised', shimmer)} />
+          <div className={cn('h-12 w-40 rounded-[14px] bg-surface-raised', shimmer)} />
+        </div>
+      </GlassPanel>
+      <div className="grid grid-cols-1 gap-4 min-[420px]:grid-cols-2 lg:gap-6 xl:grid-cols-4">
+        {[0, 1, 2, 3].map((i) => (
+          <GlassPanel key={i} className={cn('min-h-[148px] p-5', shimmer)} />
+        ))}
+      </div>
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-12">
+        <GlassPanel className={cn('min-h-[320px] xl:col-span-8', shimmer)}>
+          <p className="p-6 text-sm text-foreground-muted">Loading your progress…</p>
+        </GlassPanel>
+        <GlassPanel className={cn('min-h-[320px] xl:col-span-4', shimmer)} />
+      </div>
+    </div>
   );
 }

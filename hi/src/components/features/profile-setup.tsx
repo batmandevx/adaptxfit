@@ -1,5 +1,17 @@
 'use client';
 
+/**
+ * Profile Setup — Clinical Aurora redesign (design/features.md §11).
+ *
+ * 4-step dialog wizard (About you → Your journey → Physical stats →
+ * Diet & safety) plus a completion step. All Zustand store contracts and
+ * persistence behavior are preserved exactly (userName, userProfile fields,
+ * profileSetupComplete/Dismissed/Open, auto-open on first visit, dismissal
+ * tracking, athlete-category conditional). Styling, step transitions
+ * (x ±32px / 280ms, opacity-only when reduced), and completion treatment
+ * (one success pulse; confetti only with full motion) follow the spec.
+ */
+
 import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore } from '@/stores/app-store';
@@ -12,8 +24,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
@@ -22,9 +32,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useReduced, EASE } from '@/components/ui/aurora';
+import { cn } from '@/lib/utils';
 import {
   User,
-  Heart,
+  HeartPulse,
   Accessibility,
   Dumbbell,
   Apple,
@@ -56,46 +68,10 @@ const DISABILITY_OPTIONS = [
 ];
 
 const USER_TYPES = [
-  {
-    id: 'soldier',
-    label: 'Injured Soldier / Veteran',
-    emoji: '🎖️',
-    gradient: 'from-amber-500 to-orange-600',
-    border: 'border-amber-500/50',
-    bg: 'bg-amber-50 dark:bg-amber-950/30',
-    hoverBg: 'hover:bg-amber-100 dark:hover:bg-amber-950/50',
-    ring: 'ring-amber-500',
-  },
-  {
-    id: 'paralympic',
-    label: 'Paralympic Athlete',
-    emoji: '🏅',
-    gradient: 'from-emerald-500 to-teal-600',
-    border: 'border-emerald-500/50',
-    bg: 'bg-emerald-50 dark:bg-emerald-950/30',
-    hoverBg: 'hover:bg-emerald-100 dark:hover:bg-emerald-950/50',
-    ring: 'ring-emerald-500',
-  },
-  {
-    id: 'disability',
-    label: 'Person with Disability',
-    emoji: '♿',
-    gradient: 'from-cyan-500 to-sky-600',
-    border: 'border-cyan-500/50',
-    bg: 'bg-cyan-50 dark:bg-cyan-950/30',
-    hoverBg: 'hover:bg-cyan-100 dark:hover:bg-cyan-950/50',
-    ring: 'ring-cyan-500',
-  },
-  {
-    id: 'rehabilitation',
-    label: 'Rehabilitation Patient',
-    emoji: '🏥',
-    gradient: 'from-rose-500 to-pink-600',
-    border: 'border-rose-500/50',
-    bg: 'bg-rose-50 dark:bg-rose-950/30',
-    hoverBg: 'hover:bg-rose-100 dark:hover:bg-rose-950/50',
-    ring: 'ring-rose-500',
-  },
+  { id: 'soldier', label: 'Injured Soldier / Veteran', emoji: '🎖️' },
+  { id: 'paralympic', label: 'Paralympic Athlete', emoji: '🏅' },
+  { id: 'disability', label: 'Person with Disability', emoji: '♿' },
+  { id: 'rehabilitation', label: 'Rehabilitation Patient', emoji: '🏥' },
 ];
 
 const INJURY_TYPES = [
@@ -148,56 +124,36 @@ const ALLERGY_OPTIONS = [
 ];
 
 const STEP_INFO = [
-  { icon: User, label: 'Personal Info', color: 'emerald' },
-  { icon: Accessibility, label: 'Condition', color: 'cyan' },
-  { icon: Dumbbell, label: 'Physical Stats', color: 'amber' },
-  { icon: Apple, label: 'Diet & Allergies', color: 'rose' },
+  { icon: User, label: 'About you' },
+  { icon: Accessibility, label: 'Your journey' },
+  { icon: Dumbbell, label: 'Physical stats' },
+  { icon: Apple, label: 'Diet & safety' },
 ];
 
-// ===== Sparkle Component =====
-function Sparkle({ style }: { style: React.CSSProperties }) {
-  return (
-    <motion.div
-      className="absolute pointer-events-none"
-      style={style}
-      initial={{ scale: 0, opacity: 0, rotate: 0 }}
-      animate={{
-        scale: [0, 1, 0],
-        opacity: [0, 1, 0],
-        rotate: [0, 180, 360],
-      }}
-      transition={{ duration: 1.2, ease: 'easeInOut' }}
-    >
-      <Sparkles className="w-5 h-5 text-yellow-400" />
-    </motion.div>
-  );
-}
-
-// ===== Confetti Component =====
+// ===== Confetti (full motion only) =====
 function ConfettiPiece({ index }: { index: number }) {
   const colors = [
-    'bg-emerald-400', 'bg-teal-400', 'bg-cyan-400',
-    'bg-amber-400', 'bg-rose-400', 'bg-violet-400',
-    'bg-pink-400', 'bg-yellow-400',
+    'bg-primary', 'bg-secondary', 'bg-accent',
+    'bg-success', 'bg-info', 'bg-warning',
   ];
   const color = colors[index % colors.length];
-  const startX = 20 + Math.random() * 60;
-  const drift = (Math.random() - 0.5) * 30;
-  const delay = Math.random() * 0.5;
+  const startX = 20 + (index * 37) % 60;
+  const drift = ((index * 53) % 30) - 15;
+  const delay = (index % 8) * 0.06;
 
   return (
     <motion.div
-      className={`absolute w-2 h-2 rounded-full ${color}`}
+      className={cn('absolute h-2 w-2 rounded-full', color)}
       style={{ left: `${startX}%`, top: '30%' }}
       initial={{ y: 0, x: 0, opacity: 1, scale: 1 }}
       animate={{
-        y: [0, 200 + Math.random() * 100],
+        y: [0, 200 + ((index * 41) % 100)],
         x: [0, drift],
         opacity: [1, 0],
         scale: [1, 0.3],
         rotate: [0, 360],
       }}
-      transition={{ duration: 1.5 + Math.random(), delay, ease: 'easeOut' }}
+      transition={{ duration: 1.5 + (index % 5) * 0.2, delay, ease: 'easeOut' }}
     />
   );
 }
@@ -216,6 +172,7 @@ export default function ProfileSetup() {
     profileSetupDismissed,
     setProfileSetupDismissed,
   } = useAppStore();
+  const reduced = useReduced();
 
   const [step, setStep] = useState(0);
   const [direction, setDirection] = useState(1);
@@ -287,6 +244,8 @@ export default function ProfileSetup() {
       emergencyContact: localEmergencyContact,
     });
     setProfileSetupComplete(true);
+    setDirection(1);
+    setStep(4);
     setShowConfetti(true);
 
     // Auto-close after celebration
@@ -314,107 +273,87 @@ export default function ProfileSetup() {
     );
   }, []);
 
+  // Step transition: x ±32px over 280ms; opacity-only when reduced (§11.5)
   const slideVariants = {
-    enter: (dir: number) => ({
-      x: dir > 0 ? 300 : -300,
-      opacity: 0,
-    }),
-    center: {
-      x: 0,
-      opacity: 1,
-    },
-    exit: (dir: number) => ({
-      x: dir > 0 ? -300 : 300,
-      opacity: 0,
-    }),
+    enter: (dir: number) =>
+      reduced ? { opacity: 0 } : { x: dir > 0 ? 32 : -32, opacity: 0 },
+    center: { x: 0, opacity: 1 },
+    exit: (dir: number) =>
+      reduced ? { opacity: 0 } : { x: dir > 0 ? -32 : 32, opacity: 0 },
   };
-
-  // Sparkle positions for completion
-  const sparklePositions = [
-    { top: '10%', left: '15%' },
-    { top: '5%', left: '50%' },
-    { top: '15%', right: '15%' },
-    { top: '40%', left: '8%' },
-    { top: '35%', right: '10%' },
-    { top: '60%', left: '20%' },
-    { top: '55%', right: '18%' },
-    { bottom: '25%', left: '12%' },
-    { bottom: '20%', right: '15%' },
-  ];
+  const stepTransition = reduced
+    ? { duration: 0.14, ease: 'linear' as const }
+    : { duration: 0.28, ease: EASE.careOut };
 
   return (
     <Dialog open={profileSetupOpen} onOpenChange={handleOpenChange}>
       <DialogContent
-        className="max-w-2xl w-[calc(100%-2rem)] max-h-[90vh] overflow-y-auto p-0 gap-0"
+        className="glass-overlay max-h-[90vh] w-[calc(100%-2rem)] max-w-[760px] gap-0 overflow-y-auto rounded-[28px] p-0"
         showCloseButton={!showConfetti}
         aria-describedby={undefined}
       >
-        {/* Progress Indicator */}
-        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b px-6 py-4">
+        {/* Sticky header: step icon, title, 4-step progress */}
+        <div className="sticky top-0 z-10 border-b border-border bg-[color-mix(in_srgb,var(--surface-overlay)_92%,transparent)] px-6 py-4 backdrop-blur-xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-lg">
+            <DialogTitle className="flex items-center gap-3 text-lg">
               {step < 4 ? (
                 <>
-                  {(() => {
-                    const StepIcon = STEP_INFO[step].icon;
-                    return <StepIcon className="w-5 h-5 text-emerald-500" />;
-                  })()}
-                  <span>{STEP_INFO[step].label}</span>
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-soft text-primary">
+                    {(() => {
+                      const StepIcon = STEP_INFO[step].icon;
+                      return <StepIcon className="h-5 w-5" aria-hidden="true" />;
+                    })()}
+                  </span>
+                  <span className="font-display">{STEP_INFO[step].label}</span>
                 </>
               ) : (
                 <>
-                  <Award className="w-5 h-5 text-amber-500" />
-                  <span>All Done!</span>
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent-soft text-accent">
+                    <Award className="h-5 w-5" aria-hidden="true" />
+                  </span>
+                  <span className="font-display">All done!</span>
                 </>
               )}
             </DialogTitle>
           </DialogHeader>
+          <p className="mt-1 text-sm text-foreground-muted">
+            A few choices help AdaptiFit adapt safely.
+          </p>
 
-          {/* Step Dots */}
-          <div className="flex items-center justify-center gap-2 mt-3">
+          {/* Progress nodes: 36px, completed check, current ring, animated rail */}
+          <div className="mt-3 flex items-center justify-center gap-1" aria-hidden="true">
             {STEP_INFO.map((s, i) => {
               const isActive = i === step;
-              const isCompleted = i < step;
+              const isCompleted = i < step || step === 4;
               return (
                 <div key={s.label} className="flex items-center">
-                  <motion.div
-                    className={`
-                      w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold
-                      transition-all duration-300 cursor-pointer
-                      ${isCompleted
-                        ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/30'
-                        : isActive
-                          ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/40 ring-4 ring-emerald-500/20'
-                          : 'bg-muted text-muted-foreground'
-                      }
-                    `}
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.95 }}
+                  <button
+                    type="button"
+                    tabIndex={-1}
                     onClick={() => {
-                      if (isCompleted) {
-                        setDirection(i < step ? -1 : 1);
+                      if (isCompleted && i < step) {
+                        setDirection(-1);
                         setStep(i);
                       }
                     }}
-                    layout
-                  >
-                    {isCompleted ? (
-                      <Check className="w-4 h-4" />
-                    ) : (
-                      i + 1
+                    className={cn(
+                      'flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold transition-colors',
+                      isCompleted
+                        ? 'bg-primary text-primary-foreground'
+                        : isActive
+                          ? 'bg-primary-soft text-primary ring-2 ring-primary'
+                          : 'bg-surface-raised text-foreground-subtle',
                     )}
-                  </motion.div>
+                  >
+                    {isCompleted ? <Check className="h-4 w-4" /> : i + 1}
+                  </button>
                   {i < STEP_INFO.length - 1 && (
-                    <div className="w-8 h-0.5 mx-1">
+                    <div className="mx-1 h-0.5 w-8 overflow-hidden rounded-full bg-surface-raised">
                       <motion.div
-                        className="h-full rounded-full"
-                        initial={{ backgroundColor: 'oklch(0.97 0 0)' }}
-                        animate={{
-                          backgroundColor: isCompleted
-                            ? '#10b981'
-                            : 'oklch(0.97 0 0)',
-                        }}
-                        transition={{ duration: 0.3 }}
+                        className="h-full bg-primary"
+                        initial={false}
+                        animate={{ width: i < step || step === 4 ? '100%' : '0%' }}
+                        transition={reduced ? { duration: 0 } : { duration: 0.24 }}
                       />
                     </div>
                   )}
@@ -425,9 +364,9 @@ export default function ProfileSetup() {
         </div>
 
         {/* Step Content */}
-        <div className="relative overflow-hidden min-h-[400px]">
+        <div className="relative min-h-[400px] overflow-hidden">
           <AnimatePresence mode="wait" custom={direction}>
-            {/* ===== STEP 0: Personal Info ===== */}
+            {/* ===== STEP 0: About you ===== */}
             {step === 0 && (
               <motion.div
                 key="step-0"
@@ -436,19 +375,20 @@ export default function ProfileSetup() {
                 initial="enter"
                 animate="center"
                 exit="exit"
-                transition={{ duration: 0.3, ease: 'easeInOut' }}
-                className="p-6 space-y-6"
+                transition={stepTransition}
+                className="space-y-6 p-6"
               >
-                <div className="text-center mb-2">
-                  <h3 className="text-xl font-bold gradient-text">Tell us about yourself</h3>
-                  <p className="text-sm text-muted-foreground mt-1">
+                <div className="mb-2 text-center">
+                  <h3 className="font-display text-xl font-bold text-foreground">
+                    Tell us about yourself
+                  </h3>
+                  <p className="mt-1 text-sm text-foreground-muted">
                     We&apos;ll personalize your experience based on this info
                   </p>
                 </div>
 
-                {/* Name */}
                 <div className="space-y-2">
-                  <Label htmlFor="profile-name" className="text-sm font-medium">
+                  <Label htmlFor="profile-name" className="text-sm font-semibold">
                     Your Name
                   </Label>
                   <Input
@@ -456,13 +396,12 @@ export default function ProfileSetup() {
                     placeholder="Enter your name"
                     value={localName}
                     onChange={(e) => setLocalName(e.target.value)}
-                    className="h-11"
+                    className="h-12 rounded-[14px]"
                   />
                 </div>
 
-                {/* Age */}
                 <div className="space-y-2">
-                  <Label htmlFor="profile-age" className="text-sm font-medium">
+                  <Label htmlFor="profile-age" className="text-sm font-semibold">
                     Age
                   </Label>
                   <Input
@@ -471,48 +410,44 @@ export default function ProfileSetup() {
                     placeholder="Enter your age"
                     value={localAge}
                     onChange={(e) => setLocalAge(e.target.value)}
-                    className="h-11"
+                    className="h-12 rounded-[14px]"
                     min={1}
                     max={120}
                   />
                 </div>
 
-                {/* Avatar Emoji */}
                 <div className="space-y-3">
-                  <Label className="text-sm font-medium">Choose Your Avatar</Label>
-                  <div className="grid grid-cols-6 sm:grid-cols-9 gap-2">
+                  <Label className="text-sm font-semibold">Choose Your Avatar</Label>
+                  <div className="grid grid-cols-6 gap-2 sm:grid-cols-9">
                     {AVATAR_EMOJIS.map((emoji) => (
-                      <motion.button
+                      <button
                         key={emoji}
                         type="button"
-                        className={`
-                          w-11 h-11 rounded-xl flex items-center justify-center text-xl
-                          transition-all duration-200 border-2
-                          ${localAvatarEmoji === emoji
-                            ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30 shadow-md shadow-emerald-500/20 scale-110'
-                            : 'border-transparent bg-muted/50 hover:bg-muted hover:border-emerald-500/30'
-                          }
-                        `}
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        onClick={() => setLocalAvatarEmoji(emoji)}
                         aria-label={`Select ${emoji} as avatar`}
+                        aria-pressed={localAvatarEmoji === emoji}
+                        onClick={() => setLocalAvatarEmoji(emoji)}
+                        className={cn(
+                          'flex h-11 w-11 items-center justify-center rounded-xl border-2 text-xl transition-colors',
+                          localAvatarEmoji === emoji
+                            ? 'border-primary bg-primary-soft'
+                            : 'border-transparent bg-surface-raised hover:border-border-strong',
+                        )}
                       >
                         {emoji}
-                      </motion.button>
+                      </button>
                     ))}
                   </div>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-sm text-muted-foreground">Selected:</span>
-                    <Badge variant="secondary" className="text-base px-3 py-1">
+                  <div className="mt-1 flex items-center gap-2">
+                    <span className="text-sm text-foreground-muted">Selected:</span>
+                    <span className="inline-flex items-center rounded-full bg-secondary-soft px-3 py-1 text-sm font-semibold text-secondary">
                       {localAvatarEmoji} {localName || 'You'}
-                    </Badge>
+                    </span>
                   </div>
                 </div>
               </motion.div>
             )}
 
-            {/* ===== STEP 1: Condition/Disability ===== */}
+            {/* ===== STEP 1: Your journey ===== */}
             {step === 1 && (
               <motion.div
                 key="step-1"
@@ -521,119 +456,81 @@ export default function ProfileSetup() {
                 initial="enter"
                 animate="center"
                 exit="exit"
-                transition={{ duration: 0.3, ease: 'easeInOut' }}
-                className="p-6 space-y-6"
+                transition={stepTransition}
+                className="space-y-6 p-6"
               >
-                <div className="text-center mb-2">
-                  <h3 className="text-xl font-bold gradient-text">Your Journey</h3>
-                  <p className="text-sm text-muted-foreground mt-1">
+                <div className="mb-2 text-center">
+                  <h3 className="font-display text-xl font-bold text-foreground">Your Journey</h3>
+                  <p className="mt-1 text-sm text-foreground-muted">
                     Help us understand your unique needs
                   </p>
                 </div>
 
-                {/* User Type Selector */}
                 <div className="space-y-3">
-                  <Label className="text-sm font-medium">I am a...</Label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Label className="text-sm font-semibold">I am a...</Label>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     {USER_TYPES.map((ut) => {
                       const isSelected = localUserType === ut.id;
                       return (
-                        <motion.button
+                        <button
                           key={ut.id}
                           type="button"
-                          className={`
-                            relative p-4 rounded-xl border-2 text-left transition-all duration-200
-                            ${ut.bg} ${ut.hoverBg}
-                            ${isSelected
-                              ? `${ut.border} ring-2 ${ut.ring}/30 shadow-lg`
-                              : 'border-border hover:border-emerald-500/30'
-                            }
-                          `}
-                          whileHover={{ scale: 1.02, y: -2 }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={() => setLocalUserType(ut.id)}
                           aria-pressed={isSelected}
-                          role="button"
-                        >
-                          {/* Gradient border overlay */}
-                          {isSelected && (
-                            <motion.div
-                              className={`absolute inset-0 rounded-xl bg-gradient-to-br ${ut.gradient} opacity-10`}
-                              layoutId="userTypeHighlight"
-                              transition={{ duration: 0.3 }}
-                            />
+                          onClick={() => setLocalUserType(ut.id)}
+                          className={cn(
+                            'relative flex min-h-[56px] items-center gap-3 rounded-[14px] border-2 p-4 text-left transition-colors',
+                            isSelected
+                              ? 'border-primary bg-primary-soft'
+                              : 'border-border bg-surface hover:bg-surface-raised',
                           )}
-                          <div className="relative flex items-center gap-3">
-                            <span className="text-2xl">{ut.emoji}</span>
-                            <span className="font-semibold text-sm">{ut.label}</span>
-                            {isSelected && (
-                              <motion.div
-                                initial={{ scale: 0 }}
-                                animate={{ scale: 1 }}
-                                className="ml-auto"
-                              >
-                                <Check className="w-5 h-5 text-emerald-500" />
-                              </motion.div>
-                            )}
-                          </div>
-                        </motion.button>
+                        >
+                          <span className="text-2xl" aria-hidden="true">{ut.emoji}</span>
+                          <span className={cn('text-sm font-semibold', isSelected ? 'text-primary' : 'text-foreground')}>
+                            {ut.label}
+                          </span>
+                          {isSelected && (
+                            <Check className="ml-auto h-5 w-5 text-primary" aria-hidden="true" />
+                          )}
+                        </button>
                       );
                     })}
                   </div>
                 </div>
 
-                {/* Disability Type - Multi-select Pills */}
                 <div className="space-y-3">
-                  <Label className="text-sm font-medium">
+                  <Label className="text-sm font-semibold">
                     Condition / Disability Type
-                    <span className="text-muted-foreground font-normal ml-1">(select all that apply)</span>
+                    <span className="ml-1 font-normal text-foreground-subtle">(select all that apply)</span>
                   </Label>
                   <div className="flex flex-wrap gap-2">
                     {DISABILITY_OPTIONS.map((dis) => {
                       const isActive = selectedDisabilities.includes(dis.id);
                       return (
-                        <motion.button
+                        <button
                           key={dis.id}
                           type="button"
-                          className={`
-                            inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm
-                            font-medium transition-all duration-200 border
-                            ${isActive
-                              ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 border-emerald-500 shadow-sm'
-                              : 'bg-muted/50 text-muted-foreground border-transparent hover:bg-muted hover:border-emerald-500/30'
-                            }
-                          `}
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                          onClick={() => toggleDisability(dis.id)}
                           aria-pressed={isActive}
+                          onClick={() => toggleDisability(dis.id)}
+                          className={cn(
+                            'inline-flex min-h-11 items-center gap-1.5 rounded-full border px-3.5 text-sm font-medium transition-colors',
+                            isActive
+                              ? 'border-primary bg-primary-soft text-primary'
+                              : 'border-border bg-surface text-foreground-muted hover:bg-surface-raised',
+                          )}
                         >
-                          <span>{dis.emoji}</span>
+                          <span aria-hidden="true">{dis.emoji}</span>
                           <span>{dis.label}</span>
-                          {isActive && <Check className="w-3 h-3 ml-0.5" />}
-                        </motion.button>
+                          {isActive && <Check className="ml-0.5 h-3.5 w-3.5" aria-hidden="true" />}
+                        </button>
                       );
                     })}
                   </div>
-                  {selectedDisabilities.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      {selectedDisabilities.map((id) => {
-                        const dis = DISABILITY_OPTIONS.find((d) => d.id === id);
-                        return dis ? (
-                          <Badge key={id} variant="secondary" className="text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300">
-                            {dis.emoji} {dis.label}
-                          </Badge>
-                        ) : null;
-                      })}
-                    </div>
-                  )}
                 </div>
 
-                {/* Injury Type */}
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">Injury Type</Label>
+                  <Label className="text-sm font-semibold">Injury Type</Label>
                   <Select value={localInjuryType} onValueChange={setLocalInjuryType}>
-                    <SelectTrigger className="w-full h-11">
+                    <SelectTrigger className="h-12 w-full rounded-[14px]">
                       <SelectValue placeholder="Select injury type" />
                     </SelectTrigger>
                     <SelectContent>
@@ -646,7 +543,6 @@ export default function ProfileSetup() {
                   </Select>
                 </div>
 
-                {/* Athlete Category (conditional based on user type) */}
                 {(localUserType === 'paralympic' || localUserType === 'soldier') && (
                   <motion.div
                     initial={{ opacity: 0, height: 0 }}
@@ -654,12 +550,12 @@ export default function ProfileSetup() {
                     exit={{ opacity: 0, height: 0 }}
                     className="space-y-2"
                   >
-                    <Label className="text-sm font-medium">Athlete Category</Label>
+                    <Label className="text-sm font-semibold">Athlete Category</Label>
                     <Select
                       value={userProfile.athleteCategory}
                       onValueChange={(val) => setUserProfile({ athleteCategory: val })}
                     >
-                      <SelectTrigger className="w-full h-11">
+                      <SelectTrigger className="h-12 w-full rounded-[14px]">
                         <SelectValue placeholder="Select category" />
                       </SelectTrigger>
                       <SelectContent>
@@ -679,7 +575,7 @@ export default function ProfileSetup() {
               </motion.div>
             )}
 
-            {/* ===== STEP 2: Physical Stats ===== */}
+            {/* ===== STEP 2: Physical stats ===== */}
             {step === 2 && (
               <motion.div
                 key="step-2"
@@ -688,20 +584,19 @@ export default function ProfileSetup() {
                 initial="enter"
                 animate="center"
                 exit="exit"
-                transition={{ duration: 0.3, ease: 'easeInOut' }}
-                className="p-6 space-y-6"
+                transition={stepTransition}
+                className="space-y-6 p-6"
               >
-                <div className="text-center mb-2">
-                  <h3 className="text-xl font-bold gradient-text">Physical Stats</h3>
-                  <p className="text-sm text-muted-foreground mt-1">
+                <div className="mb-2 text-center">
+                  <h3 className="font-display text-xl font-bold text-foreground">Physical Stats</h3>
+                  <p className="mt-1 text-sm text-foreground-muted">
                     Help us tailor exercises and nutrition for you
                   </p>
                 </div>
 
-                {/* Weight & Height - Side by side */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="profile-weight" className="text-sm font-medium">
+                    <Label htmlFor="profile-weight" className="text-sm font-semibold">
                       Weight (kg)
                     </Label>
                     <Input
@@ -710,13 +605,13 @@ export default function ProfileSetup() {
                       placeholder="e.g., 75"
                       value={localWeight}
                       onChange={(e) => setLocalWeight(e.target.value)}
-                      className="h-11"
+                      className="h-12 rounded-[14px]"
                       min={20}
                       max={300}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="profile-height" className="text-sm font-medium">
+                    <Label htmlFor="profile-height" className="text-sm font-semibold">
                       Height (cm)
                     </Label>
                     <Input
@@ -725,75 +620,62 @@ export default function ProfileSetup() {
                       placeholder="e.g., 178"
                       value={localHeight}
                       onChange={(e) => setLocalHeight(e.target.value)}
-                      className="h-11"
+                      className="h-12 rounded-[14px]"
                       min={50}
                       max={250}
                     />
                   </div>
                 </div>
 
-                {/* BMI Preview */}
                 {localWeight && localHeight && Number(localHeight) > 0 && (
                   <motion.div
-                    initial={{ opacity: 0, y: 10 }}
+                    initial={{ opacity: 0, y: reduced ? 0 : 10 }}
                     animate={{ opacity: 1, y: 0 }}
                   >
-                    <Card className="p-4 bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800">
-                      <div className="flex items-center gap-3">
-                        <Heart className="w-5 h-5 text-emerald-500" />
-                        <div>
-                          <p className="text-sm font-medium">
-                            BMI: {(
-                              Number(localWeight) /
-                              ((Number(localHeight) / 100) ** 2)
-                            ).toFixed(1)}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {(() => {
-                              const bmi =
-                                Number(localWeight) /
-                                ((Number(localHeight) / 100) ** 2);
-                              if (bmi < 18.5) return 'Underweight';
-                              if (bmi < 25) return 'Normal weight';
-                              if (bmi < 30) return 'Overweight';
-                              return 'Obese';
-                            })()}
-                          </p>
-                        </div>
+                    <div className="flex items-center gap-3 rounded-[14px] bg-primary-soft p-4">
+                      <HeartPulse className="h-5 w-5 text-primary" aria-hidden="true" />
+                      <div>
+                        <p className="text-sm font-semibold text-primary">
+                          BMI: {(Number(localWeight) / (Number(localHeight) / 100) ** 2).toFixed(1)}
+                        </p>
+                        <p className="text-xs text-primary/80">
+                          {(() => {
+                            const bmi = Number(localWeight) / (Number(localHeight) / 100) ** 2;
+                            if (bmi < 18.5) return 'Underweight';
+                            if (bmi < 25) return 'Normal weight';
+                            if (bmi < 30) return 'Overweight';
+                            return 'Obese';
+                          })()}
+                        </p>
                       </div>
-                    </Card>
+                    </div>
                   </motion.div>
                 )}
 
-                {/* Target Goals */}
                 <div className="space-y-3">
-                  <Label className="text-sm font-medium">
+                  <Label className="text-sm font-semibold">
                     What are your primary goals?
-                    <span className="text-muted-foreground font-normal ml-1">(select one)</span>
+                    <span className="ml-1 font-normal text-foreground-subtle">(select one)</span>
                   </Label>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                     {TARGET_GOALS.map((goal) => {
                       const isSelected = localTargetGoals === goal;
                       return (
-                        <motion.button
+                        <button
                           key={goal}
                           type="button"
-                          className={`
-                            p-3 rounded-xl text-sm font-medium text-center transition-all duration-200
-                            border-2 cursor-pointer
-                            ${isSelected
-                              ? 'bg-amber-50 dark:bg-amber-950/30 border-amber-500 text-amber-700 dark:text-amber-300 shadow-sm'
-                              : 'bg-muted/30 border-transparent text-muted-foreground hover:bg-muted hover:border-amber-500/30'
-                            }
-                          `}
-                          whileHover={{ scale: 1.03 }}
-                          whileTap={{ scale: 0.97 }}
-                          onClick={() => setLocalTargetGoals(goal)}
                           aria-pressed={isSelected}
+                          onClick={() => setLocalTargetGoals(goal)}
+                          className={cn(
+                            'flex min-h-11 flex-col items-center justify-center gap-1 rounded-[14px] border-2 p-3 text-center text-sm font-medium transition-colors',
+                            isSelected
+                              ? 'border-accent bg-accent-soft text-accent'
+                              : 'border-transparent bg-surface-raised text-foreground-muted hover:border-border-strong',
+                          )}
                         >
-                          <Dumbbell className="w-4 h-4 mx-auto mb-1 text-amber-500" />
+                          <Dumbbell className="h-4 w-4" aria-hidden="true" />
                           {goal}
-                        </motion.button>
+                        </button>
                       );
                     })}
                   </div>
@@ -801,7 +683,7 @@ export default function ProfileSetup() {
               </motion.div>
             )}
 
-            {/* ===== STEP 3: Diet & Allergies ===== */}
+            {/* ===== STEP 3: Diet & safety ===== */}
             {step === 3 && (
               <motion.div
                 key="step-3"
@@ -810,21 +692,20 @@ export default function ProfileSetup() {
                 initial="enter"
                 animate="center"
                 exit="exit"
-                transition={{ duration: 0.3, ease: 'easeInOut' }}
-                className="p-6 space-y-6"
+                transition={stepTransition}
+                className="space-y-6 p-6"
               >
-                <div className="text-center mb-2">
-                  <h3 className="text-xl font-bold gradient-text">Diet & Allergies</h3>
-                  <p className="text-sm text-muted-foreground mt-1">
+                <div className="mb-2 text-center">
+                  <h3 className="font-display text-xl font-bold text-foreground">Diet &amp; Safety</h3>
+                  <p className="mt-1 text-sm text-foreground-muted">
                     We&apos;ll customize meal plans and safety alerts for you
                   </p>
                 </div>
 
-                {/* Diet Preference */}
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">Diet Preference</Label>
+                  <Label className="text-sm font-semibold">Diet Preference</Label>
                   <Select value={localDietPreference} onValueChange={setLocalDietPreference}>
-                    <SelectTrigger className="w-full h-11">
+                    <SelectTrigger className="h-12 w-full rounded-[14px]">
                       <SelectValue placeholder="Select diet preference" />
                     </SelectTrigger>
                     <SelectContent>
@@ -837,53 +718,37 @@ export default function ProfileSetup() {
                   </Select>
                 </div>
 
-                {/* Allergies - Multi-select with Checkboxes */}
                 <div className="space-y-3">
-                  <Label className="text-sm font-medium">
+                  <Label className="text-sm font-semibold">
                     Food Allergies
-                    <span className="text-muted-foreground font-normal ml-1">(select all that apply)</span>
+                    <span className="ml-1 font-normal text-foreground-subtle">(select all that apply)</span>
                   </Label>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                     {ALLERGY_OPTIONS.map((allergy) => {
                       const isChecked = selectedAllergies.includes(allergy);
                       return (
                         <label
                           key={allergy}
-                          className={`
-                            flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer
-                            transition-all duration-200 text-sm
-                            ${isChecked
-                              ? 'bg-rose-50 dark:bg-rose-950/20 border-rose-300 dark:border-rose-700'
-                              : 'bg-muted/20 border-transparent hover:bg-muted/40'
-                            }
-                          `}
+                          className={cn(
+                            'flex min-h-11 cursor-pointer items-center gap-2 rounded-[14px] border p-3 text-sm transition-colors',
+                            isChecked
+                              ? 'border-danger/50 bg-danger-soft text-danger'
+                              : 'border-transparent bg-surface-raised text-foreground-muted hover:border-border-strong',
+                          )}
                         >
                           <Checkbox
                             checked={isChecked}
                             onCheckedChange={() => toggleAllergy(allergy)}
-                            className={isChecked ? 'border-rose-500 data-[state=checked]:bg-rose-500' : ''}
                           />
-                          <span className={isChecked ? 'text-rose-700 dark:text-rose-300 font-medium' : 'text-muted-foreground'}>
-                            {allergy}
-                          </span>
+                          <span className={isChecked ? 'font-medium' : ''}>{allergy}</span>
                         </label>
                       );
                     })}
                   </div>
-                  {selectedAllergies.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {selectedAllergies.map((a) => (
-                        <Badge key={a} variant="secondary" className="text-xs bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300">
-                          ⚠️ {a}
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
                 </div>
 
-                {/* Emergency Contact */}
                 <div className="space-y-2">
-                  <Label htmlFor="emergency-contact" className="text-sm font-medium">
+                  <Label htmlFor="emergency-contact" className="text-sm font-semibold">
                     Emergency Contact
                   </Label>
                   <Input
@@ -891,9 +756,9 @@ export default function ProfileSetup() {
                     placeholder="Phone number or name + number"
                     value={localEmergencyContact}
                     onChange={(e) => setLocalEmergencyContact(e.target.value)}
-                    className="h-11"
+                    className="h-12 rounded-[14px]"
                   />
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-foreground-subtle">
                     This will be used only in case of emergencies during your workout sessions
                   </p>
                 </div>
@@ -904,150 +769,113 @@ export default function ProfileSetup() {
             {step === 4 && (
               <motion.div
                 key="step-complete"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5, ease: 'easeOut' }}
-                className="relative p-6 min-h-[400px] flex flex-col items-center justify-center overflow-hidden"
+                initial={reduced ? { opacity: 0 } : { opacity: 0, scale: 0.96 }}
+                animate={
+                  reduced
+                    ? { opacity: 1, transition: { duration: 0.14 } }
+                    : { scale: [0.96, 1.025, 1], opacity: 1, transition: { duration: 0.56, times: [0, 0.58, 1], ease: EASE.careOut } }
+                }
+                className="relative flex min-h-[400px] flex-col items-center justify-center overflow-hidden p-6"
               >
-                {/* Gradient Background */}
-                <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-teal-500/10 to-cyan-500/10" />
-                <div className="absolute inset-0 bg-gradient-to-t from-amber-500/5 to-transparent" />
+                {/* Gentle radial success glow */}
+                <div
+                  className="pointer-events-none absolute inset-0"
+                  aria-hidden="true"
+                  style={{
+                    background:
+                      'radial-gradient(420px 320px at 50% 30%, color-mix(in srgb, var(--primary) 12%, transparent), transparent 70%)',
+                  }}
+                />
 
-                {/* Confetti */}
-                {showConfetti && (
-                  <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                    {Array.from({ length: 30 }).map((_, i) => (
+                {/* Confetti only when full motion is enabled (§11.5) */}
+                {showConfetti && !reduced && (
+                  <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+                    {Array.from({ length: 24 }).map((_, i) => (
                       <ConfettiPiece key={i} index={i} />
                     ))}
                   </div>
                 )}
 
-                {/* Sparkles */}
-                {sparklePositions.map((pos, i) => (
-                  <Sparkle
-                    key={i}
-                    style={{
-                      ...pos,
-                      animationDelay: `${i * 0.15}s`,
-                    }}
-                  />
-                ))}
+                <div className="relative z-10 space-y-4 text-center">
+                  <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-primary-soft ring-4 ring-[color-mix(in_srgb,var(--primary)_35%,transparent)]">
+                    <span className="text-4xl" aria-hidden="true">{localAvatarEmoji}</span>
+                  </div>
 
-                {/* Content */}
-                <motion.div
-                  className="relative z-10 text-center space-y-4"
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.2, duration: 0.5 }}
-                >
-                  <motion.div
-                    className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-xl shadow-emerald-500/30"
-                    animate={{ scale: [1, 1.1, 1] }}
-                    transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                  >
-                    <span className="text-4xl">{localAvatarEmoji}</span>
-                  </motion.div>
+                  <h2 className="font-display text-2xl font-bold text-foreground">
+                    Welcome, {localName || 'friend'}!
+                  </h2>
 
-                  <motion.h2
-                    className="text-2xl font-bold"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.4 }}
-                  >
-                    Welcome, {localName || 'Champion'}! 🎉
-                  </motion.h2>
+                  <p className="mx-auto max-w-md text-foreground-muted">
+                    Your personalized experience is ready. You can change any of this later.
+                  </p>
 
-                  <motion.p
-                    className="text-muted-foreground max-w-md mx-auto"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.6 }}
-                  >
-                    Your personalized fitness journey is ready. We&apos;ve tailored everything
-                    to your unique needs and goals. Let&apos;s make it happen!
-                  </motion.p>
-
-                  <motion.div
-                    className="flex flex-wrap gap-2 justify-center mt-4"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.8 }}
-                  >
+                  <div className="mt-4 flex flex-wrap justify-center gap-2">
                     {selectedDisabilities.length > 0 && (
-                      <Badge className="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800">
-                        <Accessibility className="w-3 h-3 mr-1" />
+                      <span className="inline-flex items-center gap-1 rounded-full bg-primary-soft px-3 py-1 text-xs font-semibold text-primary">
+                        <Accessibility className="h-3 w-3" aria-hidden="true" />
                         {selectedDisabilities.length} condition{selectedDisabilities.length > 1 ? 's' : ''}
-                      </Badge>
+                      </span>
                     )}
                     {localTargetGoals && (
-                      <Badge className="bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800">
-                        <Dumbbell className="w-3 h-3 mr-1" />
+                      <span className="inline-flex items-center gap-1 rounded-full bg-accent-soft px-3 py-1 text-xs font-semibold text-accent">
+                        <Dumbbell className="h-3 w-3" aria-hidden="true" />
                         {localTargetGoals}
-                      </Badge>
+                      </span>
                     )}
                     {localDietPreference && (
-                      <Badge className="bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800">
-                        <Apple className="w-3 h-3 mr-1" />
+                      <span className="inline-flex items-center gap-1 rounded-full bg-secondary-soft px-3 py-1 text-xs font-semibold text-secondary">
+                        <Apple className="h-3 w-3" aria-hidden="true" />
                         {localDietPreference}
-                      </Badge>
+                      </span>
                     )}
-                  </motion.div>
+                  </div>
 
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 1 }}
-                    className="pt-4"
-                  >
+                  <div className="pt-4">
                     <Button
-                      className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-lg shadow-emerald-500/30 px-8"
                       size="lg"
-                      onClick={() => {
-                        setProfileSetupOpen(false);
-                      }}
+                      className="btn-aurora-primary h-12 rounded-[14px] px-8 text-sm font-semibold"
+                      onClick={() => setProfileSetupOpen(false)}
                     >
-                      <Sparkles className="w-4 h-4 mr-2" />
-                      Start My Journey
+                      <Sparkles className="mr-2 h-4 w-4" aria-hidden="true" />
+                      Start my journey
                     </Button>
-                  </motion.div>
-                </motion.div>
+                  </div>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
 
-        {/* Navigation Footer */}
+        {/* Sticky footer: Back / step count / Next */}
         {step < 4 && (
-          <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm border-t px-6 py-4 flex items-center justify-between">
+          <div className="sticky bottom-0 flex items-center justify-between border-t border-border bg-[color-mix(in_srgb,var(--surface-overlay)_92%,transparent)] px-6 py-4 backdrop-blur-xl">
             <Button
               variant="outline"
               onClick={goPrev}
               disabled={step === 0}
-              className="gap-1"
+              className="h-12 gap-1 rounded-[14px]"
             >
-              <ChevronLeft className="w-4 h-4" />
+              <ChevronLeft className="h-4 w-4" aria-hidden="true" />
               Back
             </Button>
 
-            <div className="text-xs text-muted-foreground">
-              Step {step + 1} of 4
-            </div>
+            <div className="text-xs text-foreground-subtle">Step {step + 1} of 4</div>
 
             {step < 3 ? (
               <Button
                 onClick={goNext}
-                className="gap-1 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white"
+                className="btn-aurora-primary h-12 gap-1 rounded-[14px] px-5"
               >
                 Next
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className="h-4 w-4" aria-hidden="true" />
               </Button>
             ) : (
               <Button
                 onClick={handleComplete}
-                className="gap-1 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-lg shadow-emerald-500/20"
+                className="btn-aurora-primary h-12 gap-1 rounded-[14px] px-5"
               >
                 Complete
-                <Check className="w-4 h-4" />
+                <Check className="h-4 w-4" aria-hidden="true" />
               </Button>
             )}
           </div>

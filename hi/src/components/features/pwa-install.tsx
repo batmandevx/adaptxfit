@@ -18,6 +18,7 @@ import { Download, WifiOff, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { useOutbox } from "@/lib/offline/use-outbox";
+import { useReduced } from "@/components/ui/aurora";
 
 const DISMISS_KEY = "adaptifit:pwa-install-dismissed:v1";
 
@@ -35,6 +36,7 @@ export default function PwaInstall() {
   const [isIos, setIsIos] = useState(false);
   const { pending, flush } = useOutbox();
   const hadPendingRef = useRef(false);
+  const reduced = useReduced();
 
   // --- Install prompt (beforeinstallprompt) -------------------------------
   useEffect(() => {
@@ -128,7 +130,7 @@ export default function PwaInstall() {
         <div
           role="status"
           aria-live="polite"
-          className="fixed inset-x-0 top-0 z-50 flex items-center justify-center gap-2 bg-amber-500 px-4 py-2 text-sm font-medium text-amber-950 shadow-md"
+          className="fixed inset-x-0 top-0 z-50 flex min-h-11 items-center justify-center gap-2 border-b border-warning/40 bg-warning-soft px-4 py-2 text-sm font-medium text-foreground"
         >
           <WifiOff className="h-4 w-4 shrink-0" aria-hidden="true" />
           <span>
@@ -145,17 +147,17 @@ export default function PwaInstall() {
         <div
           role="status"
           aria-live="polite"
-          className="fixed bottom-4 left-4 z-50 flex items-center gap-2 rounded-md border bg-card px-3 py-2 text-sm text-card-foreground shadow-lg"
+          className="glass-overlay fixed bottom-6 left-6 z-50 flex min-h-11 items-center gap-2 rounded-[18px] px-4 py-2.5 text-sm text-foreground"
         >
           <span
-            className="h-2 w-2 animate-pulse rounded-full bg-amber-500"
+            className={`h-2 w-2 rounded-full bg-warning ${reduced ? "" : "animate-pulse"}`}
             aria-hidden="true"
           />
           Syncing {pending} offline change{pending === 1 ? "" : "s"}…
           <button
             type="button"
             onClick={() => void flush()}
-            className="ml-1 underline underline-offset-2 hover:text-foreground/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="ml-1 min-h-11 px-2 font-medium text-primary underline underline-offset-2 hover:text-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             Retry now
           </button>
@@ -168,30 +170,30 @@ export default function PwaInstall() {
         <div
           role="status"
           aria-live="polite"
-          className="fixed bottom-4 left-4 z-50 w-[calc(100vw-2rem)] max-w-sm rounded-lg border bg-card p-4 text-card-foreground shadow-xl"
+          className="glass-overlay fixed bottom-6 left-6 z-50 w-[calc(100vw-3rem)] max-w-[380px] rounded-[24px] p-4 text-foreground"
         >
           <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
-              <Download className="h-5 w-5" aria-hidden="true" />
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary-soft text-primary">
+              <Download className="h-6 w-6" aria-hidden="true" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold">Install AdaptiFit</p>
-              <p className="mt-0.5 text-sm text-muted-foreground">
+              <p className="font-display text-base font-semibold">Install AdaptiFit</p>
+              <p className="mt-0.5 text-sm text-foreground-muted">
                 {isIos && installEvent === null
                   ? "Install AdaptiFit: tap Share → Add to Home Screen."
                   : "Works offline — workouts, Live Coach and Mind Gym stay available without internet."}
               </p>
               <div className="mt-3 flex gap-2">
                 {isIos && installEvent === null ? (
-                  <Button size="sm" onClick={handleDismiss}>
+                  <Button size="sm" onClick={handleDismiss} className="btn-aurora-primary h-11 rounded-[14px] px-4">
                     Got it
                   </Button>
                 ) : (
-                  <Button size="sm" onClick={() => void handleInstall()}>
+                  <Button size="sm" onClick={() => void handleInstall()} className="btn-aurora-primary h-11 rounded-[14px] px-4">
                     Install
                   </Button>
                 )}
-                <Button size="sm" variant="ghost" onClick={handleDismiss}>
+                <Button size="sm" variant="ghost" onClick={handleDismiss} className="h-11 rounded-[14px]">
                   Not now
                 </Button>
               </div>
@@ -200,7 +202,7 @@ export default function PwaInstall() {
               type="button"
               onClick={handleDismiss}
               aria-label="Dismiss install prompt"
-              className="shrink-0 rounded-sm p-2 -m-1 text-muted-foreground opacity-70 transition-opacity hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="-m-1 shrink-0 rounded-md p-2 text-foreground-muted opacity-70 transition-opacity hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <X className="h-4 w-4" aria-hidden="true" />
             </button>
