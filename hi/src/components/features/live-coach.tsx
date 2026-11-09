@@ -29,6 +29,8 @@ import {
   Loader2,
   CheckCircle2,
   Dumbbell,
+  Pause,
+  Headphones,
 } from 'lucide-react';
 import {
   Card,
@@ -47,7 +49,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { useToastStore } from './toast-provider';
+import { announce } from '@/voice/announcer';
+import { useCommander } from '@/voice/use-commander';
+import { useI18n } from '@/lib/i18n';
 
 // ── Pose landmark indices (BlazePose / MediaPipe Pose, 33 points) ─────────────
 const L = {
@@ -118,7 +124,17 @@ export default function LiveCoach() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [exerciseId, setExerciseId] = useState('curl');
   const [difficulty, setDifficulty] = useState<Difficulty>('normal');
-  const [voiceOn, setVoiceOn] = useState(false);
+  // Voice cues default on when audio-only mode was persisted (see below).
+  const [voiceOn, setVoiceOn] = useState<boolean>(
+    () => typeof window !== 'undefined' && localStorage.getItem('adaptifit-audio-only-coach') === 'true',
+  );
+  const [paused, setPaused] = useState(false);
+  // Audio-only coaching: camera keeps running but nothing visual is required —
+  // every cue is spoken and mirrored to the screen-reader live region, and a
+  // large-text summary replaces the video stage (persisted per device).
+  const [audioOnly, setAudioOnly] = useState<boolean>(
+    () => typeof window !== 'undefined' && localStorage.getItem('adaptifit-audio-only-coach') === 'true',
+  );
 
   const [reps, setReps] = useState(0);
   const [formScore, setFormScore] = useState(100);
@@ -143,23 +159,48 @@ export default function LiveCoach() {
   const exerciseRef = useRef(exerciseId);
   const difficultyRef = useRef(difficulty);
   const voiceRef = useRef(voiceOn);
+  const pausedRef = useRef(paused);
+  const statusRef = useRef(status);
+  const audioOnlyRef = useRef(audioOnly);
+  const lastSpokenRef = useRef('');
+  const lastVisibilityWarnRef = useRef(0);
 
   useEffect(() => { exerciseRef.current = exerciseId; }, [exerciseId]);
   useEffect(() => { difficultyRef.current = difficulty; }, [difficulty]);
   useEffect(() => { voiceRef.current = voiceOn; }, [voiceOn]);
+  useEffect(() => { statusRef.current = status; }, [status]);
+  useEffect(() => { audioOnlyRef.current = audioOnly; }, [audioOnly]);
+  useEffect(() => {
+    try { localStorage.setItem('adaptifit-audio-only-coach', String(audioOnly)); } catch { /* noop */ }
+  }, [audioOnly]);
+
+  // Audio-only mode guarantees spoken coaching even if voice cues were off.
+  const toggleAudioOnly = useCallback((value: boolean) => {
+    setAudioOnly(value);
+    if (value) setVoiceOn(true);
+  }, []);
 
   const currentExercise = EXERCISES.find((e) => e.id === exerciseId) ?? EXERCISES[0];
 
+  // All coaching speech flows through the Voice Commander announcer: the
+  // aria-live region updates for screen-reader users even when spoken cues are
+  // off, and speech output shares the commander's cancel-on-new-command queue.
+  // Multilingual coaching (Pillar B): spoken cues use the i18n dictionaries for
+  // non-English locales; English keeps the original per-exercise cue text.
+  const { t, locale } = useI18n();
+  const tRef = useRef(t);
+  const localeRef = useRef(locale);
+  useEffect(() => { tRef.current = t; }, [t]);
+  useEffect(() => { localeRef.current = locale; }, [locale]);
+
   const say = useCallback((text: string) => {
-    if (!voiceRef.current || typeof window === 'undefined' || !('speechSynthesis' in window)) return;
-    try {
-      window.speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(text);
-      u.rate = 1.05;
-      window.speechSynthesis.speak(u);
-    } catch {
-      /* speech is best-effort */
-    }
+    lastSpokenRef.current = text;
+    announce(text, { speak: voiceRef.current, force: true, interrupt: true });
+  }, []);
+
+  const setPausedState = useCallback((value: boolean) => {
+    pausedRef.current = value;
+    setPaused(value);
   }, []);
 
   const onResults = useCallback((results: any) => {
@@ -185,12 +226,25 @@ export default function LiveCoach() {
 
     if (!lm) return;
 
+    // Voice "pause" — keep the camera + skeleton running, freeze the coaching.
+    if (pausedRef.current) return;
+
     const ex = EXERCISES.find((e) => e.id === exerciseRef.current) ?? EXERCISES[0];
     const [ia, ib, ic] = ex.joints;
     const a = lm[ia], b = lm[ib], c = lm[ic];
     if (!a || !b || !c || (a.visibility ?? 0) < 0.5 || (b.visibility ?? 0) < 0.5) {
       setFeedback('Step back so the joint is visible to the camera.');
       setFeedbackTone('warn');
+      // Throttled so the screen-reader live region is not spammed every frame.
+      const now = Date.now();
+      if (now - lastVisibilityWarnRef.current > 5000) {
+        lastVisibilityWarnRef.current = now;
+        announce('Step back so the joint is visible to the camera.', {
+          speak: audioOnlyRef.current,
+          force: true,
+          interrupt: false,
+        });
+      }
       return;
     }
 
@@ -221,11 +275,15 @@ export default function LiveCoach() {
       if (full) {
         setFeedback(`Rep ${repsRef.current} · ${ex.goodMsg}`);
         setFeedbackTone('good');
-        say(`Rep ${repsRef.current}. ${ex.goodMsg}`);
+        say(localeRef.current === 'en'
+          ? `Rep ${repsRef.current}. ${ex.goodMsg}`
+          : `${tRef.current('liveCoach.cue.rep', { count: repsRef.current })}. ${tRef.current('liveCoach.cue.repComplete')}`);
       } else {
         setFeedback(`Rep ${repsRef.current} · ${ex.lowMsg} next time.`);
         setFeedbackTone('warn');
-        say(`Rep ${repsRef.current}. ${ex.lowMsg}.`);
+        say(localeRef.current === 'en'
+          ? `Rep ${repsRef.current}. ${ex.lowMsg}.`
+          : `${tRef.current('liveCoach.cue.rep', { count: repsRef.current })}. ${tRef.current('liveCoach.form.slowDown')}`);
       }
     }
   }, [say]);
@@ -279,7 +337,9 @@ export default function LiveCoach() {
       const ex = EXERCISES.find((e) => e.id === exerciseRef.current) ?? EXERCISES[0];
       setFeedback(ex.cue);
       setFeedbackTone('info');
-      say(ex.cue);
+      say(localeRef.current === 'en'
+        ? ex.cue
+        : tRef.current('liveCoach.cue.start', { exercise: ex.name }));
       addToast({ type: 'success', title: 'Live Coach ready', description: 'Move into frame to begin counting reps.' });
     } catch (err: any) {
       const message =
@@ -306,12 +366,62 @@ export default function LiveCoach() {
     canvas?.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height);
     if (status === 'tracking') {
       addToast({ type: 'info', title: 'Session ended', description: `You completed ${repsRef.current} reps. Great work!` });
+      announce(localeRef.current === 'en'
+        ? `Session ended. You completed ${repsRef.current} reps. Great work!`
+        : `${tRef.current('liveCoach.cue.sessionComplete')} ${tRef.current('liveCoach.cue.rep', { count: repsRef.current })}.`, {
+        speak: voiceRef.current,
+        force: true,
+      });
     }
+    setPausedState(false);
     setStatus('idle');
     setPhase('up');
     setFeedback('Session stopped. Press Start to go again.');
     setFeedbackTone('info');
-  }, [status, addToast]);
+  }, [status, addToast, setPausedState]);
+
+  const pauseSession = useCallback(() => {
+    if (statusRef.current !== 'tracking' || pausedRef.current) return;
+    setPausedState(true);
+    setFeedback('Paused. Say "resume" or press Resume to continue.');
+    setFeedbackTone('info');
+    say('Paused. Say resume when you are ready to continue.');
+  }, [setPausedState, say]);
+
+  const resumeSession = useCallback(() => {
+    if (!pausedRef.current) return;
+    setPausedState(false);
+    const ex = EXERCISES.find((e) => e.id === exerciseRef.current) ?? EXERCISES[0];
+    setFeedback(ex.cue);
+    setFeedbackTone('info');
+    say(`Resuming ${ex.name}. ${ex.cue}`);
+  }, [setPausedState, say]);
+
+  /** Voice "next exercise" — cycle the movement and reset the counters. */
+  const nextExercise = useCallback(() => {
+    const idx = EXERCISES.findIndex((e) => e.id === exerciseRef.current);
+    const next = EXERCISES[(idx + 1) % EXERCISES.length];
+    setExerciseId(next.id);
+    exerciseRef.current = next.id;
+    repsRef.current = 0;
+    phaseRef.current = 'up';
+    formRef.current = 100;
+    bottomRef.current = 999;
+    setReps(0);
+    setFormScore(100);
+    setPhase('up');
+    setFeedback(next.cue);
+    setFeedbackTone('info');
+    say(`Next exercise: ${next.name}. ${next.cue}`);
+  }, [say]);
+
+  /** Voice "repeat that" — re-speak the last cue/instruction verbatim. */
+  const repeatCue = useCallback(() => {
+    const ex = EXERCISES.find((e) => e.id === exerciseRef.current) ?? EXERCISES[0];
+    const last = lastSpokenRef.current || ex.cue;
+    // Force speech even if voice cues are off: the user explicitly asked.
+    announce(last, { speak: true, force: true, interrupt: true });
+  }, []);
 
   const reset = useCallback(() => {
     repsRef.current = 0;
@@ -324,6 +434,48 @@ export default function LiveCoach() {
     setFeedback('Counters reset.');
     setFeedbackTone('info');
   }, []);
+
+  // ── Voice Commander session controls (hands-free) ──────────────────────────
+  // Registering here makes "start workout" / "next exercise" / "stop" / "pause"
+  // / "repeat that" drive this component. If the user issues a session command
+  // from another section, the provider navigates here and replays the intent as
+  // soon as these handlers register.
+  const startActionRef = useRef(start);
+  const stopActionRef = useRef(stop);
+  useEffect(() => { startActionRef.current = start; }, [start]);
+  useEffect(() => { stopActionRef.current = stop; }, [stop]);
+
+  const commander = useCommander();
+  const registerHandler = commander?.registerHandler;
+  useEffect(() => {
+    if (!registerHandler) return;
+    const idleMessage = 'There is no active session. Say "start workout" to begin one.';
+    const unsubs = [
+      registerHandler('session.start', () => {
+        if (pausedRef.current) resumeSession();
+        else if (statusRef.current === 'idle' || statusRef.current === 'error') {
+          void startActionRef.current();
+        }
+        // Already tracking/loading: the spoken confirmation is accurate as-is.
+      }),
+      registerHandler('session.pause', () => {
+        if (statusRef.current === 'tracking' && !pausedRef.current) pauseSession();
+        else if (statusRef.current !== 'tracking') {
+          announce(idleMessage, { speak: true, force: true });
+        }
+      }),
+      registerHandler('session.stop', () => {
+        if (statusRef.current === 'tracking' || statusRef.current === 'loading') {
+          stopActionRef.current();
+        } else {
+          announce(idleMessage, { speak: true, force: true });
+        }
+      }),
+      registerHandler('session.next', () => nextExercise()),
+      registerHandler('session.repeat', () => repeatCue()),
+    ];
+    return () => unsubs.forEach((unsub) => unsub());
+  }, [registerHandler, pauseSession, resumeSession, nextExercise, repeatCue]);
 
   // Low-frequency mirror of the live angle into state (keeps the readout smooth
   // without re-rendering on every camera frame).
@@ -366,8 +518,8 @@ export default function LiveCoach() {
       </motion.div>
 
       <div className="grid lg:grid-cols-3 gap-6">
-        {/* Camera stage */}
-        <Card className="lg:col-span-2 overflow-hidden">
+        {/* Camera stage (kept mounted but visually + SR hidden in audio-only mode) */}
+        <Card className={audioOnly ? 'sr-only' : 'lg:col-span-2 overflow-hidden'} aria-hidden={audioOnly}>
           <CardContent className="p-0">
             <div className="relative bg-black aspect-[4/3] w-full">
               <video
@@ -437,6 +589,38 @@ export default function LiveCoach() {
           </CardContent>
         </Card>
 
+        {/* Audio-only coaching summary — replaces the visual stage. Large,
+            high-contrast text for low-vision users; blind users get the same
+            information through the spoken cues + announcer live region. */}
+        {audioOnly && (
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Headphones className="w-5 h-5 text-emerald-500" /> Audio-only coaching
+              </CardTitle>
+              <CardDescription>
+                Every cue is spoken aloud and announced to your screen reader — no need to watch the screen.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col items-center justify-center gap-3 py-8 text-center">
+                <p className="text-2xl font-semibold">{currentExercise.name}</p>
+                <p className="text-7xl font-bold tabular-nums leading-none">{reps}</p>
+                <p className="text-xs uppercase tracking-widest text-muted-foreground">repetitions</p>
+                <p className="text-xl font-medium capitalize">
+                  {status === 'tracking' ? (paused ? 'Paused' : phase) : 'Camera off'}
+                </p>
+                <p className={`text-lg font-medium max-w-md ${toneClass}`}>{feedback}</p>
+                {status !== 'tracking' && status !== 'loading' && (
+                  <p className="text-sm text-muted-foreground">
+                    Press Start below — or just say &quot;start workout&quot;.
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Controls + stats */}
         <div className="space-y-6">
           <Card>
@@ -484,6 +668,16 @@ export default function LiveCoach() {
                     <Play className="w-4 h-4" /> Start
                   </Button>
                 )}
+                {status === 'tracking' && (
+                  <Button
+                    onClick={paused ? resumeSession : pauseSession}
+                    variant="outline"
+                    className="gap-2"
+                    aria-pressed={paused}
+                  >
+                    <Pause className="w-4 h-4" /> {paused ? 'Resume' : 'Pause'}
+                  </Button>
+                )}
                 <Button onClick={reset} variant="outline" className="gap-2">
                   <RotateCcw className="w-4 h-4" /> Reset
                 </Button>
@@ -496,6 +690,30 @@ export default function LiveCoach() {
                   {voiceOn ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
                 </Button>
               </div>
+
+              {/* Audio-only coaching toggle (persisted per device) */}
+              <div className="flex items-center justify-between gap-3 rounded-lg border border-border/60 p-3">
+                <label htmlFor="audio-only-mode" className="flex items-start gap-2 cursor-pointer">
+                  <Headphones className="w-4 h-4 mt-0.5 shrink-0 text-emerald-500" />
+                  <span>
+                    <span className="text-sm font-medium">Audio-only mode</span>
+                    <span className="block text-xs text-muted-foreground">
+                      No screen needed — every cue is spoken and screen-reader announced.
+                    </span>
+                  </span>
+                </label>
+                <Switch
+                  id="audio-only-mode"
+                  checked={audioOnly}
+                  onCheckedChange={toggleAudioOnly}
+                  aria-label="Toggle audio-only coaching mode"
+                />
+              </div>
+
+              <p className="text-xs text-muted-foreground">
+                Hands-free: say &quot;start workout&quot;, &quot;next exercise&quot;, &quot;pause&quot;,
+                &quot;repeat that&quot; or &quot;stop&quot; with the microphone on.
+              </p>
             </CardContent>
           </Card>
 

@@ -40,38 +40,39 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Slider } from '@/components/ui/slider';
 import { useToastStore } from './toast-provider';
+import { useT, type TranslationKey } from '@/lib/i18n';
 
 type GameId = 'hub' | 'focus' | 'attention' | 'memory' | 'checkin';
 
 interface GameMeta {
   id: Exclude<GameId, 'hub'>;
-  name: string;
-  area: string;
-  description: string;
+  nameKey: TranslationKey;
+  areaKey: TranslationKey;
+  descriptionKey: TranslationKey;
   icon: React.ReactNode;
   gradient: string;
 }
 
 const GAMES: GameMeta[] = [
-  { id: 'focus', name: 'Focus Timer', area: 'ADHD · Focus', description: 'A calm Pomodoro with encouragement to start and keep going.', icon: <Timer className="w-6 h-6" />, gradient: 'from-amber-500 to-orange-600' },
-  { id: 'attention', name: 'Attention Game', area: 'ADHD · Impulse control', description: 'Tap on GO, hold back on STOP. Trains sustained attention.', icon: <Target className="w-6 h-6" />, gradient: 'from-rose-500 to-pink-600' },
-  { id: 'memory', name: 'Memory Match', area: 'Memory', description: 'Flip cards and find the matching pairs from memory.', icon: <Grid3x3 className="w-6 h-6" />, gradient: 'from-violet-500 to-purple-600' },
-  { id: 'checkin', name: 'Daily Check-In', area: 'Brain fog', description: 'A 20-second check-in that tailors a gentle suggestion to today.', icon: <HeartPulse className="w-6 h-6" />, gradient: 'from-cyan-500 to-teal-600' },
+  { id: 'focus', nameKey: 'mindgym.games.focus.name', areaKey: 'mindgym.games.focus.area', descriptionKey: 'mindgym.games.focus.description', icon: <Timer className="w-6 h-6" />, gradient: 'from-amber-500 to-orange-600' },
+  { id: 'attention', nameKey: 'mindgym.games.attention.name', areaKey: 'mindgym.games.attention.area', descriptionKey: 'mindgym.games.attention.description', icon: <Target className="w-6 h-6" />, gradient: 'from-rose-500 to-pink-600' },
+  { id: 'memory', nameKey: 'mindgym.games.memory.name', areaKey: 'mindgym.games.memory.area', descriptionKey: 'mindgym.games.memory.description', icon: <Grid3x3 className="w-6 h-6" />, gradient: 'from-violet-500 to-purple-600' },
+  { id: 'checkin', nameKey: 'mindgym.games.checkin.name', areaKey: 'mindgym.games.checkin.area', descriptionKey: 'mindgym.games.checkin.description', icon: <HeartPulse className="w-6 h-6" />, gradient: 'from-cyan-500 to-teal-600' },
 ];
 
 export default function MindGym() {
   const [game, setGame] = useState<GameId>('hub');
+  const t = useT();
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 space-y-6">
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="text-center space-y-2">
         <Badge variant="secondary" className="gap-1">
-          <Brain className="w-3.5 h-3.5" /> Cognitive training · private &amp; local
+          <Brain className="w-3.5 h-3.5" /> {t('mindgym.badge')}
         </Badge>
-        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">Mind Gym</h1>
+        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">{t('mindgym.title')}</h1>
         <p className="text-muted-foreground max-w-2xl mx-auto">
-          A gentle gym for the brain — focus, attention, memory and a daily check-in. Train at your
-          own pace; there is never any pressure here.
+          {t('mindgym.subtitle')}
         </p>
       </motion.div>
 
@@ -95,10 +96,10 @@ export default function MindGym() {
                     </div>
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <h3 className="font-semibold">{g.name}</h3>
-                        <Badge variant="outline" className="text-[10px]">{g.area}</Badge>
+                        <h3 className="font-semibold">{t(g.nameKey)}</h3>
+                        <Badge variant="outline" className="text-[10px]">{t(g.areaKey)}</Badge>
                       </div>
-                      <p className="text-sm text-muted-foreground">{g.description}</p>
+                      <p className="text-sm text-muted-foreground">{t(g.descriptionKey)}</p>
                     </div>
                   </CardContent>
                 </Card>
@@ -108,7 +109,7 @@ export default function MindGym() {
         ) : (
           <motion.div key={game} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
             <Button variant="ghost" onClick={() => setGame('hub')} className="mb-4 gap-2">
-              <ArrowLeft className="w-4 h-4" /> All exercises
+              <ArrowLeft className="w-4 h-4" /> {t('mindgym.back')}
             </Button>
             {game === 'focus' && <FocusTimer />}
             {game === 'attention' && <AttentionGame />}
@@ -124,6 +125,7 @@ export default function MindGym() {
 // ── Focus Timer ───────────────────────────────────────────────────────────────
 function FocusTimer() {
   const addToast = useToastStore((s) => s.addToast);
+  const t = useT();
   const [minutes, setMinutes] = useState(25);
   const [secondsLeft, setSecondsLeft] = useState(25 * 60);
   const [running, setRunning] = useState(false);
@@ -138,8 +140,8 @@ function FocusTimer() {
           const wasBreak = onBreak;
           addToast({
             type: 'success',
-            title: wasBreak ? 'Break over' : 'Focus block done!',
-            description: wasBreak ? 'Ready for another gentle focus block?' : 'Lovely work. Take a short break.',
+            title: t(wasBreak ? 'mindgym.focusTimer.toastBreakTitle' : 'mindgym.focusTimer.toastFocusTitle'),
+            description: t(wasBreak ? 'mindgym.focusTimer.toastBreakDescription' : 'mindgym.focusTimer.toastFocusDescription'),
           });
           setOnBreak(!wasBreak);
           setRunning(false);
@@ -149,7 +151,7 @@ function FocusTimer() {
       });
     }, 1000);
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
-  }, [running, onBreak, minutes, addToast]);
+  }, [running, onBreak, minutes, addToast, t]);
 
   useEffect(() => {
     if (!running) setSecondsLeft((onBreak ? 5 : minutes) * 60);
@@ -163,8 +165,8 @@ function FocusTimer() {
   return (
     <Card className="max-w-xl mx-auto">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2"><Timer className="w-5 h-5 text-amber-500" /> Focus Timer</CardTitle>
-        <CardDescription>{onBreak ? 'Break time — rest your mind.' : 'One small block of focus. You can do this.'}</CardDescription>
+        <CardTitle className="flex items-center gap-2"><Timer className="w-5 h-5 text-amber-500" /> {t('mindgym.focusTimer.title')}</CardTitle>
+        <CardDescription>{t(onBreak ? 'mindgym.focusTimer.breakDescription' : 'mindgym.focusTimer.focusDescription')}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="relative grid place-items-center py-4">
@@ -179,23 +181,23 @@ function FocusTimer() {
           </svg>
           <div className="absolute text-center">
             <div className="text-4xl font-bold tabular-nums">{mm}:{ss}</div>
-            <div className="text-xs uppercase tracking-wider text-muted-foreground mt-1">{onBreak ? 'Break' : 'Focus'}</div>
+            <div className="text-xs uppercase tracking-wider text-muted-foreground mt-1">{t(onBreak ? 'mindgym.focusTimer.breakLabel' : 'mindgym.focusTimer.focusLabel')}</div>
           </div>
         </div>
 
         {!running && !onBreak && (
           <div className="space-y-2">
-            <div className="flex justify-between text-sm"><span className="text-muted-foreground">Block length</span><span className="font-medium">{minutes} min</span></div>
+            <div className="flex justify-between text-sm"><span className="text-muted-foreground">{t('mindgym.focusTimer.blockLength')}</span><span className="font-medium">{t('common.minutes', { count: minutes })}</span></div>
             <Slider value={[minutes]} min={5} max={50} step={5} onValueChange={(v) => setMinutes(v[0])} />
           </div>
         )}
 
         <div className="flex gap-2 justify-center">
           <Button onClick={() => setRunning((r) => !r)} className="gap-2 min-w-32">
-            {running ? <><Pause className="w-4 h-4" /> Pause</> : <><Play className="w-4 h-4" /> Start</>}
+            {running ? <><Pause className="w-4 h-4" /> {t('common.pause')}</> : <><Play className="w-4 h-4" /> {t('common.start')}</>}
           </Button>
           <Button variant="outline" className="gap-2" onClick={() => { setRunning(false); setOnBreak(false); setSecondsLeft(minutes * 60); }}>
-            <RotateCcw className="w-4 h-4" /> Reset
+            <RotateCcw className="w-4 h-4" /> {t('common.reset')}
           </Button>
         </div>
       </CardContent>
@@ -209,6 +211,7 @@ const STIM_MS = 850;
 
 function AttentionGame() {
   const addToast = useToastStore((s) => s.addToast);
+  const t = useT();
   const [phase, setPhase] = useState<'idle' | 'running' | 'done'>('idle');
   const [stim, setStim] = useState<'go' | 'nogo' | null>(null);
   const [trial, setTrial] = useState(0);
@@ -232,8 +235,12 @@ function AttentionGame() {
     const acc = (s.hits + s.cr) / TOTAL_TRIALS;
     const avgRt = s.rts.length ? Math.round(s.rts.reduce((a, b) => a + b, 0) / s.rts.length) : 0;
     setResult({ acc, avgRt, hits: s.hits, misses: s.misses, cr: s.cr, fa: s.fa });
-    addToast({ type: 'success', title: 'Round complete', description: `${Math.round(acc * 100)}% accuracy. Nicely focused!` });
-  }, [addToast]);
+    addToast({
+      type: 'success',
+      title: t('mindgym.attention.roundCompleteTitle'),
+      description: t('mindgym.attention.roundCompleteDescription', { accuracy: Math.round(acc * 100) }),
+    });
+  }, [addToast, t]);
 
   const gap = useCallback(() => {
     setStim(null);
@@ -293,49 +300,49 @@ function AttentionGame() {
   return (
     <Card className="max-w-xl mx-auto">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2"><Target className="w-5 h-5 text-rose-500" /> Attention Game</CardTitle>
-        <CardDescription>Tap the shape (or press Space) on green <b>GO</b>. Do nothing on red <b>STOP</b>.</CardDescription>
+        <CardTitle className="flex items-center gap-2"><Target className="w-5 h-5 text-rose-500" /> {t('mindgym.attention.title')}</CardTitle>
+        <CardDescription>{t('mindgym.attention.instructions')}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4 text-center">
         {phase === 'idle' && (
           <div className="py-10 space-y-4">
-            <p className="text-muted-foreground">{TOTAL_TRIALS} quick rounds. Ready?</p>
-            <Button size="lg" onClick={begin}>Start</Button>
+            <p className="text-muted-foreground">{t('mindgym.attention.ready', { count: TOTAL_TRIALS })}</p>
+            <Button size="lg" onClick={begin}>{t('common.start')}</Button>
           </div>
         )}
 
         {phase === 'running' && (
           <div className="space-y-3">
-            <div className="text-sm text-muted-foreground">Round {trial + 1} / {TOTAL_TRIALS}</div>
+            <div className="text-sm text-muted-foreground">{t('mindgym.attention.round', { current: trial + 1, total: TOTAL_TRIALS })}</div>
             <button onClick={respond} aria-label="Respond" className="mx-auto w-56 h-56 grid place-items-center select-none">
               <AnimatePresence mode="wait">
                 {stim === 'go' && (
                   <motion.div key="go" initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.6, opacity: 0 }}
-                    className="w-40 h-40 rounded-full bg-emerald-500 text-white grid place-items-center text-3xl font-black shadow-lg">GO</motion.div>
+                    className="w-40 h-40 rounded-full bg-emerald-500 text-white grid place-items-center text-3xl font-black shadow-lg">{t('mindgym.attention.go')}</motion.div>
                 )}
                 {stim === 'nogo' && (
                   <motion.div key="nogo" initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.6, opacity: 0 }}
-                    className="w-36 h-36 rounded-2xl bg-rose-500 text-white grid place-items-center text-3xl font-black shadow-lg">STOP</motion.div>
+                    className="w-36 h-36 rounded-2xl bg-rose-500 text-white grid place-items-center text-3xl font-black shadow-lg">{t('mindgym.attention.stop')}</motion.div>
                 )}
                 {!stim && <motion.div key="rest" className="text-4xl text-muted-foreground">＋</motion.div>}
               </AnimatePresence>
             </button>
-            <p className="text-xs text-muted-foreground">Press Space or tap when it&apos;s green.</p>
+            <p className="text-xs text-muted-foreground">{t('mindgym.attention.hint')}</p>
           </div>
         )}
 
         {phase === 'done' && result && (
           <div className="py-6 space-y-4">
             <div className="text-5xl">{result.acc >= 0.8 ? '🌟' : result.acc >= 0.6 ? '👍' : '💪'}</div>
-            <h3 className="text-2xl font-bold">{Math.round(result.acc * 100)}% accuracy</h3>
-            <p className="text-muted-foreground">Average reaction time: <b>{result.avgRt || '—'} ms</b></p>
+            <h3 className="text-2xl font-bold">{t('mindgym.attention.accuracy', { accuracy: Math.round(result.acc * 100) })}</h3>
+            <p className="text-muted-foreground"><b>{t('mindgym.attention.averageReaction', { time: result.avgRt || '—' })}</b></p>
             <div className="flex flex-wrap gap-2 justify-center">
-              <Badge variant="secondary">✓ {result.hits} go hits</Badge>
-              <Badge variant="secondary">✓ {result.cr} correct stops</Badge>
-              <Badge variant="outline">↩ {result.misses} missed</Badge>
-              <Badge variant="outline">✋ {result.fa} impulse slips</Badge>
+              <Badge variant="secondary">{t('mindgym.attention.goHits', { count: result.hits })}</Badge>
+              <Badge variant="secondary">{t('mindgym.attention.correctStops', { count: result.cr })}</Badge>
+              <Badge variant="outline">{t('mindgym.attention.missed', { count: result.misses })}</Badge>
+              <Badge variant="outline">{t('mindgym.attention.impulseSlips', { count: result.fa })}</Badge>
             </div>
-            <Button size="lg" onClick={begin}>Play again</Button>
+            <Button size="lg" onClick={begin}>{t('mindgym.attention.playAgain')}</Button>
           </div>
         )}
       </CardContent>
@@ -363,6 +370,7 @@ function makeDeck(): MemCard[] {
 
 function MemoryMatch() {
   const addToast = useToastStore((s) => s.addToast);
+  const t = useT();
   const [cards, setCards] = useState<MemCard[]>(makeDeck);
   const [moves, setMoves] = useState(0);
   const [picks, setPicks] = useState<number[]>([]);
@@ -371,7 +379,11 @@ function MemoryMatch() {
   const won = cards.every((c) => c.matched);
 
   useEffect(() => {
-    if (won) addToast({ type: 'success', title: 'All matched!', description: `Completed in ${moves} moves. Great memory!` });
+    if (won) addToast({
+      type: 'success',
+      title: t('mindgym.memory.allMatchedTitle'),
+      description: t('mindgym.memory.allMatchedDescription', { moves }),
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [won]);
 
@@ -408,8 +420,8 @@ function MemoryMatch() {
   return (
     <Card className="max-w-xl mx-auto">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2"><Grid3x3 className="w-5 h-5 text-violet-500" /> Memory Match</CardTitle>
-        <CardDescription>Find all six matching pairs. Moves: <b>{moves}</b></CardDescription>
+        <CardTitle className="flex items-center gap-2"><Grid3x3 className="w-5 h-5 text-violet-500" /> {t('mindgym.memory.title')}</CardTitle>
+        <CardDescription>{t('mindgym.memory.description', { moves })}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-4 gap-3">
@@ -422,7 +434,7 @@ function MemoryMatch() {
                 className={`aspect-square rounded-xl text-3xl grid place-items-center transition-all border
                   ${show ? 'bg-card border-violet-400' : 'bg-gradient-to-br from-violet-500 to-purple-600 border-transparent'}
                   ${c.matched ? 'opacity-60 ring-2 ring-emerald-400' : ''}`}
-                aria-label={show ? c.emoji : 'hidden card'}
+                aria-label={show ? c.emoji : t('mindgym.memory.hiddenCard')}
               >
                 {show ? c.emoji : <Sparkles className="w-5 h-5 text-white/70" />}
               </button>
@@ -432,10 +444,10 @@ function MemoryMatch() {
         <div className="flex items-center justify-between">
           {won ? (
             <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
-              <Trophy className="w-4 h-4" /> Solved in {moves} moves!
+              <Trophy className="w-4 h-4" /> {t('mindgym.memory.solved', { moves })}
             </span>
-          ) : <span className="text-sm text-muted-foreground">Tap two cards to compare.</span>}
-          <Button variant="outline" className="gap-2" onClick={restart}><RotateCcw className="w-4 h-4" /> New game</Button>
+          ) : <span className="text-sm text-muted-foreground">{t('mindgym.memory.instruction')}</span>}
+          <Button variant="outline" className="gap-2" onClick={restart}><RotateCcw className="w-4 h-4" /> {t('mindgym.memory.newGame')}</Button>
         </div>
       </CardContent>
     </Card>
@@ -443,16 +455,17 @@ function MemoryMatch() {
 }
 
 // ── Daily Check-In ────────────────────────────────────────────────────────────
-const FIELDS: { key: string; label: string; low: string; high: string }[] = [
-  { key: 'sleep', label: 'Sleep', low: 'Poor', high: 'Great' },
-  { key: 'energy', label: 'Energy', low: 'Drained', high: 'Energised' },
-  { key: 'mood', label: 'Mood', low: 'Low', high: 'Bright' },
-  { key: 'focus', label: 'Focus', low: 'Scattered', high: 'Sharp' },
-  { key: 'fog', label: 'Clarity', low: 'Foggy', high: 'Clear' },
+const FIELDS: { key: string; labelKey: TranslationKey; lowKey: TranslationKey; highKey: TranslationKey }[] = [
+  { key: 'sleep', labelKey: 'mindgym.checkin.sleep', lowKey: 'mindgym.checkin.sleep.low', highKey: 'mindgym.checkin.sleep.high' },
+  { key: 'energy', labelKey: 'mindgym.checkin.energy', lowKey: 'mindgym.checkin.energy.low', highKey: 'mindgym.checkin.energy.high' },
+  { key: 'mood', labelKey: 'mindgym.checkin.mood', lowKey: 'mindgym.checkin.mood.low', highKey: 'mindgym.checkin.mood.high' },
+  { key: 'focus', labelKey: 'mindgym.checkin.focus', lowKey: 'mindgym.checkin.focus.low', highKey: 'mindgym.checkin.focus.high' },
+  { key: 'fog', labelKey: 'mindgym.checkin.clarity', lowKey: 'mindgym.checkin.clarity.low', highKey: 'mindgym.checkin.clarity.high' },
 ];
 
 function DailyCheckIn() {
   const addToast = useToastStore((s) => s.addToast);
+  const t = useT();
   const [vals, setVals] = useState<Record<string, number>>(() => Object.fromEntries(FIELDS.map((f) => [f.key, 5])));
   const [submitted, setSubmitted] = useState(false);
 
@@ -466,38 +479,38 @@ function DailyCheckIn() {
   const avg = FIELDS.reduce((s, f) => s + (vals[f.key] ?? 5), 0) / FIELDS.length;
   const recommendation =
     avg < 4
-      ? { tone: 'gentle', title: 'Be gentle with yourself today', text: 'Today looks like a harder day. Try the Breathing space or a short Calm session before anything demanding.' }
+      ? { tone: 'gentle', title: t('mindgym.checkin.gentle.title'), text: t('mindgym.checkin.gentle.text') }
       : avg < 7
-      ? { tone: 'balanced', title: 'A steady day', text: 'A balanced day — a single Focus block or the Attention game is a great, achievable goal.' }
-      : { tone: 'bright', title: 'You\'re in a good place', text: 'Energy looks good! A great time for a Memory Match challenge or a longer focus block.' };
+      ? { tone: 'balanced', title: t('mindgym.checkin.balanced.title'), text: t('mindgym.checkin.balanced.text') }
+      : { tone: 'bright', title: t('mindgym.checkin.bright.title'), text: t('mindgym.checkin.bright.text') };
 
   const submit = () => {
     setSubmitted(true);
     try { localStorage.setItem('mindgym-checkin', JSON.stringify(vals)); } catch { /* ignore */ }
-    addToast({ type: 'success', title: 'Check-in saved', description: recommendation.title });
+    addToast({ type: 'success', title: t('mindgym.checkin.savedTitle'), description: recommendation.title });
   };
 
   return (
     <Card className="max-w-xl mx-auto">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2"><HeartPulse className="w-5 h-5 text-cyan-500" /> Daily Check-In</CardTitle>
-        <CardDescription>How does today feel? This tailors a gentle suggestion.</CardDescription>
+        <CardTitle className="flex items-center gap-2"><HeartPulse className="w-5 h-5 text-cyan-500" /> {t('mindgym.checkin.title')}</CardTitle>
+        <CardDescription>{t('mindgym.checkin.description')}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">
         {FIELDS.map((f) => (
           <div key={f.key} className="space-y-1.5">
             <div className="flex justify-between text-sm">
-              <span className="font-medium">{f.label}</span>
+              <span className="font-medium">{t(f.labelKey)}</span>
               <span className="text-muted-foreground tabular-nums">{vals[f.key]}/10</span>
             </div>
             <Slider value={[vals[f.key]]} min={1} max={10} step={1} onValueChange={(v) => { setVals((s) => ({ ...s, [f.key]: v[0] })); setSubmitted(false); }} />
             <div className="flex justify-between text-[10px] uppercase tracking-wider text-muted-foreground">
-              <span>{f.low}</span><span>{f.high}</span>
+              <span>{t(f.lowKey)}</span><span>{t(f.highKey)}</span>
             </div>
           </div>
         ))}
 
-        <Button className="w-full" onClick={submit}>Save check-in</Button>
+        <Button className="w-full" onClick={submit}>{t('mindgym.checkin.save')}</Button>
 
         <AnimatePresence>
           {submitted && (

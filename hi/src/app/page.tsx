@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from 'next-themes';
 import { useAppStore, type AppSection } from '@/stores/app-store';
@@ -23,6 +23,17 @@ import NotificationCenter from '@/components/features/notification-center';
 import VoiceInput from '@/components/features/voice-input';
 import VoiceSettings from '@/components/features/voice-settings';
 import ToastProvider from '@/components/features/toast-provider';
+import { VoiceCommanderProvider, useCommander } from '@/voice/use-commander';
+import { I18nProvider } from '@/lib/i18n';
+import { ANNOUNCER_REGION_ID, announce } from '@/voice/announcer';
+import { describeCommands } from '@/voice/commander';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -68,6 +79,7 @@ import {
   Mic,
   Flame,
   Trophy,
+  HelpCircle,
 } from 'lucide-react';
 
 const navItems: { id: AppSection; label: string; icon: React.ReactNode; color: string }[] = [
@@ -296,6 +308,19 @@ export default function Home() {
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [voiceSettingsOpen, setVoiceSettingsOpen] = useState(false);
+  const [voiceHelpOpen, setVoiceHelpOpen] = useState(false);
+
+  // Section history for the voice "go back" command.
+  const prevSectionRef = useRef<AppSection>('home');
+  const navigate = useCallback((section: AppSection) => {
+    const current = useAppStore.getState().activeSection;
+    if (current !== section) prevSectionRef.current = current;
+    setActiveSection(section);
+  }, [setActiveSection]);
+
+  const goBack = useCallback(() => {
+    navigate(prevSectionRef.current);
+  }, [navigate]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -305,11 +330,31 @@ export default function Home() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // PWA shortcut deep-links (Pillar A): manifest shortcuts open
+  // /?section=live-coach and /?section=mind-gym — honor them on first load.
+  useEffect(() => {
+    try {
+      const section = new URLSearchParams(window.location.search).get('section');
+      const valid: AppSection[] = [
+        'home', 'dashboard', 'body-scan', 'live-coach', 'exercises',
+        'adaptive-workout', 'mind-gym', 'breathing', 'mood', 'nutrition',
+        'community', 'wearable', 'crisis',
+      ];
+      if (section && (valid as string[]).includes(section)) {
+        setActiveSection(section as AppSection);
+      }
+    } catch { /* noop */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const scrollToTop = useCallback(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
-  // Voice navigation: recognize spoken section names
+  // Legacy voice navigation fallback — only runs for transcripts the Voice
+  // Commander did NOT consume (voice-input routes through the commander first).
+  // Note: "help" is intentionally absent here; it is the commander's
+  // system.help intent (help overlay), not crisis navigation.
   const handleVoiceNavigation = useCallback((text: string) => {
     const lower = text.toLowerCase().trim();
     const voiceCommands: Record<string, AppSection> = {
@@ -345,16 +390,15 @@ export default function Home() {
       'watch': 'wearable',
       'crisis': 'crisis',
       'emergency': 'crisis',
-      'help': 'crisis',
       'support': 'crisis',
     };
     for (const [keyword, section] of Object.entries(voiceCommands)) {
       if (lower.includes(keyword)) {
-        setActiveSection(section);
+        navigate(section);
         return;
       }
     }
-  }, [setActiveSection]);
+  }, [navigate]);
 
   const renderSection = () => {
     switch (activeSection) {
@@ -375,7 +419,33 @@ export default function Home() {
   };
 
   return (
+    <VoiceCommanderProvider onNavigate={navigate}>
+    <I18nProvider>
     <div className="min-h-screen flex flex-col bg-background">
+      {/* Skip links — visible on keyboard focus */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[100] focus:rounded-md focus:bg-emerald-600 focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white focus:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300"
+      >
+        Skip to main content
+      </a>
+      <a
+        href="#voice-commands"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-52 focus:z-[100] focus:rounded-md focus:bg-emerald-600 focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white focus:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300"
+      >
+        Skip to voice commands
+      </a>
+
+      {/* Screen-reader live region owned by the Voice Commander announcer.
+          Rendered declaratively; announcer.ts reuses it by id. */}
+      <div
+        id={ANNOUNCER_REGION_ID}
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+      />
+
       {/* Header */}
       <header className="sticky top-0 z-50 glass-nav border-b border-border/50">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6">
@@ -453,8 +523,21 @@ export default function Home() {
             <div className="flex items-center gap-2">
               <ThemeToggle />
 
-              {/* Voice Navigation (ASR) */}
-              <VoiceInput onTranscription={handleVoiceNavigation} size="sm" />
+              {/* Voice Navigation + Commander (ASR) — skip-link target */}
+              <div id="voice-commands" tabIndex={-1} className="flex items-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-emerald-500">
+                <VoiceInput onTranscription={handleVoiceNavigation} size="sm" />
+              </div>
+
+              {/* Voice command help */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 relative"
+                onClick={() => setVoiceHelpOpen(true)}
+                aria-label="Voice command help — list of voice commands"
+              >
+                <HelpCircle className="w-4 h-4" />
+              </Button>
 
               {/* Voice Settings Button */}
               <Button
@@ -583,7 +666,7 @@ export default function Home() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1">
+      <main id="main-content" tabIndex={-1} className="flex-1 outline-none">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeSection}
@@ -746,7 +829,105 @@ export default function Home() {
 
       {/* Toast Notifications */}
       <ToastProvider />
+
+      {/* Voice Commander: system intent handlers (back/help) + help overlay */}
+      <VoiceCommanderChrome
+        onBack={goBack}
+        helpOpen={voiceHelpOpen}
+        setHelpOpen={setVoiceHelpOpen}
+      />
     </div>
+    </I18nProvider>
+    </VoiceCommanderProvider>
+  );
+}
+
+// ── Voice Commander chrome ─────────────────────────────────────────────────────
+// Lives inside VoiceCommanderProvider so it can register system-intent handlers.
+function VoiceCommanderChrome({
+  onBack,
+  helpOpen,
+  setHelpOpen,
+}: {
+  onBack: () => void;
+  helpOpen: boolean;
+  setHelpOpen: (open: boolean) => void;
+}) {
+  const commander = useCommander();
+  const registerHandler = commander?.registerHandler;
+
+  const onBackRef = useRef(onBack);
+  useEffect(() => { onBackRef.current = onBack; }, [onBack]);
+  const setHelpOpenRef = useRef(setHelpOpen);
+  useEffect(() => { setHelpOpenRef.current = setHelpOpen; }, [setHelpOpen]);
+
+  useEffect(() => {
+    if (!registerHandler) return;
+    const unsubs = [
+      registerHandler('system.back', () => onBackRef.current()),
+      registerHandler('system.help', () => setHelpOpenRef.current(true)),
+    ];
+    return () => unsubs.forEach((unsub) => unsub());
+  }, [registerHandler]);
+
+  // Speak a compact summary whenever the overlay opens (the full list is
+  // visible on screen and browseable by screen readers in the dialog).
+  useEffect(() => {
+    if (helpOpen) {
+      announce(
+        'Voice commands. Workout: start workout, pause, next exercise, repeat that, stop. ' +
+          'Logging: log water, I feel pain. General: go back, stop listening, help. ' +
+          'You can also say any section name, like dashboard or live coach. Press Escape to close.',
+        { speak: true, force: true },
+      );
+    }
+  }, [helpOpen]);
+
+  return <VoiceHelpOverlay open={helpOpen} onOpenChange={setHelpOpen} />;
+}
+
+// Help overlay — Radix Dialog gives us Esc-to-close and a focus trap for free.
+function VoiceHelpOverlay({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const groups = describeCommands();
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto motion-reduce:animate-none">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Mic className="w-5 h-5 text-emerald-500" /> Voice commands
+          </DialogTitle>
+          <DialogDescription>
+            Tap the microphone and speak naturally. Every command is confirmed
+            aloud and announced to your screen reader. Press Escape to close.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-5">
+          {groups.map((group) => (
+            <section key={group.category} aria-label={group.category}>
+              <h3 className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 mb-2">
+                {group.category}
+              </h3>
+              <ul className="space-y-2">
+                {group.commands.map((cmd) => (
+                  <li key={cmd.description} className="text-sm">
+                    <span className="font-medium">{cmd.description}</span>
+                    <span className="block text-xs text-muted-foreground">
+                      Say: {cmd.examples.map((e) => `“${e}”`).join(' or ')}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
