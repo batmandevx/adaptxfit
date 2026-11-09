@@ -39,6 +39,8 @@ interface AppState {
   setUserProfile: (profile: Partial<AppState['userProfile']>) => void;
   profileSetupComplete: boolean;
   setProfileSetupComplete: (complete: boolean) => void;
+  profileSetupDismissed: boolean;
+  setProfileSetupDismissed: (dismissed: boolean) => void;
   profileSetupOpen: boolean;
   setProfileSetupOpen: (open: boolean) => void;
   isTracking: boolean;
@@ -76,6 +78,11 @@ export const useAppStore = create<AppState>((set) => ({
   setProfileSetupComplete: (complete) => {
     if (typeof window !== 'undefined') localStorage.setItem('adaptifit-profile-complete', String(complete));
     set({ profileSetupComplete: complete });
+  },
+  profileSetupDismissed: typeof window !== 'undefined' ? localStorage.getItem('adaptifit-profile-dismissed') === 'true' : false,
+  setProfileSetupDismissed: (dismissed) => {
+    if (typeof window !== 'undefined') localStorage.setItem('adaptifit-profile-dismissed', String(dismissed));
+    set({ profileSetupDismissed: dismissed });
   },
   profileSetupOpen: false,
   setProfileSetupOpen: (open) => set({ profileSetupOpen: open }),

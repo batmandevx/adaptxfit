@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, MotionConfig, useReducedMotion } from 'framer-motion';
 import { useTheme } from 'next-themes';
 import { useAppStore, type AppSection } from '@/stores/app-store';
+import { useAccessibilityStore } from '@/stores/accessibility-store';
 import Dashboard from '@/components/features/dashboard';
 import BodyScan from '@/components/features/body-scan';
 import LiveCoach from '@/components/features/live-coach';
@@ -36,7 +37,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import {
@@ -80,6 +81,7 @@ import {
   Flame,
   Trophy,
   HelpCircle,
+  Languages,
 } from 'lucide-react';
 
 const navItems: { id: AppSection; label: string; icon: React.ReactNode; color: string }[] = [
@@ -105,16 +107,6 @@ const colorMap: Record<string, string> = {
   orange: 'from-orange-500 to-orange-600',
   violet: 'from-violet-500 to-violet-600',
   teal: 'from-teal-500 to-teal-600',
-};
-
-const colorMapBg: Record<string, string> = {
-  emerald: 'bg-emerald-500',
-  cyan: 'bg-cyan-500',
-  amber: 'bg-amber-500',
-  rose: 'bg-rose-500',
-  orange: 'bg-orange-500',
-  violet: 'bg-violet-500',
-  teal: 'bg-teal-500',
 };
 
 const colorMapText: Record<string, string> = {
@@ -174,6 +166,10 @@ const PARTICLES = Array.from({ length: 20 }, (_, i) => ({
 }));
 
 function FloatingParticles() {
+  const prefersReducedMotion = useReducedMotion();
+  const reducedMotion = useAccessibilityStore((s) => s.reducedMotion);
+
+  if (prefersReducedMotion || reducedMotion) return null;
 
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -208,6 +204,8 @@ function TypingEffect({ texts, className = '' }: { texts: string[]; className?: 
   const [textIndex, setTextIndex] = useState(0);
   const [charIndex, setCharIndex] = useState(0);
   const [isDeleting, setIsDeleting] = useState(false);
+  const prefersReducedMotion = useReducedMotion();
+  const reducedMotion = useAccessibilityStore((s) => s.reducedMotion);
 
   useEffect(() => {
     const currentText = texts[textIndex];
@@ -231,6 +229,11 @@ function TypingEffect({ texts, className = '' }: { texts: string[]; className?: 
     return () => clearTimeout(timeout);
   }, [charIndex, isDeleting, textIndex, texts]);
 
+  // Reduced motion: render the first tagline statically, no typing or cursor.
+  if (prefersReducedMotion || reducedMotion) {
+    return <span className={className}>{texts[0]}</span>;
+  }
+
   return (
     <span className={className}>
       {texts[textIndex].substring(0, charIndex)}
@@ -251,6 +254,64 @@ function DotGridBackground() {
   );
 }
 
+// Footer link — a real, tabbable interactive element with visible focus.
+// Items that map to an in-app destination use <button>; placeholder items use
+// an inert anchor (spec UX-03) rather than a dead <li>.
+function FooterLink({ children, onClick }: { children: React.ReactNode; onClick?: () => void }) {
+  const cls = 'hover:text-foreground transition-colors footer-link-underline rounded-sm text-left';
+  if (onClick) {
+    return (
+      <li>
+        <button type="button" onClick={onClick} className={cls}>
+          {children}
+        </button>
+      </li>
+    );
+  }
+  return (
+    <li>
+      <a href="#" onClick={(e) => e.preventDefault()} className={cls}>
+        {children}
+      </a>
+    </li>
+  );
+}
+
+// Welcome card copy — honest for first-time visitors (no fake "welcome back"
+// or invented recovery percentage before a profile exists, UX-13).
+function WelcomeCardText() {
+  const userName = useAppStore((s) => s.userName);
+  const profileSetupComplete = useAppStore((s) => s.profileSetupComplete);
+  return (
+    <div>
+      <p className="text-sm font-bold">
+        {profileSetupComplete && userName ? `Welcome back, ${userName}! 👋` : 'Your recovery, on track'}
+      </p>
+      <p className="text-xs text-muted-foreground">
+        {profileSetupComplete ? 'Your recovery is 78% on track' : 'Set up your profile to personalize this'}
+      </p>
+    </div>
+  );
+}
+
+// Header language quick-switch (UX-12) — opens the accessibility widget,
+// which presents the language radiogroup at the top of its panel.
+function HeaderLanguageButton() {
+  const locale = useAccessibilityStore((s) => s.locale);
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      className="h-11 gap-1.5"
+      aria-label="Change language"
+      onClick={() => useAccessibilityStore.getState().setOpen(true)}
+    >
+      <Languages className="w-4 h-4" />
+      <span className="text-xs font-semibold uppercase">{locale}</span>
+    </Button>
+  );
+}
+
 // Theme toggle button
 function ThemeToggle() {
   const { theme, setTheme } = useTheme();
@@ -263,7 +324,7 @@ function ThemeToggle() {
 
   if (!mounted) {
     return (
-      <Button variant="ghost" size="icon" className="h-9 w-9">
+      <Button variant="ghost" size="icon" className="h-11 w-11" aria-label="Switch theme">
         <Sun className="w-4 h-4" />
       </Button>
     );
@@ -273,8 +334,9 @@ function ThemeToggle() {
     <Button
       variant="ghost"
       size="icon"
-      className="h-9 w-9 relative"
+      className="h-11 w-11 relative"
       onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+      aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
     >
       <AnimatePresence mode="wait">
         {theme === 'dark' ? (
@@ -342,6 +404,21 @@ export default function Home() {
       ];
       if (section && (valid as string[]).includes(section)) {
         setActiveSection(section as AppSection);
+      }
+    } catch { /* noop */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // First-run: surface the real onboarding (profile setup) instead of dropping
+  // users into a dashboard of sample data. Skipped for PWA deep-links and for
+  // users who already completed or dismissed the dialog (B-05).
+  useEffect(() => {
+    try {
+      const hasDeepLink = !!new URLSearchParams(window.location.search).get('section');
+      const state = useAppStore.getState();
+      if (!hasDeepLink && !state.profileSetupComplete && !state.profileSetupDismissed) {
+        const timer = setTimeout(() => useAppStore.getState().setProfileSetupOpen(true), 1500);
+        return () => clearTimeout(timer);
       }
     } catch { /* noop */ }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -421,6 +498,7 @@ export default function Home() {
   return (
     <VoiceCommanderProvider onNavigate={navigate}>
     <I18nProvider>
+    <MotionConfig reducedMotion="user">
     <div className="min-h-screen flex flex-col bg-background">
       {/* Skip links — visible on keyboard focus */}
       <a
@@ -451,10 +529,12 @@ export default function Home() {
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
-            <motion.div
+            <motion.button
+              type="button"
+              aria-label="AdaptiFit — home"
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="flex items-center gap-2 cursor-pointer group"
+              className="flex items-center gap-2 group text-left rounded-lg"
               onClick={() => setActiveSection('home')}
             >
               <motion.div
@@ -468,9 +548,9 @@ export default function Home() {
                 <h1 className="text-lg font-bold tracking-tight">
                   Adapti<span className="text-emerald-500">Fit</span>
                 </h1>
-                <p className="text-[10px] text-muted-foreground -mt-1 hidden sm:block">AI Adaptive Fitness & Rehab</p>
+                <p className="text-xs text-muted-foreground -mt-1 hidden sm:block">AI Adaptive Fitness & Rehab</p>
               </div>
-            </motion.div>
+            </motion.button>
 
             {/* Desktop Navigation */}
             <TooltipProvider delayDuration={200}>
@@ -484,10 +564,12 @@ export default function Home() {
                           whileHover={{ scale: 1.08 }}
                           whileTap={{ scale: 0.95 }}
                           onClick={() => setActiveSection(item.id)}
+                          aria-label={item.label}
+                          aria-current={isActive ? 'page' : undefined}
                           className={`
-                            relative flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-300
+                            relative flex items-center gap-2 px-3 py-2 min-h-11 rounded-lg text-sm font-medium transition-colors duration-300
                             ${isActive
-                              ? `${colorMapBg[item.color]} text-white shadow-lg nav-active-bar nav-glow nav-glow-active`
+                              ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 nav-active-bar nav-glow nav-glow-active'
                               : 'text-muted-foreground hover:text-foreground hover:bg-muted/80'
                             }
                           `}
@@ -521,6 +603,10 @@ export default function Home() {
 
             {/* Right Side */}
             <div className="flex items-center gap-2">
+              {/* Language quick-switch — opens the accessibility widget at the
+                  language radiogroup (UX-12). */}
+              <HeaderLanguageButton />
+
               <ThemeToggle />
 
               {/* Voice Navigation + Commander (ASR) — skip-link target */}
@@ -531,29 +617,40 @@ export default function Home() {
               {/* Voice command help */}
               <Button
                 variant="ghost"
-                size="icon"
-                className="h-9 w-9 relative"
+                size="sm"
+                className="h-11 relative"
                 onClick={() => setVoiceHelpOpen(true)}
                 aria-label="Voice command help — list of voice commands"
               >
                 <HelpCircle className="w-4 h-4" />
+                <span className="hidden md:inline text-xs">Voice help</span>
               </Button>
 
               {/* Voice Settings Button */}
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-9 w-9 relative"
+                className="h-11 w-11 relative"
                 onClick={() => setVoiceSettingsOpen(true)}
+                aria-label="Voice and speech settings"
               >
                 <Volume2 className="w-4 h-4" />
               </Button>
 
               {/* Notification Bell */}
               <div className="relative">
-                <Button variant="ghost" size="icon" className="h-9 w-9 relative" onClick={() => setNotificationsOpen(!notificationsOpen)}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-11 w-11 relative"
+                  onClick={() => setNotificationsOpen(!notificationsOpen)}
+                  aria-label="Notifications, 3 unread"
+                >
                   <Bell className="w-4 h-4" />
-                  <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                  <span
+                    aria-hidden="true"
+                    className="absolute -top-0.5 -right-0.5 min-w-5 h-5 px-1 bg-rose-500 text-white text-xs font-bold rounded-full flex items-center justify-center"
+                  >
                     3
                   </span>
                 </Button>
@@ -568,19 +665,23 @@ export default function Home() {
               </Badge>
 
               {/* User Avatar */}
-              <Avatar
-                className="h-8 w-8 cursor-pointer ring-2 ring-emerald-500/30 hover:ring-emerald-500/60 transition-all"
+              <button
+                type="button"
+                aria-label="Edit your profile and accessibility needs"
+                className="rounded-full"
                 onClick={() => useAppStore.getState().setProfileSetupOpen(true)}
               >
-                <AvatarFallback className="bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 text-xs font-bold">
-                  A
-                </AvatarFallback>
-              </Avatar>
+                <Avatar className="h-10 w-10 ring-2 ring-emerald-500/30 hover:ring-emerald-500/60 transition-all">
+                  <AvatarFallback className="bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 text-xs font-bold">
+                    A
+                  </AvatarFallback>
+                </Avatar>
+              </button>
 
               <Button
                 size="sm"
-                className="hidden sm:flex bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-lg shadow-emerald-500/20"
-                onClick={() => setActiveSection('dashboard')}
+                className="hidden sm:flex bg-gradient-to-r from-emerald-700 to-teal-700 hover:from-emerald-600 hover:to-teal-600 text-white shadow-lg shadow-emerald-500/20"
+                onClick={() => useAppStore.getState().setProfileSetupOpen(true)}
               >
                 <Sparkles className="w-4 h-4 mr-1" />
                 Get Started
@@ -589,7 +690,7 @@ export default function Home() {
               {/* Mobile Menu */}
               <Sheet>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="lg:hidden">
+                  <Button variant="ghost" size="icon" className="h-11 w-11 lg:hidden" aria-label="Open navigation menu">
                     <Menu className="w-5 h-5" />
                   </Button>
                 </SheetTrigger>
@@ -611,30 +712,32 @@ export default function Home() {
                     <div className="flex-1 overflow-y-auto px-3 py-4">
                       <div className="flex flex-col gap-1">
                         {navItems.map((item) => (
-                          <motion.button
-                            key={item.id}
-                            whileHover={{ scale: 1.02, x: 4 }}
-                            whileTap={{ scale: 0.97 }}
-                            onClick={() => { setActiveSection(item.id); }}
-                            className={`
-                              w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium transition-all duration-300
-                              ${activeSection === item.id
-                                ? `bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 nav-glow-active nav-active-bar`
-                                : 'hover:bg-muted text-muted-foreground hover:text-foreground border border-transparent'
-                              }
-                            `}
-                          >
-                            <motion.span
-                              className={`flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200 ${activeSection === item.id ? 'bg-emerald-500 text-white' : 'bg-muted'}`}
-                              whileHover={{ scale: 1.1, rotate: 5 }}
+                          <SheetClose asChild key={item.id}>
+                            <motion.button
+                              whileHover={{ scale: 1.02, x: 4 }}
+                              whileTap={{ scale: 0.97 }}
+                              onClick={() => { setActiveSection(item.id); }}
+                              aria-current={activeSection === item.id ? 'page' : undefined}
+                              className={`
+                                w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium transition-all duration-300
+                                ${activeSection === item.id
+                                  ? `bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 nav-glow-active nav-active-bar`
+                                  : 'hover:bg-muted text-muted-foreground hover:text-foreground border border-transparent'
+                                }
+                              `}
                             >
-                              {item.icon}
-                            </motion.span>
-                            <span>{item.label}</span>
-                            {activeSection === item.id && (
-                              <ChevronRight className="w-4 h-4 ml-auto text-emerald-500" />
-                            )}
-                          </motion.button>
+                              <motion.span
+                                className={`flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200 ${activeSection === item.id ? 'bg-emerald-500 text-white' : 'bg-muted'}`}
+                                whileHover={{ scale: 1.1, rotate: 5 }}
+                              >
+                                {item.icon}
+                              </motion.span>
+                              <span>{item.label}</span>
+                              {activeSection === item.id && (
+                                <ChevronRight className="w-4 h-4 ml-auto text-emerald-500" />
+                              )}
+                            </motion.button>
+                          </SheetClose>
                         ))}
                       </div>
                     </div>
@@ -651,7 +754,7 @@ export default function Home() {
                           <p className="text-sm font-semibold truncate">AdaptiFit User</p>
                           <p className="text-xs text-muted-foreground">Pro Plan</p>
                         </div>
-                        <Badge variant="outline" className="text-[10px] gap-0.5 shrink-0">
+                        <Badge variant="outline" className="text-xs gap-0.5 shrink-0">
                           <Shield className="w-2.5 h-2.5 text-emerald-500" />
                           Pro
                         </Badge>
@@ -688,6 +791,7 @@ export default function Home() {
         {/* Gradient accent line */}
         <div className="h-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 gradient-line-animate" />
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-10">
+          <nav aria-label="Footer">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 mb-8">
             {/* Platform */}
             <div>
@@ -699,11 +803,11 @@ export default function Home() {
               </div>
               <h4 className="font-semibold text-sm mb-3">Platform</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li className="hover:text-foreground cursor-pointer transition-colors footer-link-underline">Dashboard</li>
-                <li className="hover:text-foreground cursor-pointer transition-colors footer-link-underline">Body Scan</li>
-                <li className="hover:text-foreground cursor-pointer transition-colors footer-link-underline">Exercise Library</li>
-                <li className="hover:text-foreground cursor-pointer transition-colors footer-link-underline">Mood Monitor</li>
-                <li className="hover:text-foreground cursor-pointer transition-colors footer-link-underline">Nutrition</li>
+                <FooterLink onClick={() => setActiveSection('dashboard')}>Dashboard</FooterLink>
+                <FooterLink onClick={() => setActiveSection('body-scan')}>Body Scan</FooterLink>
+                <FooterLink onClick={() => setActiveSection('exercises')}>Exercise Library</FooterLink>
+                <FooterLink onClick={() => setActiveSection('mood')}>Mood Monitor</FooterLink>
+                <FooterLink onClick={() => setActiveSection('nutrition')}>Nutrition</FooterLink>
               </ul>
             </div>
 
@@ -711,11 +815,11 @@ export default function Home() {
             <div>
               <h4 className="font-semibold text-sm mb-3">Resources</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li className="hover:text-foreground cursor-pointer transition-colors footer-link-underline">Documentation</li>
-                <li className="hover:text-foreground cursor-pointer transition-colors footer-link-underline">API Reference</li>
-                <li className="hover:text-foreground cursor-pointer transition-colors footer-link-underline">Video Tutorials</li>
-                <li className="hover:text-foreground cursor-pointer transition-colors footer-link-underline">Blog</li>
-                <li className="hover:text-foreground cursor-pointer transition-colors footer-link-underline">Help Center</li>
+                <FooterLink>Documentation</FooterLink>
+                <FooterLink>API Reference</FooterLink>
+                <FooterLink onClick={() => setActiveSection('exercises')}>Video Tutorials</FooterLink>
+                <FooterLink onClick={() => setActiveSection('community')}>Blog</FooterLink>
+                <FooterLink onClick={() => setVoiceHelpOpen(true)}>Help Center</FooterLink>
               </ul>
             </div>
 
@@ -723,11 +827,11 @@ export default function Home() {
             <div>
               <h4 className="font-semibold text-sm mb-3">Community</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li className="hover:text-foreground cursor-pointer transition-colors footer-link-underline">Peer Support</li>
-                <li className="hover:text-foreground cursor-pointer transition-colors footer-link-underline">Expert Coaching</li>
-                <li className="hover:text-foreground cursor-pointer transition-colors footer-link-underline">Success Stories</li>
-                <li className="hover:text-foreground cursor-pointer transition-colors footer-link-underline">Events</li>
-                <li className="hover:text-foreground cursor-pointer transition-colors footer-link-underline">Ambassador Program</li>
+                <FooterLink onClick={() => setActiveSection('community')}>Peer Support</FooterLink>
+                <FooterLink onClick={() => setActiveSection('community')}>Expert Coaching</FooterLink>
+                <FooterLink onClick={() => setActiveSection('community')}>Success Stories</FooterLink>
+                <FooterLink onClick={() => setActiveSection('community')}>Events</FooterLink>
+                <FooterLink onClick={() => setActiveSection('community')}>Ambassador Program</FooterLink>
               </ul>
             </div>
 
@@ -735,14 +839,15 @@ export default function Home() {
             <div>
               <h4 className="font-semibold text-sm mb-3">Legal</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li className="hover:text-foreground cursor-pointer transition-colors footer-link-underline">Privacy Policy</li>
-                <li className="hover:text-foreground cursor-pointer transition-colors footer-link-underline">Terms of Service</li>
-                <li className="hover:text-foreground cursor-pointer transition-colors footer-link-underline">HIPAA Compliance</li>
-                <li className="hover:text-foreground cursor-pointer transition-colors footer-link-underline">Cookie Policy</li>
-                <li className="hover:text-foreground cursor-pointer transition-colors footer-link-underline">Accessibility</li>
+                <FooterLink>Privacy Policy</FooterLink>
+                <FooterLink>Terms of Service</FooterLink>
+                <FooterLink>HIPAA Compliance</FooterLink>
+                <FooterLink>Cookie Policy</FooterLink>
+                <FooterLink onClick={() => useAccessibilityStore.getState().setOpen(true)}>Accessibility</FooterLink>
               </ul>
             </div>
           </div>
+          </nav>
 
           {/* Divider */}
           <div className="border-t border-border/50 pt-6">
@@ -755,22 +860,22 @@ export default function Home() {
               {/* Social Icons */}
               <div className="flex items-center gap-3">
                 <motion.div whileHover={{ scale: 1.2 }} transition={{ type: 'spring', stiffness: 400, damping: 17 }}>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-cyan-500 transition-colors micro-bounce">
+                  <Button variant="ghost" size="icon" aria-label="AdaptiFit on Twitter" className="h-10 w-10 text-muted-foreground hover:text-cyan-500 transition-colors micro-bounce">
                     <Twitter className="w-4 h-4" />
                   </Button>
                 </motion.div>
                 <motion.div whileHover={{ scale: 1.2 }} transition={{ type: 'spring', stiffness: 400, damping: 17 }}>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-rose-500 transition-colors micro-bounce">
+                  <Button variant="ghost" size="icon" aria-label="AdaptiFit on Instagram" className="h-10 w-10 text-muted-foreground hover:text-rose-500 transition-colors micro-bounce">
                     <Instagram className="w-4 h-4" />
                   </Button>
                 </motion.div>
                 <motion.div whileHover={{ scale: 1.2 }} transition={{ type: 'spring', stiffness: 400, damping: 17 }}>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-red-500 transition-colors micro-bounce">
+                  <Button variant="ghost" size="icon" aria-label="AdaptiFit on YouTube" className="h-10 w-10 text-muted-foreground hover:text-red-500 transition-colors micro-bounce">
                     <Youtube className="w-4 h-4" />
                   </Button>
                 </motion.div>
                 <motion.div whileHover={{ scale: 1.2 }} transition={{ type: 'spring', stiffness: 400, damping: 17 }}>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-teal-500 transition-colors micro-bounce">
+                  <Button variant="ghost" size="icon" aria-label="AdaptiFit on LinkedIn" className="h-10 w-10 text-muted-foreground hover:text-teal-500 transition-colors micro-bounce">
                     <Linkedin className="w-4 h-4" />
                   </Button>
                 </motion.div>
@@ -804,12 +909,13 @@ export default function Home() {
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
-            className="fixed bottom-6 left-6 z-40"
+            className="fixed bottom-6 right-24 z-40"
           >
             <Button
               size="icon"
               variant="outline"
-              className="rounded-full shadow-lg bg-background/80 backdrop-blur-sm"
+              aria-label="Back to top"
+              className="h-11 w-11 rounded-full shadow-lg bg-background/80 backdrop-blur-sm"
               onClick={scrollToTop}
             >
               <ArrowUp className="w-4 h-4" />
@@ -837,6 +943,7 @@ export default function Home() {
         setHelpOpen={setVoiceHelpOpen}
       />
     </div>
+    </MotionConfig>
     </I18nProvider>
     </VoiceCommanderProvider>
   );
@@ -935,11 +1042,13 @@ function VoiceHelpOverlay({
 function HeroSection({ onNavigate }: { onNavigate: (section: AppSection) => void }) {
   const [statsInView, setStatsInView] = useState(false);
 
+  // Capability stats that are true of the product — no fabricated user counts
+  // or invented accuracy claims (UX-13).
   const statValues = [
-    { target: 50, suffix: 'K+', label: 'Active Users', icon: <Users className="w-4 h-4" /> },
+    { target: 5, suffix: '', label: 'Languages', icon: <Languages className="w-4 h-4" /> },
     { target: 200, suffix: '+', label: 'Adaptive Exercises', icon: <Dumbbell className="w-4 h-4" /> },
-    { target: 98, suffix: '%', label: 'Form Accuracy', icon: <Target className="w-4 h-4" /> },
-    { target: 24, suffix: '/7', label: 'AI Monitoring', icon: <Activity className="w-4 h-4" /> },
+    { target: 100, suffix: '%', label: 'On-Device AI', icon: <Target className="w-4 h-4" /> },
+    { target: 24, suffix: '/7', label: 'Voice Control', icon: <Activity className="w-4 h-4" /> },
   ];
 
   const features = [
@@ -1113,7 +1222,7 @@ function HeroSection({ onNavigate }: { onNavigate: (section: AppSection) => void
           animate={{ y: [0, 8, 0] }}
           transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
         >
-          <span className="text-[10px] uppercase tracking-widest">Scroll to explore</span>
+          <span className="text-xs uppercase tracking-widest">Scroll to explore</span>
           <ChevronRight className="w-3 h-3 rotate-90" />
         </motion.div>
 
@@ -1169,10 +1278,10 @@ function HeroSection({ onNavigate }: { onNavigate: (section: AppSection) => void
               <div className="flex flex-wrap gap-4 mb-10">
                 <Button
                   size="lg"
-                  className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-xl shadow-emerald-500/25 group shimmer-btn magnetic-hover"
-                  onClick={() => onNavigate('dashboard')}
+                  className="bg-gradient-to-r from-emerald-700 to-teal-700 hover:from-emerald-600 hover:to-teal-600 text-white shadow-xl shadow-emerald-500/25 group shimmer-btn magnetic-hover"
+                  onClick={() => useAppStore.getState().setProfileSetupOpen(true)}
                 >
-                  Start Your Journey
+                  Set Up My Profile
                   <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                 </Button>
                 <Button
@@ -1247,26 +1356,23 @@ function HeroSection({ onNavigate }: { onNavigate: (section: AppSection) => void
                   <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/30">
                     <Accessibility className="w-5 h-5 text-white" />
                   </div>
-                  <div>
-                    <p className="text-sm font-bold">Welcome back, Alex! 👋</p>
-                    <p className="text-[11px] text-muted-foreground">Your recovery is 78% on track</p>
-                  </div>
+                  <WelcomeCardText />
                 </div>
                 <div className="grid grid-cols-3 gap-3">
                   <div className="text-center p-2 rounded-lg bg-emerald-500/10">
                     <Flame className="w-4 h-4 text-amber-500 mx-auto mb-1" />
                     <p className="text-sm font-bold">245</p>
-                    <p className="text-[10px] text-muted-foreground">Cal</p>
+                    <p className="text-xs text-muted-foreground">Cal</p>
                   </div>
                   <div className="text-center p-2 rounded-lg bg-teal-500/10">
                     <Trophy className="w-4 h-4 text-emerald-500 mx-auto mb-1" />
                     <p className="text-sm font-bold">12</p>
-                    <p className="text-[10px] text-muted-foreground">Streak</p>
+                    <p className="text-xs text-muted-foreground">Streak</p>
                   </div>
                   <div className="text-center p-2 rounded-lg bg-rose-500/10">
                     <Heart className="w-4 h-4 text-rose-500 mx-auto mb-1" />
                     <p className="text-sm font-bold">8.5</p>
-                    <p className="text-[10px] text-muted-foreground">Mood</p>
+                    <p className="text-xs text-muted-foreground">Mood</p>
                   </div>
                 </div>
               </motion.div>
@@ -1387,7 +1493,8 @@ function HeroSection({ onNavigate }: { onNavigate: (section: AppSection) => void
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {features.map((feature, i) => (
-              <motion.div
+              <motion.button
+                type="button"
                 key={feature.title}
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -1396,13 +1503,13 @@ function HeroSection({ onNavigate }: { onNavigate: (section: AppSection) => void
                 whileHover={{ scale: 1.02, y: -6 }}
                 onClick={() => onNavigate(feature.section)}
                 className={`
-                  cursor-pointer rounded-2xl border ${feature.border} bg-gradient-to-br ${feature.gradient}
+                  text-left w-full rounded-2xl border ${feature.border} bg-gradient-to-br ${feature.gradient}
                   p-6 transition-all duration-300 group gradient-border-card gradient-border-animate card-lift relative overflow-hidden
                 `}
               >
                 {/* Badge */}
                 {feature.badge && (
-                  <div className={`absolute top-3 right-3 px-2 py-0.5 rounded-full text-[10px] font-bold badge-pulse ${
+                  <div className={`absolute top-3 right-3 px-2 py-0.5 rounded-full text-xs font-bold badge-pulse ${
                     feature.badge === 'NEW'
                       ? 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20'
                       : feature.badge === 'Critical'
@@ -1427,7 +1534,7 @@ function HeroSection({ onNavigate }: { onNavigate: (section: AppSection) => void
                     <ChevronRight className="w-4 h-4" />
                   </div>
                 </div>
-              </motion.div>
+              </motion.button>
             ))}
           </div>
         </div>
@@ -1571,7 +1678,7 @@ function HeroSection({ onNavigate }: { onNavigate: (section: AppSection) => void
                     <p className="text-xs text-muted-foreground italic leading-relaxed mb-2">
                       &ldquo;{item.testimonial.quote}&rdquo;
                     </p>
-                    <p className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                    <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
                       — {item.testimonial.author}
                     </p>
                   </div>
@@ -1589,7 +1696,7 @@ function HeroSection({ onNavigate }: { onNavigate: (section: AppSection) => void
             initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
-            className="relative bg-gradient-to-br from-emerald-500 to-teal-600 rounded-3xl p-8 sm:p-12 lg:p-16 text-white overflow-hidden"
+            className="relative bg-gradient-to-br from-emerald-600 to-teal-700 rounded-3xl p-8 sm:p-12 lg:p-16 text-white overflow-hidden"
           >
             {/* Animated geometric shapes */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">

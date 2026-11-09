@@ -19,7 +19,7 @@
  * `t('namespace.key', { value })`. Missing translations fall back to English.
  */
 
-import { createContext, createElement, useContext, useMemo, type ReactNode } from 'react';
+import { createContext, createElement, useContext, useEffect, useMemo, type ReactNode } from 'react';
 import { useAccessibilityStore } from '@/stores/accessibility-store';
 import {
   DEFAULT_LOCALE,
@@ -92,6 +92,12 @@ const englishFallback: I18nContextValue = {
 export function I18nProvider({ children }: { children: ReactNode }) {
   const locale = useAccessibilityStore((state) => state.locale);
   const setLocale = useAccessibilityStore((state) => state.setLocale);
+
+  // Keep <html lang> in sync with the active UI locale so screen readers use
+  // the correct pronunciation rules (WCAG 3.1.1/3.1.2).
+  useEffect(() => {
+    document.documentElement.lang = locale;
+  }, [locale]);
 
   const value = useMemo<I18nContextValue>(
     () => ({

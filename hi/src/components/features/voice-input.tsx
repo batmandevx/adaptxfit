@@ -272,7 +272,7 @@ export default function VoiceInput({
             className="flex items-center gap-2 overflow-hidden"
           >
             <WaveformAnimation audioLevel={audioLevel} isActive={isRecording} />
-            <span className="text-xs text-rose-500 font-medium whitespace-nowrap">Recording...</span>
+            <span className="text-xs text-rose-600 dark:text-rose-400 font-semibold whitespace-nowrap">Recording...</span>
           </motion.div>
         )}
       </AnimatePresence>

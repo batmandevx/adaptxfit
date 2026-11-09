@@ -92,7 +92,7 @@ function SettingRow({ icon, label, description, children }: SettingRowProps) {
         <div className="min-w-0">
           <p className="text-sm font-medium text-foreground leading-tight">{label}</p>
           {description && (
-            <p className="text-[11px] text-muted-foreground leading-tight mt-0.5 truncate">
+            <p className="text-xs text-muted-foreground leading-tight mt-0.5 truncate">
               {description}
             </p>
           )}
@@ -198,6 +198,14 @@ export default function AccessibilityWidget() {
         root.classList.remove(cls);
       }
     });
+
+    // Expose the in-app reduced-motion toggle to JS-driven (framer-motion)
+    // animators, which don't read CSS media queries.
+    if (store.reducedMotion) {
+      root.dataset.reducedMotion = 'true';
+    } else {
+      delete root.dataset.reducedMotion;
+    }
   }, [
     store.fontSize,
     store.highContrast,
@@ -206,6 +214,21 @@ export default function AccessibilityWidget() {
     store.focusIndicators,
     store.largerTouchTargets,
   ]);
+
+  // First visit (nothing persisted yet): seed the Reduced Motion preference
+  // from the OS-level prefers-reduced-motion setting.
+  useEffect(() => {
+    try {
+      if (
+        window.localStorage.getItem('adaptifit-accessibility') === null &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches &&
+        !useAccessibilityStore.getState().reducedMotion
+      ) {
+        useAccessibilityStore.getState().toggleReducedMotion();
+      }
+    } catch { /* storage/matchMedia unavailable — ignore */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Mark as visited after first open
   const handleToggleOpen = useCallback(() => {
@@ -228,7 +251,7 @@ export default function AccessibilityWidget() {
 
   // Font size button style helper
   const fontSizeBtnClass = (size: 'small' | 'medium' | 'large') =>
-    `px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+    `min-h-11 min-w-11 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
       store.fontSize === size
         ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/25'
         : 'bg-muted text-muted-foreground hover:bg-emerald-500/10 hover:text-emerald-600 dark:hover:text-emerald-400'
@@ -290,7 +313,7 @@ export default function AccessibilityWidget() {
                     <h2 className="text-sm font-semibold text-foreground">
                       Accessibility Settings
                     </h2>
-                    <p className="text-[10px] text-muted-foreground">
+                    <p className="text-xs text-muted-foreground">
                       Customize your experience
                     </p>
                   </div>
@@ -315,7 +338,7 @@ export default function AccessibilityWidget() {
                     title={t('accessibility.language.title')}
                   />
                   <div className="pb-2">
-                    <p className="text-[11px] text-muted-foreground pb-2">
+                    <p className="text-xs text-muted-foreground pb-2">
                       {t('accessibility.language.description')}
                     </p>
                     <div
@@ -337,7 +360,7 @@ export default function AccessibilityWidget() {
                             aria-checked={selected}
                             tabIndex={selected ? 0 : -1}
                             onClick={() => selectLanguage(option.code)}
-                            className={`flex min-h-10 items-center gap-2.5 rounded-xl border px-3 py-2 text-left text-sm transition-colors focus-visible:outline-2 focus-visible:outline-emerald-500 focus-visible:outline-offset-2 ${
+                            className={`flex min-h-11 items-center gap-2.5 rounded-xl border px-3 py-2 text-left text-sm transition-colors focus-visible:outline-2 focus-visible:outline-emerald-500 focus-visible:outline-offset-2 ${
                               selected
                                 ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
                                 : 'border-border/60 bg-muted/40 text-foreground hover:border-emerald-500/30 hover:bg-emerald-500/5'
@@ -347,7 +370,7 @@ export default function AccessibilityWidget() {
                               {option.flag}
                             </span>
                             <span className="flex-1 font-medium">{option.nativeName}</span>
-                            <span className="text-[10px] text-muted-foreground">
+                            <span className="text-xs text-muted-foreground">
                               {option.englishName}
                             </span>
                           </button>
@@ -462,8 +485,8 @@ export default function AccessibilityWidget() {
                     description="Enhanced shortcuts"
                   >
                     <Switch
-                      checked={store.focusIndicators}
-                      onCheckedChange={store.toggleFocusIndicators}
+                      checked={store.keyboardNavigation}
+                      onCheckedChange={store.toggleKeyboardNavigation}
                       aria-label="Toggle keyboard navigation enhancements"
                       className="data-[state=checked]:bg-emerald-500"
                     />
@@ -511,7 +534,7 @@ export default function AccessibilityWidget() {
                       <div className="flex items-center gap-3 py-2 pl-9">
                         <Gauge className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400 shrink-0" />
                         <div className="flex-1 flex items-center gap-2">
-                          <span className="text-[10px] text-muted-foreground shrink-0">0.5x</span>
+                          <span className="text-xs text-muted-foreground shrink-0">0.5x</span>
                           <Slider
                             min={0.5}
                             max={2}
@@ -521,9 +544,9 @@ export default function AccessibilityWidget() {
                             aria-label="Voice speed"
                             className="flex-1 data-[state=checked]:bg-emerald-500"
                           />
-                          <span className="text-[10px] text-muted-foreground shrink-0">2.0x</span>
+                          <span className="text-xs text-muted-foreground shrink-0">2.0x</span>
                         </div>
-                        <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 w-8 text-right">
+                        <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400 w-8 text-right">
                           {store.voiceSpeed.toFixed(1)}x
                         </span>
                       </div>

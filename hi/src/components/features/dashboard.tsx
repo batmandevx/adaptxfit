@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, type ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import {
   Activity,
@@ -369,6 +369,17 @@ function MiniSparkline({ data, color }: { data: number[]; color: string }) {
   );
 }
 
+// ── Accessible chart wrapper: gives the recharts SVG an accessible name and
+// an sr-only caption (UX-14). ────────────────────────────────────────────────
+function ChartFigure({ summary, children }: { summary: string; children: ReactNode }) {
+  return (
+    <figure role="img" aria-label={summary} className="m-0">
+      <figcaption className="sr-only">{summary}</figcaption>
+      {children}
+    </figure>
+  );
+}
+
 // ── Health Score circular gauge ─────────────────────────────────────────────
 
 function HealthScoreGauge({ score }: { score: number }) {
@@ -605,6 +616,7 @@ function DailyInspirationCard() {
 
 export default function Dashboard() {
   const setActiveSection = useAppStore((s) => s.setActiveSection);
+  const profileSetupComplete = useAppStore((s) => s.profileSetupComplete);
   const { locale, t } = useI18n();
   const weeklyExerciseConfig = getWeeklyExerciseConfig(t);
   const progressConfig = getProgressConfig(t);
@@ -676,6 +688,28 @@ export default function Dashboard() {
           </Badge>
         </div>
       </motion.div>
+
+      {/* ── First-run honesty banner: this is sample data until the user sets
+          up a profile (UX-14). ─────────────────────────────────────────── */}
+      {!profileSetupComplete && (
+        <motion.div variants={itemVariants}>
+          <Card role="status" className="rounded-xl border-emerald-500/30 bg-emerald-500/5">
+            <CardContent className="flex flex-col items-start gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm">
+                <span className="font-semibold">This is sample data.</span>{' '}
+                Set up your profile to see your own plan.
+              </p>
+              <Button
+                size="sm"
+                className="bg-gradient-to-r from-emerald-700 to-teal-700 hover:from-emerald-600 hover:to-teal-600 text-white"
+                onClick={() => useAppStore.getState().setProfileSetupOpen(true)}
+              >
+                Set up my profile
+              </Button>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
 
       {/* ── Quick Action Buttons ─────────────────────────────────────────── */}
       <motion.div variants={itemVariants}>
@@ -864,7 +898,16 @@ export default function Dashboard() {
                   {t('dashboard.todayPlan.exercises')}
                 </h4>
                 <div className="space-y-2">
-                  {todaysExercises.map((exercise) => (
+                  {todaysExercises.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed p-6 text-center">
+                      <Activity className="h-6 w-6 text-muted-foreground" />
+                      <p className="text-sm font-medium">No plan yet</p>
+                      <Button size="sm" onClick={() => setActiveSection('adaptive-workout')}>
+                        Build my plan
+                      </Button>
+                    </div>
+                  ) : (
+                  todaysExercises.map((exercise) => (
                     <div
                       key={exercise.id}
                       className="flex items-center gap-2 rounded-lg border p-2.5 transition-colors hover:bg-muted/50"
@@ -881,7 +924,7 @@ export default function Dashboard() {
                         }`}>
                           {t(exercise.nameKey)}
                         </p>
-                        <p className="text-muted-foreground text-[11px]">
+                        <p className="text-muted-foreground text-xs">
                           {exercise.time} · {exercise.duration}
                         </p>
                       </div>
@@ -891,7 +934,7 @@ export default function Dashboard() {
                         <Circle className="text-muted-foreground/40 h-4 w-4 shrink-0" />
                       )}
                     </div>
-                  ))}
+                  )))}
                 </div>
               </div>
 
@@ -909,7 +952,7 @@ export default function Dashboard() {
                     >
                       <Bell className="text-amber-500 h-3.5 w-3.5 shrink-0" />
                       <span className="text-sm flex-1">{t(reminder.textKey)}</span>
-                      <Badge variant="outline" className="text-[10px] shrink-0">
+                      <Badge variant="outline" className="text-xs shrink-0">
                         {reminder.time}
                       </Badge>
                     </div>
@@ -1032,6 +1075,7 @@ export default function Dashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent className="p-4 pt-0 overflow-x-auto">
+              <ChartFigure summary={`${t('dashboard.charts.weeklyExercise.title')}. ${t('dashboard.charts.weeklyExercise.description')}`}>
               <ChartContainer
                 config={weeklyExerciseConfig}
                 className="h-[280px] w-full min-w-[300px]"
@@ -1070,6 +1114,7 @@ export default function Dashboard() {
                   />
                 </BarChart>
               </ChartContainer>
+              </ChartFigure>
             </CardContent>
           </Card>
         </motion.div>
@@ -1087,6 +1132,7 @@ export default function Dashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent className="p-4 pt-0 overflow-x-auto">
+              <ChartFigure summary={`${t('dashboard.charts.progress.title')}. ${t('dashboard.charts.progress.description')}`}>
               <ChartContainer
                 config={progressConfig}
                 className="h-[280px] w-full min-w-[300px]"
@@ -1144,6 +1190,7 @@ export default function Dashboard() {
                   />
                 </AreaChart>
               </ChartContainer>
+              </ChartFigure>
             </CardContent>
           </Card>
         </motion.div>
@@ -1161,6 +1208,7 @@ export default function Dashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent className="p-4 pt-0 overflow-x-auto">
+              <ChartFigure summary={`${t('dashboard.charts.calories.title')}. ${t('dashboard.charts.calories.description')}`}>
               <ChartContainer
                 config={calorieConfig}
                 className="h-[280px] w-full min-w-[300px]"
@@ -1206,6 +1254,7 @@ export default function Dashboard() {
                   />
                 </ComposedChart>
               </ChartContainer>
+              </ChartFigure>
             </CardContent>
           </Card>
         </motion.div>
@@ -1223,6 +1272,7 @@ export default function Dashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent className="p-4 pt-0 overflow-x-auto">
+              <ChartFigure summary={`${t('dashboard.charts.heartRate.title')}. ${t('dashboard.charts.heartRate.description')}`}>
               <ChartContainer
                 config={heartRateConfig}
                 className="h-[280px] w-full min-w-[300px]"
@@ -1292,6 +1342,7 @@ export default function Dashboard() {
                   />
                 </LineChart>
               </ChartContainer>
+              </ChartFigure>
               {/* Zone legend */}
               <div className="mt-2 flex flex-wrap items-center justify-center gap-3 text-xs">
                 {Object.entries(zoneColors).map(([zone, color]) => (
@@ -1328,6 +1379,7 @@ export default function Dashboard() {
                 <TabsTrigger value="details">{t('common.details')}</TabsTrigger>
               </TabsList>
               <TabsContent value="chart">
+                <ChartFigure summary={`${t('dashboard.charts.moodTrend.title')}. ${t('dashboard.charts.moodTrend.description')}`}>
                 <ChartContainer
                   config={moodConfig}
                   className="h-[250px] w-full min-w-[300px]"
@@ -1383,6 +1435,7 @@ export default function Dashboard() {
                     />
                   </BarChart>
                 </ChartContainer>
+              </ChartFigure>
               </TabsContent>
               <TabsContent value="details">
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">

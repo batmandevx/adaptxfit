@@ -318,7 +318,7 @@ function AttentionGame() {
               <AnimatePresence mode="wait">
                 {stim === 'go' && (
                   <motion.div key="go" initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.6, opacity: 0 }}
-                    className="w-40 h-40 rounded-full bg-emerald-500 text-white grid place-items-center text-3xl font-black shadow-lg">{t('mindgym.attention.go')}</motion.div>
+                    className="w-40 h-40 rounded-full bg-emerald-700 text-white grid place-items-center text-3xl font-black shadow-lg">{t('mindgym.attention.go')}</motion.div>
                 )}
                 {stim === 'nogo' && (
                   <motion.div key="nogo" initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.6, opacity: 0 }}

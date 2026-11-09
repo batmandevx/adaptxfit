@@ -227,11 +227,15 @@
   color: inherit;
 }
 
-/* ===== Smooth Focus Styles ===== */
+/* ===== Smooth Focus Styles — one consistent, on-brand emerald ring ===== */
 :focus-visible {
-  outline: 2px solid oklch(0.646 0.222 41.116);
+  outline: 2px solid #10b981;
   outline-offset: 2px;
   border-radius: 4px;
+}
+
+.dark :focus-visible {
+  outline-color: #34d399;
 }
 
 /* ===== Badge Shimmer Effect ===== */

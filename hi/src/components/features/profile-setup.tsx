@@ -213,19 +213,34 @@ export default function ProfileSetup() {
     setProfileSetupComplete,
     profileSetupOpen,
     setProfileSetupOpen,
+    profileSetupDismissed,
+    setProfileSetupDismissed,
   } = useAppStore();
 
   const [step, setStep] = useState(0);
   const [direction, setDirection] = useState(1);
   const [showConfetti, setShowConfetti] = useState(false);
 
-  // Auto-open on first visit
+  // Auto-open on first visit — but not if the user already dismissed it once
+  // (B-05). It stays reachable from the header avatar at any time.
   useEffect(() => {
-    if (!profileSetupComplete) {
+    if (!profileSetupComplete && !profileSetupDismissed) {
       const timer = setTimeout(() => setProfileSetupOpen(true), 1500);
       return () => clearTimeout(timer);
     }
   }, []);
+
+  // Closing the dialog without completing the wizard counts as a dismissal:
+  // remember it so the dialog stops re-nagging on every reload.
+  const handleOpenChange = useCallback(
+    (open: boolean) => {
+      if (!open && !useAppStore.getState().profileSetupComplete) {
+        setProfileSetupDismissed(true);
+      }
+      setProfileSetupOpen(open);
+    },
+    [setProfileSetupDismissed, setProfileSetupOpen]
+  );
 
   // Local form state
   const [localName, setLocalName] = useState(userName || '');
@@ -328,7 +343,7 @@ export default function ProfileSetup() {
   ];
 
   return (
-    <Dialog open={profileSetupOpen} onOpenChange={setProfileSetupOpen}>
+    <Dialog open={profileSetupOpen} onOpenChange={handleOpenChange}>
       <DialogContent
         className="max-w-2xl w-[calc(100%-2rem)] max-h-[90vh] overflow-y-auto p-0 gap-0"
         showCloseButton={!showConfetti}
